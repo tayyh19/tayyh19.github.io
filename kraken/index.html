@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>KRAKEN · 红队攻击演练台</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#0b0609; --bg2:#170a13;
+  --accent:#ff4d6d; --accent2:#ff9a3c;
+  --cyan:#39e0f0; --green:#33d17a; --red:#ff4d6d; --amber:#ffb64d; --violet:#b06cff;
+  --text:#fbeef2; --dim:#c09aa6; --dim2:#7d5f6a;
+  --glass:rgba(255,255,255,.055);
+  --glass2:rgba(255,255,255,.085);
+  --brd:rgba(255,255,255,.13);
+  --brd2:rgba(255,255,255,.24);
+  --r:22px; --rm:16px; --rs:11px;
+  --navw:250px;
+}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:
+    radial-gradient(1100px 700px at 84% -10%, rgba(255,77,109,.17), transparent 60%),
+    radial-gradient(900px 640px at -12% 110%, rgba(255,154,60,.13), transparent 58%),
+    linear-gradient(160deg,var(--bg),var(--bg2));
+  color:var(--text);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  overflow:hidden;
+}
+body.armed{--accent:#ff3b5c;--accent2:#ff7a2f}
+.app{display:flex;height:100%}
+/* ---------- 侧栏 ---------- */
+.nav{
+  width:var(--navw);flex:0 0 var(--navw);height:100%;
+  background:rgba(20,10,17,.74);
+  -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+  border-right:1px solid var(--brd);
+  display:flex;flex-direction:column;padding:20px 14px;
+}
+.brand{display:flex;align-items:center;gap:12px;padding:6px 8px 20px}
+.logo{
+  width:44px;height:44px;flex:0 0 44px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;color:#fff;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 10px 26px rgba(255,77,109,.42);
+}
+.bt{font-size:17px;font-weight:800;letter-spacing:2.5px}
+.bs{font-size:10.5px;color:var(--dim2);letter-spacing:1.4px;text-transform:uppercase}
+#navlist{display:flex;flex-direction:column;gap:4px;flex:1;overflow:auto}
+.navi{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;
+  color:var(--dim);cursor:pointer;font-size:13.5px;font-weight:600;
+  transition:all .18s;user-select:none;
+}
+.navi i{font-style:normal;font-size:15px;width:18px;text-align:center;opacity:.85}
+.navi:hover{background:var(--glass);color:var(--text)}
+.navi.on{
+  background:linear-gradient(100deg,rgba(255,77,109,.26),rgba(255,154,60,.14));
+  color:#fff;box-shadow:inset 0 0 0 1px rgba(255,77,109,.38);
+}
+.navfoot{border-top:1px solid var(--brd);padding:14px 8px 4px}
+.pf{font-size:10.5px;color:var(--dim2);letter-spacing:1.5px;margin-bottom:8px}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+  padding:7px 12px;border-radius:999px;background:rgba(120,120,140,.16);
+  color:var(--dim);border:1px solid var(--brd);
+}
+.pill.act{background:rgba(255,77,109,.15);color:var(--red);border-color:rgba(255,77,109,.38)}
+.pill.ok{background:rgba(51,209,122,.14);color:var(--green);border-color:rgba(51,209,122,.3)}
+/* ---------- 主区 ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
+.top{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 26px;border-bottom:1px solid var(--brd);
+  background:rgba(18,9,15,.5);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+}
+.tl h1{margin:0;font-size:19px;font-weight:800;letter-spacing:.5px}
+.crumb{font-size:11px;color:var(--dim2);letter-spacing:1.2px;text-transform:uppercase;margin-top:3px}
+.tr{display:flex;align-items:center;gap:14px}
+.threat{
+  font-size:11.5px;color:var(--dim);padding:8px 13px;border-radius:11px;
+  background:var(--glass);border:1px solid var(--brd);
+}
+.threat b{color:var(--green);font-weight:800;margin-left:4px}
+.threat.warn b{color:var(--amber)}
+.threat.crit b{color:var(--red)}
+.threat.crit{border-color:rgba(255,77,109,.42);background:rgba(255,77,109,.1)}
+.clock{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;
+  color:var(--cyan);letter-spacing:1px;padding:8px 12px;border-radius:11px;
+  background:rgba(57,224,240,.08);border:1px solid rgba(57,224,240,.2);
+}
+.operator{display:flex;align-items:center;gap:9px}
+.ava{
+  width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;background:linear-gradient(140deg,var(--accent),var(--accent2));color:#fff;
+}
+.on2{font-size:12.5px;font-weight:700}
+.os{font-size:10.5px;color:var(--dim2)}
+.body{flex:1;overflow:auto;padding:22px 26px 40px}
+.panel{display:none;animation:fade .28s ease}
+.panel.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+/* ---------- 卡片 ---------- */
+.card{
+  background:var(--glass);border:1px solid var(--brd);border-radius:var(--r);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  box-shadow:0 20px 48px rgba(14,2,8,.46);
+  padding:20px;
+}
+.card h3{margin:0 0 4px;font-size:14px;font-weight:800;letter-spacing:.3px}
+.card .sub{font-size:11.5px;color:var(--dim2);margin-bottom:14px}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(178px,1fr));margin-bottom:16px}
+.kpi{position:relative;overflow:hidden}
+.kpi .lab{font-size:11.5px;color:var(--dim);letter-spacing:.6px;margin-bottom:10px}
+.kpi .val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:27px;font-weight:800;letter-spacing:.4px}
+.kpi .un{font-size:12px;color:var(--dim2);margin-left:5px;font-weight:600}
+.kpi .delta{font-size:11px;margin-top:9px;color:var(--dim2)}
+.kpi .bar{position:absolute;left:0;top:0;height:3px;width:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.c-blue .val{color:var(--accent)} .c-cyan .val{color:var(--cyan)}
+.c-green .val{color:var(--green)} .c-red .val{color:var(--red)}
+.c-amber .val{color:var(--amber)} .c-violet .val{color:var(--violet)}
+.c-red .bar{background:linear-gradient(90deg,var(--red),#ff9a7a)}
+.c-green .bar{background:linear-gradient(90deg,var(--green),#7fe0a8)}
+.two{grid-template-columns:1.35fr .85fr;margin-top:16px}
+.three{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:16px}
+@media(max-width:1080px){.two{grid-template-columns:1fr}}
+canvas{display:block;width:100%;height:auto;border-radius:14px}
+.legend{display:flex;gap:18px;margin-top:12px;font-size:11.5px;color:var(--dim);flex-wrap:wrap}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+/* ---------- 条形 ---------- */
+.brow{margin-bottom:13px}
+.brow .t{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:var(--dim)}
+.brow .t b{color:var(--text);font-family:ui-monospace,monospace}
+.track{height:7px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden}
+.track i{display:block;height:100%;border-radius:6px;transition:width .5s ease;
+  background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.track i.rd{background:linear-gradient(90deg,var(--red),#ff9a7a)}
+.track i.gr{background:linear-gradient(90deg,var(--green),#7fe0a8)}
+.track i.cy{background:linear-gradient(90deg,var(--cyan),#7fe6f5)}
+/* ---------- 表格 ---------- */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{
+  text-align:left;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--dim2);font-weight:700;padding:0 12px 11px;border-bottom:1px solid var(--brd);
+}
+td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--dim)}
+tbody tr:hover td{background:rgba(255,255,255,.03);color:var(--text)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text)}
+.tag{display:inline-block;padding:3px 9px;border-radius:7px;font-size:10.5px;font-weight:700}
+.t-red{background:rgba(255,77,109,.15);color:var(--red)}
+.t-green{background:rgba(51,209,122,.15);color:var(--green)}
+.t-amber{background:rgba(255,182,77,.15);color:var(--amber)}
+.t-blue{background:rgba(57,224,240,.15);color:var(--cyan)}
+.t-violet{background:rgba(176,108,255,.16);color:var(--violet)}
+/* ---------- 控件 ---------- */
+.btn{
+  border:1px solid var(--brd2);background:var(--glass2);color:var(--text);
+  padding:9px 15px;border-radius:11px;font-size:12.5px;font-weight:700;cursor:pointer;
+  transition:all .16s;font-family:inherit;
+}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn.pri{background:linear-gradient(100deg,var(--accent),var(--accent2));border:none;color:#fff}
+.btn.dg{background:rgba(255,77,109,.16);border-color:rgba(255,77,109,.42);color:var(--red)}
+.btn.sm{padding:6px 11px;font-size:11.5px;border-radius:9px}
+.btnrow{display:flex;flex-wrap:wrap;gap:9px}
+input[type=text],input[type=number],select{
+  background:rgba(0,0,0,.28);border:1px solid var(--brd);color:var(--text);
+  padding:9px 12px;border-radius:10px;font-size:12.5px;font-family:inherit;outline:none;
+}
+input:focus,select:focus{border-color:var(--accent)}
+label{font-size:12px;color:var(--dim)}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.055)}
+.sw .nm{font-size:13px;font-weight:600}
+.sw .ds{font-size:11px;color:var(--dim2);margin-top:2px}
+.toggle{
+  width:46px;height:26px;border-radius:999px;background:rgba(255,255,255,.13);
+  position:relative;cursor:pointer;transition:background .2s;flex:0 0 46px;
+}
+.toggle i{
+  position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:left .2s;box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.toggle.on{background:linear-gradient(100deg,var(--accent),var(--accent2))}
+.toggle.on i{left:23px}
+.sl{margin:16px 0}
+.sl .t{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:8px}
+.sl .t b{color:var(--cyan);font-family:ui-monospace,monospace}
+input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:6px;
+  background:rgba(255,255,255,.13);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.5)}
+/* ---------- 专用 ---------- */
+.term{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.8;max-height:300px;overflow:auto;padding-right:4px}
+.term .ln{padding:1px 0;color:var(--dim);word-break:break-all}
+.term .ln .ts{color:var(--dim2);margin-right:8px}
+.lv-ok{color:var(--green)} .lv-warn{color:var(--amber)} .lv-err{color:var(--red)} .lv-info{color:var(--cyan)}
+.tstate{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:7px;white-space:nowrap}
+.st-heal{background:rgba(51,209,122,.15);color:var(--green)}
+.st-degr{background:rgba(255,182,77,.15);color:var(--amber)}
+.st-crit{background:rgba(255,77,109,.16);color:var(--red)}
+.st-down{background:rgba(120,120,140,.22);color:var(--dim2)}
+.minirow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.minirow:last-child{border-bottom:none}
+.minirow .nm{font-size:12.5px;font-weight:600}
+.minirow .hh{font-size:10.5px;color:var(--dim2);font-family:ui-monospace,monospace}
+.atkc{border:1px solid var(--brd);border-radius:var(--rm);padding:15px;cursor:pointer;transition:all .16s;background:var(--glass)}
+.atkc:hover{background:var(--glass2);transform:translateY(-1px)}
+.atkc.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent),0 12px 30px rgba(255,77,109,.18);background:rgba(255,77,109,.07)}
+.atkc .nm{font-size:13.5px;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.atkc .ds{font-size:11.5px;color:var(--dim2);margin:7px 0 12px;min-height:32px}
+.atkc .mt{display:flex;gap:16px;font-size:11px;color:var(--dim)}
+.atkc .mt b{color:var(--text);font-family:ui-monospace,monospace}
+.choice{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border:1px solid var(--brd);border-radius:12px;cursor:pointer;background:var(--glass);transition:all .16s;margin-bottom:8px}
+.choice:hover{background:var(--glass2)}
+.choice.on{border-color:var(--accent);background:rgba(255,77,109,.08)}
+.choice .nm{font-size:12.5px;font-weight:700}
+.choice .hh{font-size:10.5px;color:var(--dim2);font-family:ui-monospace,monospace}
+.stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.stat4 .it{background:rgba(0,0,0,.2);border:1px solid var(--brd);border-radius:13px;padding:13px}
+.stat4 .it .k{font-size:10.5px;color:var(--dim2);letter-spacing:.8px;margin-bottom:7px}
+.stat4 .it .v{font-family:ui-monospace,monospace;font-size:17px;font-weight:800}
+@media(max-width:640px){.stat4{grid-template-columns:repeat(2,1fr)}}
+.banner{border:1px solid rgba(255,77,109,.35);background:rgba(255,77,109,.09);border-radius:var(--rm);padding:14px 16px;font-size:12.5px;color:var(--dim);margin-bottom:16px;line-height:1.7}
+.banner b{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="nav">
+    <div class="brand">
+      <div class="logo">Ξ</div>
+      <div><div class="bt">KRAKEN</div><div class="bs">Red Team Ops</div></div>
+    </div>
+    <nav id="navlist">
+      <a class="navi on" data-p="overview"><i>◈</i><span>作战总览</span></a>
+      <a class="navi" data-p="recon"><i>⌖</i><span>目标侦察</span></a>
+      <a class="navi" data-p="arsenal"><i>⚔</i><span>武器库</span></a>
+      <a class="navi" data-p="campaign"><i>⚡</i><span>实时压制</span></a>
+      <a class="navi" data-p="logs"><i>▤</i><span>作战日志</span></a>
+      <a class="navi" data-p="settings"><i>⚙</i><span>系统设置</span></a>
+    </nav>
+    <div class="navfoot">
+      <div class="pf">CAMPAIGN STATUS</div>
+      <div class="pill" id="navStatus">● 待命 / Standby</div>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <div class="tl">
+        <h1 id="pgTitle">作战总览</h1>
+        <div class="crumb" id="pgCrumb">Operations / Overview</div>
+      </div>
+      <div class="tr">
+        <div class="threat" id="threatChip">战役状态 <b>待命</b></div>
+        <div class="clock" id="clock">--:--:--</div>
+        <div class="operator">
+          <div class="ava">红</div>
+          <div><div class="on2">红队指挥官</div><div class="os">red@kraken.ops</div></div>
+        </div>
+      </div>
+    </header>
+    <div class="body">
+      <section class="panel on" id="p-overview">
+        <div class="banner">
+          <b>⚑ 演练声明</b> — 本控制台为<b>纯前端模拟</b>，所有“攻击”均由本地脚本演算，不发起任何真实网络请求，也不作用于任何真实目标。仅用于红蓝对抗演示与教学。
+        </div>
+        <div class="grid kpis">
+          <div class="card kpi c-blue"><div class="bar"></div><div class="lab">活跃战役</div>
+            <div><span class="val" id="kCamp">0</span><span class="un">场</span></div>
+            <div class="delta" id="kCampD">无进行中战役</div></div>
+          <div class="card kpi c-red"><div class="bar"></div><div class="lab">累计投放请求</div>
+            <div><span class="val" id="kReq">0</span><span class="un">万次</span></div>
+            <div class="delta">本次会话模拟量</div></div>
+          <div class="card kpi c-amber"><div class="bar"></div><div class="lab">防御拦截面</div>
+            <div><span class="val" id="kIntcpt">0</span><span class="un">%</span></div>
+            <div class="delta" id="kIntcptD">目标平均拦截率</div></div>
+          <div class="card kpi c-green"><div class="bar"></div><div class="lab">目标可用率</div>
+            <div><span class="val" id="kAvail">100</span><span class="un">%</span></div>
+            <div class="delta" id="kAvailD">全场平均健康度</div></div>
+          <div class="card kpi c-violet"><div class="bar"></div><div class="lab">已压制目标</div>
+            <div><span class="val" id="kHit">0</span><span class="un">个</span></div>
+            <div class="delta" id="kHitD">可用率 < 25%</div></div>
+          <div class="card kpi c-red"><div class="bar"></div><div class="lab">综合压制指数</div>
+            <div><span class="val" id="kImpact">0</span><span class="un">pts</span></div>
+            <div class="delta" id="kImpactD">0 - 100</div></div>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>压制态势</h3>
+            <div class="sub">攻击投放体量 vs 目标可用率 · 窗口 120 采样</div>
+            <canvas id="cvsPressure" width="1000" height="330"></canvas>
+            <div class="legend">
+              <span><i style="background:#ff4d6d"></i>攻击投放 (Mbps)</span>
+              <span><i style="background:#ffb64d"></i>防御吸收 (Mbps)</span>
+              <span><i style="background:#33d17a"></i>目标可用率 (%)</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>目标池状态</h3>
+            <div class="sub">8 个演练目标 · 实时可用率</div>
+            <div id="tgtMini"></div>
+          </div>
+        </div>
+        <div class="grid three">
+          <div class="card">
+            <h3>战役强度仪表</h3>
+            <div class="sub">当前投放体量 / 上限 12 Gbps</div>
+            <canvas id="cvsGauge" width="560" height="300"></canvas>
+          </div>
+          <div class="card">
+            <h3>攻击手法分布</h3>
+            <div class="sub">本轮战役各手法投放占比</div>
+            <canvas id="cvsMethod" width="560" height="300"></canvas>
+          </div>
+          <div class="card">
+            <h3>目标可用率</h3>
+            <div class="sub">各目标当前健康度</div>
+            <canvas id="cvsBars" width="560" height="300"></canvas>
+          </div>
+        </div>
+      </section>
+      <!-- ---------- 目标侦察 ---------- -->
+      <section class="panel" id="p-recon">
+        <div class="grid two">
+          <div class="card">
+            <h3>侦察雷达</h3>
+            <div class="sub">目标分布扫描 · 颜色=健康度</div>
+            <canvas id="cvsRadar" width="620" height="380"></canvas>
+            <div class="btnrow" style="margin-top:14px">
+              <button class="btn pri" id="btnRecon">⌖ 发起侦察</button>
+              <button class="btn sm" id="btnReconAll">侦察全部目标</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>目标情报</h3>
+            <div class="sub" id="reconSub">未选择目标 · 点击左侧雷达或下方清单</div>
+            <div id="reconInfo"></div>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:16px">
+          <div class="card">
+            <h3>目标清单</h3>
+            <div class="sub">点击任一行设为主目标并查看情报</div>
+            <div style="overflow:auto">
+              <table>
+                <thead><tr><th>目标</th><th>业务</th><th>区域</th><th>防护评估</th><th>状态</th><th>可用率</th></tr></thead>
+                <tbody id="tgtBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      <!-- ---------- 武器库 ---------- -->
+      <section class="panel" id="p-arsenal">
+        <div class="grid two">
+          <div class="card">
+            <h3>攻击手法</h3>
+            <div class="sub">选择本战役主用手法 · 仅本地演算，不发真实报文</div>
+            <div class="grid two" id="atkGrid" style="gap:11px;margin-top:4px"></div>
+          </div>
+          <div class="card">
+            <h3>投放器与参数</h3>
+            <div class="sub">选择模拟投放器，调整演算强度</div>
+            <div id="wpnList"></div>
+            <div class="sl"><div class="t"><span>并发连接数</span><b id="vConc">--</b></div>
+              <input type="range" id="slConc" min="1" max="100" value="40"></div>
+            <div class="sl"><div class="t"><span>单点请求速率 (req/s)</span><b id="vRate">--</b></div>
+              <input type="range" id="slRate" min="1" max="100" value="60"></div>
+            <div class="sl"><div class="t"><span>投放时长 (分钟)</span><b id="vDur">--</b></div>
+              <input type="range" id="slDur" min="1" max="60" value="20"></div>
+            <div class="banner" style="margin-top:8px">预计投放强度 <b id="cfgSummary">--</b></div>
+          </div>
+        </div>
+      </section>
+      <!-- ---------- 实时压制 ---------- -->
+      <section class="panel" id="p-campaign">
+        <div class="grid two">
+          <div class="card">
+            <h3>投放控制</h3>
+            <div class="sub">启动后由本地脚本推演压制过程</div>
+            <div class="btnrow" style="margin:6px 0 4px">
+              <button class="btn pri" id="btnFire">⚡ 发动战役</button>
+              <button class="btn dg" id="btnHalt">■ 中止投放</button>
+              <button class="btn sm" id="btnSurge">↯ 增压脉冲</button>
+            </div>
+            <div class="sl"><div class="t"><span>投放强度</span><b id="vPow">--</b></div>
+              <input type="range" id="slPow" min="1" max="100" value="55"></div>
+            <div class="stat4" style="margin-top:6px">
+              <div class="it"><div class="k">已投放请求</div><div class="v t-red" id="cReq">0</div></div>
+              <div class="it"><div class="k">实时体量</div><div class="v t-amber" id="cMbps">0</div></div>
+              <div class="it"><div class="k">目标可用率</div><div class="v t-green" id="cAvail">100</div></div>
+              <div class="it"><div class="k">防御拦截</div><div class="v t-blue" id="cIntcpt">0</div></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>压制战况</h3>
+            <div class="sub">投放体量与目标可用率实时曲线 · 窗口 120 采样</div>
+            <canvas id="cvsLive" width="1000" height="330"></canvas>
+            <div class="legend">
+              <span><i style="background:#ff4d6d"></i>投放 (Mbps)</span>
+              <span><i style="background:#33d17a"></i>目标可用率 (%)</span>
+              <span><i style="background:#ffb64d"></i>拦截 (Mbps)</span>
+            </div>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:16px">
+          <div class="card">
+            <h3>目标压制进度</h3>
+            <div class="sub">各目标可用率与压制状态</div>
+            <div id="liveList"></div>
+          </div>
+        </div>
+      </section>
+      <!-- ---------- 作战日志 ---------- -->
+      <section class="panel" id="p-logs">
+        <div class="grid">
+          <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap">
+              <div><h3 style="margin:0">作战日志</h3><div class="sub">本地事件流 · 不入库、不外发</div></div>
+              <div class="btnrow">
+                <button class="btn sm" id="btnLogClear">清空</button>
+                <button class="btn sm" id="btnLogExport">导出</button>
+              </div>
+            </div>
+            <div class="term" id="logTerm" style="margin-top:12px"></div>
+          </div>
+        </div>
+      </section>
+      <!-- ---------- 系统设置 ---------- -->
+      <section class="panel" id="p-settings">
+        <div class="grid two">
+          <div class="card">
+            <h3>运行设置</h3>
+            <div class="sub">全部为本地偏好，刷新后重置</div>
+            <div class="sw"><div><div class="nm">粒子自动回收</div><div class="ds">超界粒子立即释放，避免堆积</div></div>
+              <div class="toggle on" data-k="autoGC"><i></i></div></div>
+            <div class="sw"><div><div class="nm">日志自动滚动</div><div class="ds">新事件自动滚到底部</div></div>
+              <div class="toggle on" data-k="autoScroll"><i></i></div></div>
+            <div class="sw"><div><div class="nm">事件提示音</div><div class="ds">默认关闭</div></div>
+              <div class="toggle" data-k="sound"><i></i></div></div>
+            <div class="sw"><div><div class="nm">安全沙盒（锁定）</div><div class="ds">禁止任何真实网络请求，强制开启</div></div>
+              <div class="toggle on" style="opacity:.5;pointer-events:none"><i></i></div></div>
+          </div>
+          <div class="card">
+            <h3>模拟参数</h3>
+            <div class="sub">影响本地演算速度与平滑度</div>
+            <div class="sl"><div class="t"><span>演算速度</span><b id="vSpeed">--</b></div>
+              <input type="range" id="slSpeed" min="1" max="100" value="50"></div>
+            <div class="sl"><div class="t"><span>采样窗口</span><b id="vWin">--</b></div>
+              <input type="range" id="slWin" min="30" max="240" value="120"></div>
+            <div class="btnrow" style="margin-top:18px">
+              <button class="btn dg" id="btnReset">重置演练</button>
+            </div>
+            <div class="banner" style="margin-top:14px">本控制台不含任何可指向真实目标的攻击能力。</div>
+          </div>
+        </div>
+      </section>
+    </div><!-- /.body -->
+  </main>
+</div><!-- /.app -->
+  <script>
+  (function(){
+  'use strict';
+  var W = window;
+
+  /* ================= 工具函数 ================= */
+  function byId(id){ return document.getElementById(id); }
+  function ce(tag,cls){ var e=document.createElement(tag); if(cls) e.className=cls; return e; }
+  function fmt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+  function pad2(n){ return n<10?('0'+n):(''+n); }
+  function rnd(a,b){ return a+Math.random()*(b-a); }
+  function clamp(v,a,b){ return v<a?a:(v>b?b:v); }
+  function ts(){ var d=new Date(); return pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds()); }
+  function panelOn(p){ var e=byId('p-'+p); return !!e && (' '+e.className+' ').indexOf(' on ')>=0; }
+
+  /* ================= 常量数据 ================= */
+  var PAGE_META = {
+    overview:['作战总览','Operations / Overview'],
+    recon:['目标侦察','Reconnaissance / Targets'],
+    arsenal:['武器库','Arsenal / Vectors'],
+    campaign:['实时压制','Campaign / Suppression'],
+    logs:['作战日志','Operations / Logs'],
+    settings:['系统设置','System / Settings']
+  };
+  /* 攻击手法（与本地演算关联，均不产生真实报文） */
+  var ATTACK_TYPES = [
+    {n:'SYN Flood',        w:26, ds:'伪造源地址的 TCP 半开连接，耗尽连接表', cost:'高带宽/连接数'},
+    {n:'UDP Amplification',w:22, ds:'借 UDP 反射通道放大模拟，纯数学推演',     cost:'中带宽/高倍数'},
+    {n:'HTTP Flood',       w:18, ds:'海量合法形态 GET 请求压满应用层',        cost:'中带宽/请求'},
+    {n:'CC 攻击',           w:14, ds:'针对动态接口的高频查询模拟',              cost:'低带宽/高并发'},
+    {n:'DNS Amplification',w:12, ds:'伪造查询触发大响应体量（本地占位）',     cost:'低带宽/高倍数'},
+    {n:'Slowloris',        w:8,  ds:'低速慢连接长期占位，消耗并发槽',          cost:'极低带宽/连接'}
+  ];
+  /* 模拟投放器（纯本地） */
+  var WEAPONS = [
+    {n:'本地演算器 MK-I',  ds:'零真实流量，纯脚本推演投放曲线'},
+    {n:'反射放大模拟器',   ds:'以 1:38 黄金比例演算放大效应'},
+    {n:'低频慢速模拟器',   ds:'长连接占位模型，压力平缓上升'},
+    {n:'混合投放器',       ds:'多手法联合投放，曲线更平滑'}
+  ];
+  /* 8 个演练目标 */
+  var TARGETS = [
+    {c:'TGT-01', name:'华东-门户主站', biz:'门户',  region:'华东', def:0.82},
+    {c:'TGT-02', name:'华北-支付网关', biz:'支付',  region:'华北', def:0.90},
+    {c:'TGT-03', name:'华南-API 集群', biz:'接口',  region:'华南', def:0.74},
+    {c:'TGT-04', name:'西南-游戏登录', biz:'游戏',  region:'西南', def:0.62},
+    {c:'TGT-05', name:'华东-静态 CDN', biz:'静态',  region:'华东', def:0.88},
+    {c:'TGT-06', name:'海外-出海节点', biz:'出海',  region:'海外', def:0.55},
+    {c:'TGT-07', name:'华北-数据中台', biz:'数据',  region:'华北', def:0.70},
+    {c:'TGT-08', name:'华东-直播推流', biz:'直播',  region:'华东', def:0.48}
+  ];
+  var COLORS = ['#ff4d6d','#ff9a3c','#e05cff','#39c0f0','#33d17a','#ffd24d'];
+
+  /* ================= 状态 ================= */
+  var S = {
+    armed:false, firedAt:0,
+    pow:55, conc:40, rate:60, dur:20,
+    methods:{0:true},          /* 启用的攻击手法索引 */
+    wpn:0,
+    targets:[], pressure:[],
+    reqTotal:0, intcpt:0, mbps:0,
+    logs:[],
+    sel:0, sweep:0,
+    autoGC:true, autoScroll:true, sound:false,
+    speed:50, win:120
+  };
+  var ti; /* 临时变量占位 */
+
+  /* ================= 目标实例 & 状态初始化 ================= */
+  function initTargets(){
+    S.targets = TARGETS.map(function(t,i){
+      return { idx:i, code:t.c, name:t.name, biz:t.biz, region:t.region, def:t.def,
+               hp:100, press:0, delta:0, probes:0 };
+    });
+    S.pressure = [];
+    S.reqTotal = 0; S.intcpt = 0; S.mbps = 0;
+    S.sel = 0; S.sweep = 0;
+  }
+  function tstate(t){
+    if(t.hp<=20) return 'down';
+    if(t.hp<=45) return 'crit';
+    if(t.hp<=75) return 'degr';
+    return 'heal';
+  }
+  var STAT_LABEL = { heal:['健康','st-heal'], degr:['降级','st-degr'], crit:['危急','st-crit'], down:['失联','st-down'] };
+  function setText(id,v){ var e=byId(id); if(e && e.textContent!==String(v)) e.textContent=v; }
+
+  /* ================= 作战日志 ================= */
+  function pushLog(lv,msg){
+    S.logs.push({ t:ts(), lv:(lv||'info'), m:msg });
+    if(S.logs.length>500) S.logs.shift();
+    if(panelOn('logs')) logRender();
+  }
+  function logLine(o){
+    var d = ce('div','ln '+(o.lv||'info'));
+    var st = ce('span','ts'); st.textContent = '['+o.t+']';
+    d.appendChild(st);
+    d.appendChild(document.createTextNode(o.m));
+    return d;
+  }
+  function logRender(){
+    var box = byId('logTerm'); if(!box) return;
+    var frag = document.createDocumentFragment();
+    var arr = S.logs.slice(-250);
+    for(var i=0;i<arr.length;i++) frag.appendChild(logLine(arr[i]));
+    box.innerHTML=''; box.appendChild(frag);
+    if(S.autoScroll) box.scrollTop = box.scrollHeight;
+  }
+
+  /* ================= 目标渲染 ================= */
+  function tgtBar(t){
+    var row = ce('div','brow');
+    var top = ce('div','t');
+    var l = document.createElement('span'); l.textContent = t.code+' · '+t.name;
+    var r = document.createElement('b'); r.textContent = Math.round(t.hp)+'%';
+    top.appendChild(l); top.appendChild(r);
+    var tr = ce('div','track');
+    var f = document.createElement('i');
+    var cls = t.hp<=45?'rd':(t.hp<=75?'cy':'gr');
+    f.className = cls; f.style.width = clamp(t.hp,0,100)+'%';
+    tr.appendChild(f);
+    row.appendChild(top); row.appendChild(tr);
+    return row;
+  }
+  function renderTgtMini(){
+    var box = byId('tgtMini'); if(!box) return;
+    box.innerHTML='';
+    for(var i=0;i<S.targets.length;i++) box.appendChild(tgtBar(S.targets[i]));
+  }
+  function renderTgtTable(){
+    var tb = byId('tgtBody'); if(!tb) return;
+    tb.innerHTML='';
+    for(var i=0;i<S.targets.length;i++){
+      var t = S.targets[i], tr = ce('tr');
+      if(i===S.sel) tr.style.background='rgba(255,77,109,.07)';
+      var td1=ce('td'); td1.textContent = t.code+' '+t.name;
+      var td2=ce('td'); td2.textContent = t.biz;
+      var td3=ce('td'); td3.textContent = t.region;
+      var td4=ce('td'); td4.textContent = Math.round(t.def*100)+' /100';
+      var td5=ce('td'); var sl=STAT_LABEL[tstate(t)]; var tag=ce('span','tstate '+sl[1]); tag.textContent=sl[0]; td5.appendChild(tag);
+      var td6=ce('td'); td6.textContent = Math.round(t.hp)+'%';
+      tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3);
+      tr.appendChild(td4); tr.appendChild(td5); tr.appendChild(td6);
+      (function(idx){ tr.onclick=function(){ selectTarget(idx); }; })(i);
+      tb.appendChild(tr);
+    }
+  }
+  function renderRecon(){
+    var t = S.targets[S.sel]; if(!t) return;
+    var sub = byId('reconSub');
+    if(sub) sub.textContent = t.code+' · '+t.name+' · 情报已装载';
+    var box = byId('reconInfo'); if(!box) return;
+    box.innerHTML='';
+    var sl = STAT_LABEL[tstate(t)];
+    var rows = [['目标代号',t.code],['目标名称',t.name],['业务类型',t.biz],['部署区域',t.region],
+      ['防护系数',Math.round(t.def*100)+' /100'],['当前可用率',Math.round(t.hp)+'%'],
+      ['健康状态',sl[0]],['探测次数',t.probes+' 次']];
+    for(var i=0;i<rows.length;i++){
+      var r=ce('div','minirow');
+      var a=ce('div','nm'); a.textContent=rows[i][0];
+      var b=ce('div','hh'); b.textContent=rows[i][1];
+      r.appendChild(a); r.appendChild(b); box.appendChild(r);
+    }
+  }
+
+  /* ================= Canvas 基础设施 ================= */
+  var CX = {};
+  function initCanvas(){
+    CX.pressure = ctxOf('cvsPressure'); CX.gauge = ctxOf('cvsGauge');
+    CX.method = ctxOf('cvsMethod'); CX.bars = ctxOf('cvsBars');
+    CX.radar = ctxOf('cvsRadar'); CX.live = ctxOf('cvsLive');
+  }
+  function ctxOf(id){ var c=byId(id); return c ? c.getContext('2d') : null; }
+  function clearC(ctx){ if(ctx) ctx.clearRect(0,0,ctx.canvas.width,ctx.canvas.height); }
+  function grid(ctx,pad){
+    if(!ctx) return;
+    ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+    var w=ctx.canvas.width,h=ctx.canvas.height;
+    for(var i=1;i<4;i++){ var y=pad+(h-pad*2)*i/4; ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad,y); ctx.stroke(); }
+  }
+  function drawSeries(ctx,arr,key,color,pad,maxv){
+    if(!ctx||arr.length<2) return;
+    var w=ctx.canvas.width,h=ctx.canvas.height;
+    ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath();
+    for(var i=0;i<arr.length;i++){
+      var x=pad+(w-pad*2)*i/(arr.length-1);
+      var y=h-pad-(h-pad*2)*clamp(arr[i][key]/maxv,0,1);
+      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  }
+  function drawPressure(){
+    var ctx=CX.pressure; if(!ctx) return;
+    clearC(ctx); grid(ctx,24);
+    drawSeries(ctx,S.pressure,'av','#33d17a',24,100);
+    drawSeries(ctx,S.pressure,'atk','#ff4d6d',24,12000);
+    drawSeries(ctx,S.pressure,'def','#ffb64d',24,12000);
+  }
+  function drawLive(){
+    var ctx=CX.live; if(!ctx) return;
+    clearC(ctx); grid(ctx,24);
+    drawSeries(ctx,S.pressure,'av','#33d17a',24,100);
+    drawSeries(ctx,S.pressure,'atk','#ff4d6d',24,12000);
+    drawSeries(ctx,S.pressure,'def','#ffb64d',24,12000);
+  }
+  function drawGauge(){
+    var ctx=CX.gauge; if(!ctx) return;
+    clearC(ctx);
+    var w=ctx.canvas.width,h=ctx.canvas.height;
+    var cx=w/2, cy=h*0.62, r=Math.min(w,h)*0.36;
+    var pct=clamp(S.mbps/12000,0,1);
+    ctx.lineWidth=18; ctx.lineCap='round';
+    ctx.strokeStyle='rgba(255,255,255,.08)';
+    ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,Math.PI*2); ctx.stroke();
+    var g=ctx.createLinearGradient(cx-r,0,cx+r,0);
+    g.addColorStop(0,'#ff9a3c'); g.addColorStop(1,'#ff4d6d');
+    ctx.strokeStyle=g;
+    ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,Math.PI+Math.PI*pct); ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.textAlign='center';
+    ctx.font='700 30px ui-monospace,monospace';
+    ctx.fillText((S.mbps/1000).toFixed(2),cx,cy-2);
+    ctx.font='11px sans-serif'; ctx.fillStyle='rgba(255,255,255,.5)';
+    ctx.fillText('Gbps / 12 上限',cx,cy+20);
+  }
+  function drawMethod(){
+    var ctx=CX.method; if(!ctx) return;
+    clearC(ctx);
+    var w=ctx.canvas.width,h=ctx.canvas.height;
+    var cx=w/2, cy=h/2, r=Math.min(w,h)*0.32, tot=0, i;
+    var ws=[];
+    for(i=0;i<ATTACK_TYPES.length;i++){ ws.push(S.methods[i]?ATTACK_TYPES[i].w:0); tot+=ws[i]; }
+    if(tot<=0) tot=1;
+    var a=-Math.PI/2;
+    for(i=0;i<ws.length;i++){
+      if(ws[i]<=0) continue;
+      var ang=Math.PI*2*ws[i]/tot;
+      ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,a,a+ang); ctx.closePath();
+      ctx.fillStyle=COLORS[i%COLORS.length]; ctx.fill();
+      a+=ang;
+    }
+    ctx.globalCompositeOperation='destination-out';
+    ctx.beginPath(); ctx.arc(cx,cy,r*0.58,0,Math.PI*2); ctx.fill();
+    ctx.globalCompositeOperation='source-over';
+  }
+  function drawBars(){
+    var ctx=CX.bars; if(!ctx) return;
+    clearC(ctx);
+    var w=ctx.canvas.width,h=ctx.canvas.height, pad=18;
+    var rowH=(h-pad*2)/S.targets.length;
+    for(var i=0;i<S.targets.length;i++){
+      var t=S.targets[i], y=pad+i*rowH;
+      ctx.fillStyle='rgba(255,255,255,.5)'; ctx.font='11px monospace'; ctx.textAlign='left';
+      ctx.fillText(t.code, pad, y+rowH*0.58);
+      var x0=pad+56, bw=w-pad*2-56;
+      ctx.fillStyle='rgba(255,255,255,.07)'; ctx.fillRect(x0, y+rowH*0.22, bw, rowH*0.44);
+      ctx.fillStyle = t.hp<=45?'#ff4d6d':(t.hp<=75?'#ffb64d':'#33d17a');
+      ctx.fillRect(x0, y+rowH*0.22, bw*clamp(t.hp,0,100)/100, rowH*0.44);
+    }
+  }
+  function drawRadar(){
+    var ctx=CX.radar; if(!ctx) return;
+    clearC(ctx);
+    var w=ctx.canvas.width,h=ctx.canvas.height;
+    var cx=w/2, cy=h/2, R=Math.min(w,h)*0.42;
+    ctx.strokeStyle='rgba(255,255,255,.08)';
+    for(var k=1;k<=4;k++){ ctx.beginPath(); ctx.arc(cx,cy,R*k/4,0,Math.PI*2); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(cx-R,cy); ctx.lineTo(cx+R,cy); ctx.moveTo(cx,cy-R); ctx.lineTo(cx,cy+R); ctx.stroke();
+    ctx.save(); ctx.translate(cx,cy); ctx.rotate(S.sweep);
+    var lg=ctx.createLinearGradient(0,0,R,0); lg.addColorStop(0,'rgba(255,77,109,.55)'); lg.addColorStop(1,'rgba(255,77,109,0)');
+    ctx.strokeStyle=lg; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(R,0); ctx.stroke();
+    ctx.restore();
+    for(var i=0;i<S.targets.length;i++){
+      var t=S.targets[i];
+      var a2=Math.PI*2*i/S.targets.length, rr=R*(0.35+0.55*(1-t.def));
+      var x=cx+Math.cos(a2)*rr, y=cy+Math.sin(a2)*rr;
+      ctx.beginPath(); ctx.arc(x,y, i===S.sel?6:4, 0, Math.PI*2);
+      ctx.fillStyle = t.hp<=45?'#ff4d6d':(t.hp<=75?'#ffb64d':'#33d17a'); ctx.fill();
+      if(i===S.sel){ ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); }
+    }
+  }
+
+  /* ================= 武器库渲染 ================= */
+  function renderArsenal(){
+    var g = byId('atkGrid'); if(!g) return;
+    g.innerHTML='';
+    for(var i=0;i<ATTACK_TYPES.length;i++){
+      var a = ATTACK_TYPES[i];
+      var c = ce('div','atkc'+(S.methods[i]?' on':''));
+      var nm = ce('div','nm');
+      var nmt = document.createElement('span'); nmt.textContent = a.n;
+      var wv = document.createElement('span'); wv.textContent = a.w+'%';
+      nm.appendChild(nmt); nm.appendChild(wv);
+      var ds = ce('div','ds'); ds.textContent = a.ds;
+      var mt = ce('div','mt');
+      var m1 = ce('div'); m1.innerHTML = '权重 <b>'+a.w+'</b>';
+      var m2 = ce('div'); m2.innerHTML = '成本 <b>'+a.cost+'</b>';
+      mt.appendChild(m1); mt.appendChild(m2);
+      c.appendChild(nm); c.appendChild(ds); c.appendChild(mt);
+      (function(idx){ c.onclick = function(){ toggleMethod(idx); }; })(i);
+      g.appendChild(c);
+    }
+  }
+  function toggleMethod(i){
+    S.methods[i] = !S.methods[i];
+    var on = 0, k;
+    for(k in S.methods){ if(S.methods[k]) on++; }
+    if(on===0){ S.methods[i]=true; pushLog('warn','至少需保留一种攻击手法，已自动恢复'); }
+    renderArsenal(); renderCfg();
+  }
+  function renderWeapons(){
+    var box = byId('wpnList'); if(!box) return;
+    box.innerHTML='';
+    for(var i=0;i<WEAPONS.length;i++){
+      var w = WEAPONS[i];
+      var c = ce('div','choice'+(S.wpn===i?' on':''));
+      var l = ce('div');
+      var nm = ce('div','nm'); nm.textContent = w.n;
+      var hh = ce('div','hh'); hh.textContent = w.ds;
+      l.appendChild(nm); l.appendChild(hh);
+      c.appendChild(l);
+      (function(idx,w2){ c.onclick = function(){ S.wpn=idx; renderWeapons(); renderCfg(); pushLog('info','已切换投放器：'+w2.n); }; })(i,w);
+      box.appendChild(c);
+    }
+  }
+  function renderCfg(){
+    setText('vConc',S.conc); setText('vRate',S.rate); setText('vDur',S.dur); setText('vPow',S.pow);
+    setText('vSpeed',S.speed); setText('vWin',S.win);
+    var on=0, k;
+    for(k in S.methods){ if(S.methods[k]) on++; }
+    var power = Math.round(S.pow*0.44*(0.6+S.conc/100)*(0.7+S.rate/100));
+    var gbps = (power*0.09).toFixed(2);
+    setText('cfgSummary', WEAPONS[S.wpn].n+' · '+on+' 种手法 · 峰值约 '+gbps+' Gbps · 持续 '+S.dur+' 分钟');
+  }
+  function renderLiveList(){
+    var box = byId('liveList'); if(!box) return;
+    box.innerHTML='';
+    for(var i=0;i<S.targets.length;i++){
+      var t = S.targets[i];
+      var row = ce('div','minirow');
+      var l = ce('div');
+      var nm = ce('div','nm'); nm.textContent = t.code+' · '+t.name;
+      var hh = ce('div','hh'); hh.textContent = '防护 '+Math.round(t.def*100)+' · 压力 '+t.press.toFixed(1);
+      l.appendChild(nm); l.appendChild(hh);
+      var right = ce('div'); right.style.minWidth='130px'; right.style.textAlign='right';
+      var tr = ce('div','track');
+      var f = document.createElement('i'); f.className = t.hp<=45?'rd':(t.hp<=75?'cy':'gr'); f.style.width = clamp(100-t.hp,0,100)+'%';
+      tr.appendChild(f);
+      var sl = STAT_LABEL[tstate(t)];
+      var tag = ce('span','tstate '+sl[1]); tag.textContent = sl[0];
+      right.appendChild(tr); right.appendChild(tag);
+      row.appendChild(l); row.appendChild(right);
+      box.appendChild(row);
+    }
+  }
+
+  /* ================= 交互动作 ================= */
+  function selectTarget(i){
+    if(i<0||i>=S.targets.length) return;
+    S.sel = i;
+    renderTgtTable(); renderRecon(); drawRadar();
+    pushLog('info','已锁定主目标 '+S.targets[i].code+' · '+S.targets[i].name);
+  }
+  function reconTarget(all){
+    if(all){
+      for(var i=0;i<S.targets.length;i++) S.targets[i].probes++;
+      pushLog('ok','全量侦察完成 · 已刷新 '+S.targets.length+' 个目标情报');
+    } else {
+      S.targets[S.sel].probes++;
+      pushLog('ok','侦察完成 · '+S.targets[S.sel].code+' '+S.targets[S.sel].name);
+    }
+    renderTgtTable(); renderRecon(); drawRadar();
+  }
+  function setStatusPill(live){
+    var e = byId('navStatus'); if(!e) return;
+    e.className = live ? 'pill act' : 'pill ok';
+    e.textContent = live ? '● 投放中 / Active' : '● 待命 / Standby';
+    var tc = byId('threatChip');
+    if(tc) tc.innerHTML = live ? '战役状态 <b>进行中</b>' : '战役状态 <b>待命</b>';
+  }
+  function fire(){
+    if(S.armed) return;
+    S.armed = true; S.firedAt = Date.now();
+    document.body.classList.add('armed');
+    setStatusPill(true);
+    var on=0, k; for(k in S.methods){ if(S.methods[k]) on++; }
+    pushLog('err','⚡ 战役已发动 · 投放器 '+WEAPONS[S.wpn].n+' · '+on+' 种手法 · 纯本地演算');
+  }
+  function halt(){
+    if(!S.armed) return;
+    S.armed = false;
+    document.body.classList.remove('armed');
+    setStatusPill(false);
+    pushLog('warn','投放已中止 · 目标进入恢复阶段');
+  }
+  function surge(){
+    if(!S.armed){ pushLog('warn','增压脉冲仅在战役进行中可用'); return; }
+    var old = S.pow;
+    S.pow = Math.min(100, S.pow+25);
+    var s = byId('slPow'); if(s) s.value = S.pow;
+    setText('vPow',S.pow); renderCfg();
+    pushLog('warn','↯ 增压脉冲 · 强度临时提升至 '+S.pow);
+    setTimeout(function(){
+      S.pow = old;
+      var s2 = byId('slPow'); if(s2) s2.value = old;
+      setText('vPow',old); renderCfg();
+      pushLog('info','增压脉冲结束 · 强度回落至 '+old);
+    }, 4000);
+  }
+  function reset(){
+    S.armed = false;
+    document.body.classList.remove('armed');
+    setStatusPill(false);
+    S.logs = [];
+    initTargets();
+    renderTgtMini(); renderTgtTable(); renderRecon(); renderLiveList(); renderCfg(); logRender();
+    switchPage('overview');
+    pushLog('ok','演练已重置 · 全部目标恢复健康');
+  }
+  function switchPage(name){
+    var meta = PAGE_META[name]; if(!meta) return;
+    var navs = byId('navlist').getElementsByTagName('a');
+    for(var i=0;i<navs.length;i++){
+      navs[i].className = (navs[i].getAttribute('data-p')===name) ? 'navi on' : 'navi';
+    }
+    var panels = ['overview','recon','arsenal','campaign','logs','settings'];
+    for(i=0;i<panels.length;i++){
+      var e = byId('p-'+panels[i]); if(!e) continue;
+      e.className = (panels[i]===name) ? 'panel on' : 'panel';
+    }
+    setText('pgTitle', meta[0]); setText('pgCrumb', meta[1]);
+    if(name==='overview'){ renderTgtMini(); drawPressure(); drawGauge(); drawMethod(); drawBars(); }
+    if(name==='recon'){ renderTgtTable(); renderRecon(); drawRadar(); }
+    if(name==='arsenal'){ renderArsenal(); renderWeapons(); renderCfg(); }
+    if(name==='campaign'){ drawLive(); renderLiveList(); }
+    if(name==='logs'){ logRender(); }
+  }
+  function bindSlider(sid,vid,key){
+    var s = byId(sid); if(!s) return;
+    s.oninput = function(){
+      S[key] = parseInt(s.value,10)||0;
+      setText(vid,S[key]);
+      if(key==='win'){ while(S.pressure.length>S.win) S.pressure.shift(); }
+      renderCfg();
+    };
+    setText(vid,S[key]); s.value = S[key];
+  }
+  function bindUI(){
+    var i;
+    var navs = byId('navlist').getElementsByTagName('a');
+    for(i=0;i<navs.length;i++){ (function(a){ a.onclick = function(){ switchPage(a.getAttribute('data-p')); }; })(navs[i]); }
+    var tog = document.querySelectorAll('.toggle[data-k]');
+    for(i=0;i<tog.length;i++){ (function(el){
+      el.onclick = function(){
+        var k = el.getAttribute('data-k');
+        var on = (' '+el.className+' ').indexOf(' on ')>=0;
+        if(on){ el.className='toggle'; S[k]=false; } else { el.className='toggle on'; S[k]=true; }
+        pushLog('info','设置更新：'+k+' = '+S[k]);
+      };
+    })(tog[i]); }
+    var b = byId('btnFire'); if(b) b.onclick = fire;
+    b = byId('btnHalt'); if(b) b.onclick = halt;
+    b = byId('btnSurge'); if(b) b.onclick = surge;
+    b = byId('btnRecon'); if(b) b.onclick = function(){ reconTarget(false); };
+    b = byId('btnReconAll'); if(b) b.onclick = function(){ reconTarget(true); };
+    b = byId('btnLogClear'); if(b) b.onclick = function(){ S.logs=[]; logRender(); pushLog('info','日志已清空'); };
+    b = byId('btnLogExport'); if(b) b.onclick = function(){ pushLog('ok','导出（模拟）：共 '+S.logs.length+' 条事件，仅本地'); };
+    b = byId('btnReset'); if(b) b.onclick = reset;
+    bindSlider('slConc','vConc','conc');
+    bindSlider('slRate','vRate','rate');
+    bindSlider('slDur','vDur','dur');
+    bindSlider('slPow','vPow','pow');
+    bindSlider('slSpeed','vSpeed','speed');
+    bindSlider('slWin','vWin','win');
+  }
+
+  /* ================= 主循环 ================= */
+  function tick(){
+    var i, t;
+    S.sweep += 0.14;
+    if(!S.armed){
+      for(i=0;i<S.targets.length;i++){
+        t = S.targets[i];
+        if(t.hp<100) t.hp = Math.min(100, t.hp + 0.5);
+        t.press *= 0.92;
+      }
+      S.mbps *= 0.85; if(S.mbps<1) S.mbps=0;
+      S.intcpt *= 0.9;
+    } else {
+      var elapsed = (Date.now()-S.firedAt)/1000;
+      var remain = S.dur*60 - elapsed;
+      if(remain<=0){ pushLog('ok','时段结束 · 投放自动停止'); halt(); return; }
+      var ramp = Math.min(1, elapsed/6) * Math.min(1, remain/8);
+      var unit = (S.pow/100)*(0.55+S.conc/100)*(0.6+S.rate/100)*(0.7+S.speed/100*0.6);
+      var atk = unit*9000*ramp*rnd(0.94,1.06);
+      if(atk>12000) atk=12000;
+      S.mbps = atk;
+      S.reqTotal += atk*0.02;
+      var absorbed=0, incoming=0;
+      for(i=0;i<S.targets.length;i++){
+        t = S.targets[i];
+        var share = atk/1000/8*(0.7+Math.random()*0.6);
+        var dEff = clamp(t.def*(0.92+Math.random()*0.16),0,0.97);
+        t.press = t.press*0.9 + share*0.35;
+        t.hp = clamp(t.hp - share*(1-dEff)*0.55, 0, 100);
+        incoming += share; absorbed += share*dEff;
+      }
+      S.intcpt = incoming>0 ? Math.round(absorbed/incoming*100) : 0;
+    }
+    var avSum=0, hit=0;
+    for(i=0;i<S.targets.length;i++){ avSum += S.targets[i].hp; if(S.targets[i].hp<25) hit++; }
+    var av = avSum/S.targets.length;
+    S.pressure.push({ atk:S.mbps, def:S.mbps*S.intcpt/100, av:av });
+    while(S.pressure.length>S.win) S.pressure.shift();
+    setText('kCamp', S.armed?1:0);
+    setText('kCampD', S.armed ? ('进行中 · 剩余约 '+Math.max(0,Math.round(S.dur*60-(Date.now()-S.firedAt)/1000))+'s') : '无进行中战役');
+    setText('kReq', fmt(S.reqTotal));
+    setText('kIntcpt', S.intcpt);
+    setText('kAvail', Math.round(av));
+    setText('kHit', hit);
+    setText('kHitD', '可用率 < 25% · '+hit+'/'+S.targets.length);
+    var impact = Math.round(clamp((100-av)*0.6 + (hit/S.targets.length)*40, 0, 100));
+    setText('kImpact', impact);
+    setText('kImpactD', (S.armed?'战役进行中':'待命')+' · 0 - 100');
+    setText('cReq', fmt(S.reqTotal));
+    setText('cMbps', Math.round(S.mbps));
+    setText('cAvail', Math.round(av));
+    setText('cIntcpt', S.intcpt);
+    if(panelOn('overview')){ renderTgtMini(); drawPressure(); drawGauge(); drawMethod(); drawBars(); }
+    if(panelOn('campaign')){ drawLive(); renderLiveList(); }
+    if(panelOn('recon')){ drawRadar(); }
+  }
+  function clockTick(){ setText('clock', ts()); }
+
+  /* ================= 初始化 ================= */
+  function init(){
+    initTargets(); initCanvas();
+    renderArsenal(); renderWeapons();
+    bindUI();
+    renderTgtMini(); renderTgtTable(); renderRecon(); renderLiveList(); renderCfg(); logRender();
+    setStatusPill(false);
+    pushLog('ok','KRAKEN 红队演练台就绪 · 纯本地演算模式');
+    pushLog('info','安全沙盒已强制开启：不存在任何真实网络请求能力');
+    clockTick();
+    switchPage('overview');
+    setInterval(tick, 700);
+    setInterval(clockTick, 1000);
+  }
+  function renderAll(){
+    renderTgtMini(); renderTgtTable(); renderRecon(); renderArsenal(); renderWeapons();
+    renderLiveList(); renderCfg(); logRender();
+    drawPressure(); drawLive(); drawGauge(); drawMethod(); drawBars(); drawRadar();
+  }
+
+  W.KRAKEN = {
+    S:S, init:init, tick:tick, fire:fire, halt:halt, surge:surge,
+    selectTarget:selectTarget, reconTarget:reconTarget, switchPage:switchPage,
+    renderAll:renderAll, pushLog:pushLog, reset:reset,
+    ATTACK_TYPES:ATTACK_TYPES, WEAPONS:WEAPONS, TARGETS:TARGETS
+  };
+
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+  })();
+</script>
+
+</body>
+</html>
