@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0c12">
+<title>VAULT · 本地密码保险库</title>
+<style>
+:root{
+  --bg:#0a0c12; --panel:#12151f; --panel2:#171b28; --line:#242a3c;
+  --fg:#e8ecf6; --dim:#8892a8; --gold:#f0b429; --gold2:#ffd76b;
+  --ok:#3ddc97; --warn:#ffb020; --bad:#ff6b6b;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--fg);
+  font-family:-apple-system,"PingFang SC","Microsoft YaHei",system-ui,sans-serif;font-size:14px}
+button{font-family:inherit}
+input,textarea{font-family:inherit}
+
+/* ---------- 通用 ---------- */
+.btn{font-size:13px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);color:var(--fg);cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{background:rgba(255,255,255,.09)}
+.btn.primary{background:linear-gradient(135deg,var(--gold),#d99a12);border-color:transparent;
+  color:#1a1206;font-weight:700}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:transparent;color:var(--dim)}
+.btn.danger{color:var(--bad);border-color:rgba(255,107,107,.35)}
+.btn.danger:hover{background:rgba(255,107,107,.12)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:var(--dim);margin-bottom:6px;letter-spacing:.04em}
+.field input,.field textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--fg);font-size:14px;outline:none;transition:.15s;resize:vertical}
+.field input:focus,.field textarea:focus{border-color:rgba(240,180,41,.55);background:#1b2030}
+.inline{display:flex;gap:8px;align-items:center}
+.inline input{flex:1;min-width:0}
+
+/* ---------- 锁定屏 ---------- */
+.lock{position:fixed;inset:0;display:none;align-items:center;justify-content:center;
+  padding:22px;background:radial-gradient(ellipse at 50% 30%,#151a28 0%,#0a0c12 65%);z-index:50}
+.lock.show{display:flex}
+.lockCard{width:100%;max-width:360px;padding:30px 24px 24px;border:1px solid var(--line);
+  border-radius:20px;background:var(--panel);box-shadow:0 24px 60px rgba(0,0,0,.6)}
+.logo{font-size:24px;letter-spacing:.34em;font-weight:700;
+  background:linear-gradient(90deg,var(--gold),var(--gold2));
+  -webkit-background-clip:text;background-clip:text;color:transparent;text-align:center}
+.lockSub{text-align:center;color:var(--dim);font-size:12px;margin:8px 0 24px;letter-spacing:.06em}
+.err{color:var(--bad);font-size:12px;min-height:18px;margin:8px 0 4px;text-align:center}
+.hide{display:none !important}
+
+/* ---------- 主界面 ---------- */
+#main{position:fixed;inset:0;display:none;flex-direction:column}
+#main.show{display:flex}
+header{display:flex;align-items:center;gap:9px;padding:10px 12px;border-bottom:1px solid var(--line);
+  background:var(--panel);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);flex:0 0 auto}
+.brand{font-size:15px;letter-spacing:.26em;font-weight:700;color:var(--gold);white-space:nowrap}
+#search{flex:1;min-width:0;padding:9px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--fg);outline:none;font-size:13px}
+#search:focus{border-color:rgba(240,180,41,.5)}
+.iconBtn{width:38px;height:38px;flex:0 0 auto;border-radius:11px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);color:var(--fg);font-size:16px;cursor:pointer;line-height:1}
+.iconBtn:hover{background:rgba(240,180,41,.14);border-color:rgba(240,180,41,.4)}
+
+.body{flex:1;display:flex;min-height:0}
+#listPane{width:308px;flex:0 0 auto;border-right:1px solid var(--line);overflow:auto;padding:8px}
+#list{list-style:none;margin:0;padding:0}
+.item{display:flex;align-items:center;gap:11px;padding:11px;border-radius:12px;cursor:pointer;
+  border:1px solid transparent;transition:.14s;margin-bottom:4px}
+.item:hover{background:rgba(255,255,255,.04)}
+.item.active{background:rgba(240,180,41,.12);border-color:rgba(240,180,41,.32)}
+.icode{width:34px;height:34px;flex:0 0 auto;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-weight:700;font-size:15px;color:#0d0f16}
+.ititle{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iuser{font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ilist{min-width:0;flex:1}
+.empty{color:var(--dim);font-size:13px;text-align:center;padding:40px 16px;line-height:1.8}
+
+#editPane{flex:1;overflow:auto;padding:22px 24px;min-width:0}
+.edHead{display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.edHead h2{margin:0;font-size:16px;font-weight:600;flex:1;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis}
+#backBtn{display:none}
+
+.strength{margin-top:9px}
+.bars{display:flex;gap:4px;margin-bottom:5px}
+.bars i{flex:1;height:4px;border-radius:3px;background:var(--line);transition:.2s}
+.stxt{font-size:11px;color:var(--dim)}
+
+/* ---------- 弹层 ---------- */
+.overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;padding:18px;
+  background:rgba(4,6,12,.72);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);z-index:80}
+.overlay.show{display:flex}
+.modal{width:100%;max-width:420px;max-height:86vh;overflow:auto;padding:22px;border-radius:18px;
+  border:1px solid var(--line);background:var(--panel);box-shadow:0 24px 60px rgba(0,0,0,.7)}
+.modal h3{margin:0 0 16px;font-size:16px}
+.gr{display:block;font-size:12px;color:var(--dim);margin-bottom:14px}
+.gr input[type=range]{width:100%;margin-top:10px;-webkit-appearance:none;appearance:none;height:4px;
+  border-radius:4px;background:linear-gradient(90deg,var(--gold),var(--gold2));outline:none}
+.gr input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;
+  background:#fff;box-shadow:0 0 10px var(--gold)}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:9px 12px;margin-bottom:14px}
+.checks label{font-size:13px;color:var(--fg);display:flex;align-items:center;gap:8px;cursor:pointer}
+.checks input{width:17px;height:17px;accent-color:var(--gold)}
+.genOut{display:flex;gap:8px;margin-bottom:16px}
+.genOut input{flex:1;min-width:0;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--gold2);font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:14px;outline:none}
+.note{font-size:11.5px;color:var(--dim);line-height:1.7;margin:0 0 16px}
+#ioText{width:100%;height:190px;padding:11px;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--fg);font-family:ui-monospace,Menlo,Consolas,monospace;
+  font-size:12px;outline:none;resize:vertical;margin-bottom:14px}
+.mActions{display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+.warnbox{padding:10px 12px;border-radius:10px;background:rgba(255,176,32,.12);
+  border:1px solid rgba(255,176,32,.3);color:#ffd489;font-size:12px;line-height:1.7;margin-bottom:16px}
+
+/* ---------- Toast ---------- */
+#toast{position:fixed;left:50%;bottom:34px;transform:translateX(-50%) translateY(20px);
+  padding:10px 18px;border-radius:12px;background:rgba(20,26,40,.96);border:1px solid var(--line);
+  color:var(--fg);font-size:13px;opacity:0;pointer-events:none;transition:.25s;z-index:99;
+  box-shadow:0 10px 30px rgba(0,0,0,.6)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:720px){
+  #listPane{width:100%;border-right:0}
+  #editPane{position:fixed;left:0;right:0;top:59px;bottom:0;background:var(--bg);
+    transform:translateX(102%);transition:transform .22s ease;z-index:10;padding:18px 16px;
+    overflow:auto}
+  #editPane.open{transform:none}
+  #backBtn{display:inline-flex;align-items:center;justify-content:center}
+  .brand{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 锁定屏 ============ -->
+<div class="lock" id="lockScreen">
+  <div class="lockCard">
+    <div class="logo">VAULT</div>
+    <div class="lockSub" id="lockSub">本地密码保险库</div>
+    <div class="field">
+      <label id="pw1Label">主密码</label>
+      <input type="password" id="pw1" autocomplete="off" placeholder="请输入主密码">
+    </div>
+    <div class="field hide" id="pw2Wrap">
+      <label>确认主密码</label>
+      <input type="password" id="pw2" autocomplete="off" placeholder="再输入一次">
+    </div>
+    <div class="err" id="lockErr"></div>
+    <button class="btn primary" id="lockBtn" style="width:100%;padding:12px">创建保险库</button>
+    <button class="btn ghost" id="skipBtn" style="width:100%;margin-top:9px;padding:10px">不加密，直接使用</button>
+    <p class="note" style="margin:14px 0 0;text-align:center" id="lockNote">
+      主密码仅保存在本机内存中，用于加密本地数据，<b>不会也无法上传</b>。忘记将无法恢复。
+    </p>
+  </div>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="main">
+  <header>
+    <div class="brand">VAULT</div>
+    <input id="search" placeholder="搜索标题 / 账号 / 网址…">
+    <button class="iconBtn" id="btnNew" title="新建">＋</button>
+    <button class="iconBtn" id="btnIO" title="导出 / 导入">⇅</button>
+    <button class="iconBtn" id="btnLock" title="锁定">🔒</button>
+  </header>
+  <div class="body">
+    <div id="listPane">
+      <ul id="list"></ul>
+      <div class="empty" id="emptyTip" style="display:none">
+        还没有任何条目<br>点右上角 ＋ 新建一条
+      </div>
+    </div>
+
+    <div id="editPane">
+      <div class="edHead">
+        <button class="btn ghost" id="backBtn">←</button>
+        <h2 id="edTitle">新建条目</h2>
+        <span id="edBadge" class="stxt"></span>
+      </div>
+
+      <div class="field">
+        <label>标题 *</label>
+        <input id="fTitle" placeholder="例如：GitHub" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>用户名 / 账号</label>
+        <input id="fUser" placeholder="例如：me@example.com" autocomplete="off">
+        <button class="btn" id="copyUser" style="margin-top:8px">复制账号</button>
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <div class="inline">
+          <input id="fPass" type="password" placeholder="点击右侧生成" autocomplete="off">
+          <button class="iconBtn" id="bShow" title="显示/隐藏">👁</button>
+          <button class="iconBtn" id="bGen" title="生成器">⚙</button>
+        </div>
+        <button class="btn" id="copyPass" style="margin-top:8px">复制密码</button>
+        <div class="strength">
+          <div class="bars" id="bars"><i></i><i></i><i></i><i></i></div>
+          <div class="stxt" id="stxt">强度：—</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>网址</label>
+        <input id="fUrl" placeholder="https://…" autocomplete="off">
+      </div>
+      <div class="field">
+        <label>备注</label>
+        <textarea id="fNote" rows="3" placeholder="安全问题、恢复码等…"></textarea>
+      </div>
+
+      <div class="mActions" style="justify-content:flex-start">
+        <button class="btn primary" id="bSave">保存</button>
+        <button class="btn danger" id="bDel">删除</button>
+      </div>
+      <p class="note" id="storeNote" style="margin-top:14px"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 生成器弹层 ============ -->
+<div class="overlay" id="genModal">
+  <div class="modal">
+    <h3>密码生成器</h3>
+    <div class="genOut">
+      <input id="genOut" readonly>
+      <button class="btn" id="genRe">↻</button>
+    </div>
+    <label class="gr">长度 <b id="genLenV">20</b>
+      <input type="range" id="genLen" min="8" max="48" value="20">
+    </label>
+    <div class="checks">
+      <label><input type="checkbox" id="gUpper" checked>大写 A-Z</label>
+      <label><input type="checkbox" id="gLower" checked>小写 a-z</label>
+      <label><input type="checkbox" id="gDigit" checked>数字 0-9</label>
+      <label><input type="checkbox" id="gSym" checked>符号 !@#</label>
+    </div>
+    <p class="note">随机源使用 <b>crypto.getRandomValues</b>（非 Math.random），并自动排除易混淆字符 0 O o l 1 I。</p>
+    <div class="mActions">
+      <button class="btn ghost" id="genClose">取消</button>
+      <button class="btn primary" id="genUse">使用此密码</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 导入导出弹层 ============ -->
+<div class="overlay" id="ioModal">
+  <div class="modal">
+    <h3 id="ioTitle">导出备份</h3>
+    <p class="note" id="ioNote"></p>
+    <textarea id="ioText" spellcheck="false"></textarea>
+    <div class="mActions">
+      <button class="btn ghost" id="ioClose">关闭</button>
+      <button class="btn" id="ioCopy">复制</button>
+      <button class="btn primary" id="ioImport">导入文本</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* =========================================================
+   存储层（localStorage 不可用时自动降级为内存）
+   ========================================================= */
+var STORE_KEY = "vault_store_v1";
+var memStore = {};
+var persistent = true;
+try{
+  window.localStorage.setItem("__vault_t", "1");
+  window.localStorage.removeItem("__vault_t");
+}catch(e){ persistent = false; }
+
+function lsGet(k){
+  try{ return window.localStorage.getItem(k); }catch(e){ return memStore[k] || null; }
+}
+function lsSet(k, v){
+  try{ window.localStorage.setItem(k, v); }catch(e){ memStore[k] = v; }
+}
+
+/* =========================================================
+   基础工具
+   ========================================================= */
+function $(id){ return document.getElementById(id); }
+function esc(s){
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&#34;").replace(/'/g, "&#39;");
+}
+var toastTimer = null;
+function toast(msg){
+  var t = $("toast");
+  t.textContent = msg;
+  t.className = "show";
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.className = ""; }, 1700);
+}
+function uid(){
+  return "e" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+}
+function hueOf(str){
+  var h = 0, s = String(str || "?");
+  for(var i = 0; i < s.length; i++){ h = (h * 31 + s.charCodeAt(i)) % 360; }
+  return h;
+}
+
+/* Base64 <-> ArrayBuffer */
+function b64FromBuf(buf){
+  var bytes = new Uint8Array(buf), s = "";
+  for(var i = 0; i < bytes.length; i++){ s += String.fromCharCode(bytes[i]); }
+  return window.btoa(s);
+}
+function bufFromB64(str){
+  var bin = window.atob(str), out = new Uint8Array(bin.length);
+  for(var i = 0; i < bin.length; i++){ out[i] = bin.charCodeAt(i); }
+  return out;
+}
+
+/* =========================================================
+   加密层（Web Crypto：PBKDF2 + AES-GCM）
+   ========================================================= */
+var HAS_CRYPTO = !!(window.crypto && window.crypto.subtle && window.TextEncoder && window.TextDecoder);
+var te = HAS_CRYPTO ? new window.TextEncoder() : null;
+var td = HAS_CRYPTO ? new window.TextDecoder() : null;
+
+function deriveKey(password, salt){
+  return window.crypto.subtle.importKey(
+    "raw", te.encode(password), { name:"PBKDF2" }, false, ["deriveKey"]
+  ).then(function(base){
+    return window.crypto.subtle.deriveKey(
+      { name:"PBKDF2", salt:salt, iterations:120000, hash:"SHA-256" },
+      base, { name:"AES-GCM", length:256 }, false, ["encrypt", "decrypt"]
+    );
+  });
+}
+function encryptEntries(entries, key, salt){
+  var iv = window.crypto.getRandomValues(new Uint8Array(12));
+  return window.crypto.subtle.encrypt(
+    { name:"AES-GCM", iv:iv }, key, te.encode(JSON.stringify(entries))
+  ).then(function(ct){
+    return { v:1, enc:true, iter:120000, salt:b64FromBuf(salt), iv:b64FromBuf(iv), ct:b64FromBuf(ct) };
+  });
+}
+function decryptEntries(store, key){
+  return window.crypto.subtle.decrypt(
+    { name:"AES-GCM", iv:bufFromB64(store.iv) }, key, bufFromB64(store.ct)
+  ).then(function(pt){
+    return JSON.parse(td.decode(pt));
+  });
+}
+
+/* =========================================================
+   全局状态
+   ========================================================= */
+var S = {
+  enc:false,          /* 是否启用主密码加密 */
+  key:null,           /* CryptoKey（仅内存） */
+  salt:null,          /* Uint8Array */
+  entries:[],         /* [{id,title,username,password,url,notes,updated}] */
+  editingId:null,     /* 当前编辑条目 id，null = 新建 */
+  ioMode:"export"     /* 弹层当前模式 */
+};
+
+/* =========================================================
+   持久化
+   ========================================================= */
+function save(){
+  if(S.enc && S.key){
+    return encryptEntries(S.entries, S.key, S.salt).then(function(blob){
+      lsSet(STORE_KEY, JSON.stringify(blob));
+    });
+  }
+  lsSet(STORE_KEY, JSON.stringify({ v:1, enc:false, entries:S.entries }));
+  return Promise.resolve();
+}
+
+/* =========================================================
+   锁定屏逻辑
+   ========================================================= */
+function showLock(mode){
+  var ls = $("lockScreen");
+  ls.className = "lock show";
+  $("lockErr").textContent = "";
+  $("pw1").value = ""; $("pw2").value = "";
+
+  if(mode === "setup"){
+    $("lockSub").textContent = "本地密码保险库 · 初始化";
+    $("pw1Label").textContent = "设置主密码";
+    $("pw2Wrap").className = "field";
+    $("lockBtn").textContent = "创建保险库";
+    $("skipBtn").className = "btn ghost";
+    $("lockNote").innerHTML = "主密码仅保存在本机内存中，用于加密本地数据，<b>不会也无法上传</b>。忘记将无法恢复。";
+    $("lockBtn").setAttribute("data-mode", "setup");
+    if(!HAS_CRYPTO){
+      $("lockErr").textContent = "当前环境不支持 Web Crypto，加密功能不可用。";
+      $("lockBtn").disabled = true;
+      $("lockBtn").style.opacity = ".45";
+    }
+  }else{
+    $("lockSub").textContent = "本地密码保险库 · 已加密";
+    $("pw1Label").textContent = "主密码";
+    $("pw2Wrap").className = "field hide";
+    $("lockBtn").textContent = "解锁";
+    $("skipBtn").className = "btn ghost hide";
+    $("lockNote").innerHTML = "数据以 AES-256-GCM 加密存储在本机。";
+    $("lockBtn").setAttribute("data-mode", "unlock");
+    $("lockBtn").disabled = false;
+    $("lockBtn").style.opacity = "1";
+  }
+  setTimeout(function(){ $("pw1").focus(); }, 120);
+}
+function hideLock(){ $("lockScreen").className = "lock"; }
+
+function onLockBtn(){
+  var mode = $("lockBtn").getAttribute("data-mode");
+  var err = $("lockErr");
+  var pw = $("pw1").value;
+  err.textContent = "";
+
+  if(mode === "setup"){
+    if(pw.length < 4){ err.textContent = "主密码至少 4 位"; return; }
+    if(pw !== $("pw2").value){ err.textContent = "两次输入不一致"; return; }
+    $("lockBtn").textContent = "正在派生密钥…";
+    var salt = window.crypto.getRandomValues(new Uint8Array(16));
+    deriveKey(pw, salt).then(function(key){
+      S.enc = true; S.key = key; S.salt = salt; S.entries = [];
+      return save();
+    }).then(function(){
+      startApp();
+      toast("保险库已创建（已加密）");
+    })["catch"](function(e){
+      err.textContent = "创建失败：" + (e && e.message ? e.message : e);
+      $("lockBtn").textContent = "创建保险库";
+    });
+  }else{
+    if(!pw){ err.textContent = "请输入主密码"; return; }
+    $("lockBtn").textContent = "正在解锁…";
+    var st;
+    try{ st = JSON.parse(lsGet(STORE_KEY)); }catch(e2){ st = null; }
+    if(!st || !st.enc){ err.textContent = "本地数据异常"; $("lockBtn").textContent = "解锁"; return; }
+    var salt2 = bufFromB64(st.salt);
+    deriveKey(pw, salt2).then(function(key){
+      return decryptEntries(st, key).then(function(entries){
+        S.enc = true; S.key = key; S.salt = salt2; S.entries = entries || [];
+        startApp();
+        toast("已解锁 · " + S.entries.length + " 条记录");
+      });
+    })["catch"](function(){
+      err.textContent = "主密码错误，或数据已损坏";
+      $("lockBtn").textContent = "解锁";
+    });
+  }
+}
+
+/* =========================================================
+   启动主界面
+   ========================================================= */
+function startApp(){
+  hideLock();
+  $("main").className = "show";
+  $("search").value = "";
+  renderList();
+  newEntry();
+  updStoreNote();
+}
+
+function updStoreNote(){
+  var parts = [];
+  if(S.enc) parts.push("🔒 AES-256-GCM 加密存储");
+  else parts.push("⚠ 未加密（明文存储于本机）");
+  if(!persistent) parts.push("⚠ 本环境 localStorage 不可用，数据仅存在于内存，关闭后丢失");
+  $("storeNote").innerHTML = parts.join(" · ");
+}
+
+/* =========================================================
+   列表渲染
+   ========================================================= */
+function renderList(){
+  var q = ($("search").value || "").trim().toLowerCase();
+  var ul = $("list");
+  var html = "", shown = 0;
+
+  var arr = S.entries.slice().sort(function(a, b){
+    return (b.updated || 0) - (a.updated || 0);
+  });
+
+  for(var i = 0; i < arr.length; i++){
+    var e = arr[i];
+    var hay = ((e.title || "") + " " + (e.username || "") + " " + (e.url || "")).toLowerCase();
+    if(q && hay.indexOf(q) === -1) continue;
+    shown++;
+    var t = e.title || "(未命名)";
+    var hue = hueOf(t);
+    var initial = t.slice(0, 1).toUpperCase();
+    html += '<li class="item' + (e.id === S.editingId ? " active" : "") + '" data-id="' + esc(e.id) + '">' +
+      '<span class="icode" style="background:hsl(' + hue + ',72%,62%)">' + esc(initial) + '</span>' +
+      '<span class="ilist"><span class="ititle">' + esc(t) + '</span><br>' +
+      '<span class="iuser">' + esc(e.username || "—") + '</span></span></li>';
+  }
+  ul.innerHTML = html;
+  $("emptyTip").style.display = (S.entries.length === 0 || shown === 0) ? "block" : "none";
+  if(S.entries.length > 0 && shown === 0){
+    $("emptyTip").innerHTML = "没有匹配「" + esc(q) + "」的条目";
+  }else{
+    $("emptyTip").innerHTML = "还没有任何条目<br>点右上角 ＋ 新建一条";
+  }
+
+  var items = ul.querySelectorAll(".item");
+  for(var j = 0; j < items.length; j++){
+    (function(li){
+      li.addEventListener("click", function(){
+        openEntry(li.getAttribute("data-id"));
+      }, false);
+    })(items[j]);
+  }
+}
+
+/* =========================================================
+   编辑器
+   ========================================================= */
+function findEntry(id){
+  for(var i = 0; i < S.entries.length; i++){
+    if(S.entries[i].id === id) return S.entries[i];
+  }
+  return null;
+}
+
+function openEntry(id){
+  var e = findEntry(id);
+  if(!e) return;
+  S.editingId = id;
+  $("edTitle").textContent = e.title || "(未命名)";
+  $("edBadge").textContent = e.updated ? "更新于 " + new Date(e.updated).toLocaleString() : "";
+  $("fTitle").value = e.title || "";
+  $("fUser").value  = e.username || "";
+  $("fPass").value  = e.password || "";
+  $("fPass").setAttribute("type", "password");
+  $("fUrl").value   = e.url || "";
+  $("fNote").value  = e.notes || "";
+  $("bDel").style.display = "";
+  $("editPane").className = "open";
+  updStrength();
+  renderList();
+}
+
+function newEntry(){
+  S.editingId = null;
+  $("edTitle").textContent = "新建条目";
+  $("edBadge").textContent = "";
+  $("fTitle").value = ""; $("fUser").value = "";
+  $("fPass").value = ""; $("fPass").setAttribute("type", "password");
+  $("fUrl").value = ""; $("fNote").value = "";
+  $("bDel").style.display = "none";
+  $("editPane").className = "open";
+  updStrength();
+  renderList();
+}
+
+function saveEntry(){
+  var title = ($("fTitle").value || "").trim();
+  if(!title){ toast("请填写标题"); $("fTitle").focus(); return; }
+  var data = {
+    title: title,
+    username: ($("fUser").value || "").trim(),
+    password: $("fPass").value || "",
+    url: ($("fUrl").value || "").trim(),
+    notes: $("fNote").value || "",
+    updated: Date.now()
+  };
+  if(S.editingId){
+    var e = findEntry(S.editingId);
+    if(e){
+      e.title = data.title; e.username = data.username; e.password = data.password;
+      e.url = data.url; e.notes = data.notes; e.updated = data.updated;
+    }
+  }else{
+    data.id = uid();
+    S.entries.push(data);
+    S.editingId = data.id;
+  }
+  $("edTitle").textContent = title;
+  $("bDel").style.display = "";
+  save().then(function(){ renderList(); toast("已保存"); });
+}
+
+function delEntry(){
+  if(!S.editingId){ return; }
+  var e = findEntry(S.editingId);
+  if(!e) return;
+  if(!window.confirm('确定删除「' + (e.title || "未命名") + '」？此操作不可撤销。')) return;
+  for(var i = 0; i < S.entries.length; i++){
+    if(S.entries[i].id === S.editingId){ S.entries.splice(i, 1); break; }
+  }
+  S.editingId = null;
+  save().then(function(){ newEntry(); renderList(); toast("已删除"); });
+}
+
+/* =========================================================
+   强度评估
+   ========================================================= */
+function pwBits(pw){
+  if(!pw) return 0;
+  var pool = 0;
+  if(/[a-z]/.test(pw)) pool += 26;
+  if(/[A-Z]/.test(pw)) pool += 26;
+  if(/[0-9]/.test(pw)) pool += 10;
+  if(/[^A-Za-z0-9]/.test(pw)) pool += 33;
+  if(pool === 0) pool = 1;
+  return pw.length * (Math.log(pool) / Math.LN2);
+}
+function updStrength(){
+  var pw = $("fPass").value || "";
+  var bits = pwBits(pw);
+  var lvl = 0;
+  if(!pw) lvl = 0;
+  else if(bits < 40) lvl = 1;
+  else if(bits < 60) lvl = 2;
+  else if(bits < 90) lvl = 3;
+  else lvl = 4;
+
+  var colors = ["", "#ff6b6b", "#ffb020", "#3ddc97", "#3ddc97"];
+  var names  = ["—", "弱", "一般", "强", "非常强"];
+  var bars = $("bars").getElementsByTagName("i");
+  for(var i = 0; i < bars.length; i++){
+    bars[i].style.background = (i < lvl) ? colors[lvl] : "var(--line)";
+  }
+  $("stxt").textContent = "强度：" + names[lvl] + (pw ? "（约 " + Math.round(bits) + " bit 熵）" : "");
+}
+
+/* =========================================================
+   复制
+   ========================================================= */
+function copyText(txt, label){
+  if(!txt){ toast("内容为空"); return; }
+  function fallback(){
+    var ta = document.createElement("textarea");
+    ta.value = txt;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "-1000px";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try{ ok = document.execCommand("copy"); }catch(e){ ok = false; }
+    document.body.removeChild(ta);
+    toast(ok ? (label + "已复制") : "复制失败，请手动选择");
+  }
+  if(window.navigator && navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(
+      function(){ toast(label + "已复制"); },
+      fallback
+    );
+  }else{
+    fallback();
+  }
+}
+
+/* =========================================================
+   密码生成器
+   ========================================================= */
+function randInts(n){
+  var a = new Uint32Array(n);
+  if(window.crypto && window.crypto.getRandomValues){
+    window.crypto.getRandomValues(a);
+  }else{
+    for(var i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 4294967296);
+  }
+  return a;
+}
+function genPassword(){
+  var len = parseInt($("genLen").value, 10) || 20;
+  var sets = [];
+  if($("gUpper").checked) sets.push("ABCDEFGHJKLMNPQRSTUVWXYZ");
+  if($("gLower").checked) sets.push("abcdefghijkmnopqrstuvwxyz");
+  if($("gDigit").checked) sets.push("23456789");
+  if($("gSym").checked)   sets.push("!@#$%^&*()-_=+[]{};:,.?");
+  if(sets.length === 0){
+    sets.push("abcdefghijkmnopqrstuvwxyz");
+    $("gLower").checked = true;
+  }
+
+  var all = sets.join("");
+  var rnd = randInts(len * 2 + 8);
+  var out = [], idx = 0;
+
+  /* 每个被选中的字符集至少出现一次 */
+  for(var s = 0; s < sets.length && out.length < len; s++){
+    out.push(sets[s].charAt(rnd[idx++] % sets[s].length));
+  }
+  while(out.length < len){
+    out.push(all.charAt(rnd[idx++] % all.length));
+  }
+  /* Fisher-Yates 洗牌 */
+  var rnd2 = randInts(out.length);
+  for(var i = out.length - 1; i > 0; i--){
+    var j = rnd2[i] % (i + 1);
+    var tmp = out[i]; out[i] = out[j]; out[j] = tmp;
+  }
+  return out.join("");
+}
+
+/* =========================================================
+   导入 / 导出
+   ========================================================= */
+function openIO(mode){
+  S.ioMode = mode;
+  var t = $("ioTitle"), n = $("ioNote"), tx = $("ioText");
+  $("ioModal").className = "overlay show";
+  if(mode === "export"){
+    t.textContent = "导出备份";
+    n.innerHTML = S.enc
+      ? "当前保险库已加密。此处导出的是<b>明文 JSON</b>，请妥善保管、用完即删。"
+      : "导出为明文 JSON 文本。请妥善保管。";
+    tx.value = JSON.stringify(S.entries, null, 2);
+  }else{
+    t.textContent = "导入备份";
+    n.innerHTML = "粘贴此前导出的 JSON 数组，点「导入文本」按 id 合并进当前保险库。";
+    tx.value = "";
+  }
+}
+function doImport(){
+  var raw = $("ioText").value || "";
+  if(!raw.trim()){ toast("请先粘贴 JSON"); return; }
+  var arr;
+  try{ arr = JSON.parse(raw); }
+  catch(e){ toast("JSON 解析失败"); return; }
+  if(Object.prototype.toString.call(arr) !== "[object Array]"){ toast("格式应为 JSON 数组"); return; }
+
+  var added = 0, merged = 0;
+  for(var i = 0; i < arr.length; i++){
+    var it = arr[i];
+    if(!it || typeof it !== "object") continue;
+    var item = {
+      id: it.id || uid(),
+      title: it.title || "(未命名)",
+      username: it.username || "",
+      password: it.password || "",
+      url: it.url || "",
+      notes: it.notes || "",
+      updated: it.updated || Date.now()
+    };
+    var exist = findEntry(item.id);
+    if(exist){
+      exist.title = item.title; exist.username = item.username; exist.password = item.password;
+      exist.url = item.url; exist.notes = item.notes; exist.updated = item.updated;
+      merged++;
+    }else{
+      S.entries.push(item);
+      added++;
+    }
+  }
+  save().then(function(){
+    renderList();
+    $("ioModal").className = "overlay";
+    toast("导入完成：新增 " + added + " 条，覆盖 " + merged + " 条");
+  });
+}
+
+/* =========================================================
+   事件绑定
+   ========================================================= */
+$("lockBtn").addEventListener("click", onLockBtn, false);
+$("pw1").addEventListener("keydown", function(e){
+  if(e.keyCode === 13){ if($("lockBtn").getAttribute("data-mode") === "setup") $("pw2").focus(); else onLockBtn(); }
+}, false);
+$("pw2").addEventListener("keydown", function(e){ if(e.keyCode === 13) onLockBtn(); }, false);
+
+$("skipBtn").addEventListener("click", function(){
+  S.enc = false; S.key = null; S.entries = [];
+  save().then(function(){
+    startApp();
+    toast("已进入不加密模式");
+  });
+}, false);
+
+$("btnNew").addEventListener("click", function(){ newEntry(); $("fTitle").focus(); }, false);
+$("backBtn").addEventListener("click", function(){ $("editPane").className = ""; }, false);
+
+$("btnLock").addEventListener("click", function(){
+  if(!S.enc){ toast("当前为不加密模式，无法锁定"); return; }
+  S.key = null;
+  S.entries = [];
+  $("main").className = "";
+  showLock("unlock");
+}, false);
+
+$("search").addEventListener("input", renderList, false);
+
+$("bSave").addEventListener("click", saveEntry, false);
+$("bDel").addEventListener("click", delEntry, false);
+
+$("bShow").addEventListener("click", function(){
+  var f = $("fPass");
+  var isPw = f.getAttribute("type") === "password";
+  f.setAttribute("type", isPw ? "text" : "password");
+  this.textContent = isPw ? "🙈" : "👁";
+}, false);
+
+$("fPass").addEventListener("input", updStrength, false);
+$("copyPass").addEventListener("click", function(){ copyText($("fPass").value, "密码"); }, false);
+$("copyUser").addEventListener("click", function(){ copyText($("fUser").value, "账号"); }, false);
+
+/* 生成器 */
+$("bGen").addEventListener("click", function(){
+  $("genModal").className = "overlay show";
+  $("genOut").value = genPassword();
+}, false);
+$("genRe").addEventListener("click", function(){ $("genOut").value = genPassword(); }, false);
+$("genLen").addEventListener("input", function(){
+  $("genLenV").textContent = this.value;
+  $("genOut").value = genPassword();
+}, false);
+var gcs = ["gUpper", "gLower", "gDigit", "gSym"];
+for(var gi = 0; gi < gcs.length; gi++){
+  (function(id){
+    $(id).addEventListener("change", function(){ $("genOut").value = genPassword(); }, false);
+  })(gcs[gi]);
+}
+$("genClose").addEventListener("click", function(){ $("genModal").className = "overlay"; }, false);
+$("genUse").addEventListener("click", function(){
+  $("fPass").value = $("genOut").value;
+  $("fPass").setAttribute("type", "text");
+  $("bShow").textContent = "🙈";
+  updStrength();
+  $("genModal").className = "overlay";
+  toast("已填入生成的密码");
+}, false);
+
+/* 导入导出 */
+$("btnIO").addEventListener("click", function(){ openIO("export"); }, false);
+$("ioClose").addEventListener("click", function(){ $("ioModal").className = "overlay"; }, false);
+$("ioCopy").addEventListener("click", function(){ copyText($("ioText").value, "内容"); }, false);
+$("ioImport").addEventListener("click", doImport, false);
+
+/* 点击遮罩关闭弹层 */
+$("genModal").addEventListener("click", function(e){ if(e.target === this) this.className = "overlay"; }, false);
+$("ioModal").addEventListener("click", function(e){ if(e.target === this) this.className = "overlay"; }, false);
+
+/* =========================================================
+   初始化
+   ========================================================= */
+(function init(){
+  var raw = lsGet(STORE_KEY);
+  if(!raw){
+    showLock("setup");
+    return;
+  }
+  var st;
+  try{ st = JSON.parse(raw); }catch(e){ st = null; }
+  if(!st || typeof st !== "object"){ showLock("setup"); return; }
+
+  if(st.enc){
+    showLock("unlock");
+  }else{
+    S.enc = false;
+    S.entries = st.entries || [];
+    startApp();
+  }
+})();
+
+})();
+</script>
+</body>
+</html>
