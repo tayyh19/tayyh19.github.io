@@ -50,6 +50,7 @@ body{min-height:100vh}
 .chip{flex:none;padding:8px 14px;border-radius:999px;font-size:11.5px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);cursor:pointer;font-family:inherit;white-space:nowrap}
 .chip.on{color:#fff;background:linear-gradient(135deg,rgba(139,92,246,.9),rgba(217,70,239,.85));border-color:rgba(255,255,255,.3)}
 
+.empty{padding:40px 0;text-align:center;font-size:12px;color:rgba(255,255,255,.26);letter-spacing:1.5px}
 .foot{text-align:center;font-size:10.5px;color:rgba(255,255,255,.24);padding:22px 0 4px}
 .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px));gap:8px;z-index:50;background:linear-gradient(180deg,rgba(8,8,15,0),rgba(8,8,15,.93) 45%);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 .tab{flex:1;padding:9px 4px;border:none;border-radius:15px;background:transparent;color:rgba(255,255,255,.42);font-size:10.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.18s}
@@ -155,27 +156,10 @@ a.lnk{color:#67e8f9;text-decoration:none}
   var cur='全部';
 
   function renderHome(){
-    var html='';
-    for(var gi=0;gi<ORDER.length;gi++){
-      var g=ORDER[gi];
-      var items='', cnt=0;
-      for(var i=0;i<APPS.length;i++){
-        if(APPS[i].g!==g) continue;
-        items+=itemHTML(APPS[i]); cnt++;
-      }
-      if(!cnt) continue;
-      html+='<div class="gTitle"><span class="gdot"></span>'+g+'</div><div class="grid">'+items+'</div>';
-    }
-    homeGrid.innerHTML=html;
+    homeGrid.innerHTML='<div class="empty">项目整理中</div>';
   }
   function renderWork(g){
-    var html='';
-    for(var i=0;i<APPS.length;i++){
-      if(g!=='全部'&&APPS[i].g!==g) continue;
-      html+=itemHTML(APPS[i]);
-    }
-    if(!html) html='<div class="foot">暂无</div>';
-    workGrid.innerHTML=html;
+    workGrid.innerHTML='<div class="empty">暂无作品</div>';
   }
   function buildChips(){
     var html='';
