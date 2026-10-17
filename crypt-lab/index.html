@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>CRYPT LAB · 密码学实验室</title>
+<style>
+:root{
+  --bg:#070b10;--panel:#0d131c;--panel2:#111a26;--line:#1d2a3a;
+  --fg:#c9d6e5;--dim:#5f7387;--acc:#22d3a7;--acc2:#3b82f6;
+  --warn:#f59e0b;--err:#ef4444;--ok:#22c55e;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Courier New",monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--mono);font-size:13.5px;line-height:1.5}
+body{padding:0 0 50px}
+header{padding:16px 16px 10px;border-bottom:1px solid var(--line);
+  background:linear-gradient(180deg,#0b1420,#070b10)}
+.brand{font-size:19px;font-weight:700;letter-spacing:2px;color:#eaf4ff}
+.brand .logo{color:var(--acc);text-shadow:0 0 12px rgba(34,211,167,.7)}
+.brand .en{color:var(--dim);font-weight:400;letter-spacing:3px;font-size:12px}
+.sub{color:var(--dim);font-size:11.5px;margin-top:3px}
+.crypto-warn{margin:10px 16px;padding:10px 12px;border:1px solid var(--warn);
+  background:rgba(245,158,11,.08);color:var(--warn);border-radius:8px;font-size:12px}
+.tabs{display:flex;gap:6px;padding:12px 16px 4px}
+.tab{flex:1;padding:9px 6px;border:1px solid var(--line);background:var(--panel);
+  color:var(--dim);border-radius:8px;font-family:var(--mono);font-size:13px;cursor:pointer}
+.tab.on{color:#06121a;background:linear-gradient(180deg,#3ee7bb,#22d3a7);border-color:transparent;
+  font-weight:700;box-shadow:0 0 18px rgba(34,211,167,.28)}
+main{padding:8px 16px}
+.panel{display:none;animation:fade .22s ease}
+.panel.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.field{margin:10px 0}
+.field label{display:block;font-size:11px;color:var(--dim);letter-spacing:1px;margin-bottom:5px}
+.field label b{color:var(--acc)}
+textarea,input,select{width:100%;background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+  border-radius:8px;padding:9px 10px;font-family:var(--mono);font-size:12.5px;outline:none;resize:vertical}
+textarea:focus,input:focus,select:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(34,211,167,.12)}
+input[type=range]{padding:0;background:transparent;border:none}
+.row{display:flex;gap:10px}
+.row>.field{flex:1;min-width:0}
+.btns{margin:12px 0;flex-wrap:wrap}
+.btn{flex:1;min-width:110px;padding:10px 12px;border:1px solid var(--line);background:var(--panel);
+  color:var(--fg);border-radius:8px;font-family:var(--mono);font-size:12.5px;cursor:pointer;transition:.15s}
+.btn:hover{border-color:var(--acc);color:var(--acc)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:linear-gradient(180deg,#3ee7bb,#22d3a7);color:#06121a;border-color:transparent;font-weight:700}
+.btn.danger{border-color:rgba(239,68,68,.5);color:#ff8b8b}
+.btn.danger:hover{background:rgba(239,68,68,.12);border-color:var(--err)}
+.log{margin-top:12px;background:#050a0e;border:1px solid var(--line);border-radius:8px;
+  padding:10px;font-size:11.5px;color:var(--dim);max-height:260px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.log .l-ok{color:var(--ok)}.log .l-err{color:var(--err)}.log .l-hi{color:var(--acc)}
+.log .l-warn{color:var(--warn)}.log .l-dim{color:#3c4c5e}
+.bar{height:8px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;overflow:hidden;margin:12px 0 8px}
+.fill{height:100%;width:0;background:linear-gradient(90deg,#22d3a7,#3b82f6);transition:width .18s}
+.stats{font-size:11.5px;color:var(--dim);letter-spacing:.5px}
+.badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10.5px;margin:2px 3px 2px 0;
+  border:1px solid var(--line);background:var(--panel2);color:var(--dim)}
+.badge.on{color:var(--acc);border-color:rgba(34,211,167,.4)}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo">◈</span> CRYPT LAB <span class="en">V1</span></div>
+  <div class="sub">多层 AES-256-GCM 嵌套 · PBKDF2 密钥派生 · 字典攻击演示</div>
+</header>
+
+<div class="crypto-warn" id="warn" style="display:none">
+  ⚠ 当前环境不支持 Web Crypto（window.crypto.subtle）。请用 https 或本地文件方式打开本页。
+</div>
+
+<nav class="tabs">
+  <button class="tab on" data-t="enc">① 加密</button>
+  <button class="tab" data-t="dec">② 解密</button>
+  <button class="tab" data-t="crack">③ 破解</button>
+</nav>
+
+<main>
+<section class="panel on" id="panel-enc">
+  <div class="field">
+    <label>明文 · PLAINTEXT</label>
+    <textarea id="encPlain" rows="4">绝密：金库口令 = ORIOLE-7749 ; 接头暗号 = 蓝色知更鸟</textarea>
+  </div>
+  <div class="row">
+    <div class="field"><label>主密码 · MASTER KEY</label><input id="encPw" type="text" value="Tr0ub4dor&amp;3_xK9"></div>
+    <div class="field"><label>嵌套层数 · <b id="encLayersV">3</b></label>
+      <input id="encLayers" type="range" min="1" max="5" value="3"></div>
+  </div>
+  <div class="field"><label>PBKDF2 迭代</label>
+    <select id="encIter">
+      <option value="10000">10,000（快 · 演示）</option>
+      <option value="50000">50,000</option>
+      <option value="120000" selected>120,000（推荐）</option>
+      <option value="300000">300,000（很慢）</option>
+    </select>
+  </div>
+  <div class="row btns">
+    <button class="btn primary" id="encGo">▶ 生成加密文件</button>
+    <button class="btn" id="encCopy">复制密文</button>
+    <button class="btn" id="encDl">下载 .vault</button>
+  </div>
+  <div class="field"><label>加密文件 · CIPHERTEXT (JSON)</label>
+    <textarea id="encOut" rows="7" readonly placeholder="…"></textarea></div>
+  <div class="log" id="encLog"><span class="l-dim">等待操作…</span></div>
+</section>
+
+<section class="panel" id="panel-dec">
+  <div class="field"><label>加密文件 · CIPHERTEXT (JSON)</label>
+    <textarea id="decIn" rows="6" placeholder="粘贴 .vault 内容…"></textarea></div>
+  <div class="field"><label>主密码 · MASTER KEY</label><input id="decPw" type="text" placeholder="输入主密码"></div>
+  <div class="row btns">
+    <button class="btn primary" id="decGo">▶ 解密</button>
+    <button class="btn" id="decUse">← 取用加密页结果</button>
+  </div>
+  <div class="field"><label>还原明文 · PLAINTEXT</label>
+    <textarea id="decOut" rows="4" readonly></textarea></div>
+  <div class="log" id="decLog"><span class="l-dim">等待操作…</span></div>
+</section>
+
+<section class="panel" id="panel-crack">
+  <div class="field"><label>目标加密文件 · TARGET</label>
+    <textarea id="ckIn" rows="5" placeholder="粘贴 .vault 内容…"></textarea></div>
+  <div class="row btns">
+    <button class="btn" id="ckUse">← 取用加密页结果</button>
+    <button class="btn" id="ckDemo">⚡ 生成弱密码样本</button>
+  </div>
+  <div class="field"><label>字典 · WORDLIST（每行一个密码）</label>
+    <textarea id="ckDict" rows="5">123456
+password
+qwerty
+admin
+letmein
+welcome
+iloveyou
+monkey
+dragon
+master
+sunshine
+princess
+football
+shadow
+superman
+trustno1
+abc123
+12345678
+password1
+diamond</textarea></div>
+  <div class="row btns">
+    <button class="btn danger" id="ckGo">☠ 开始字典攻击</button>
+    <button class="btn" id="ckStop" disabled>■ 停止</button>
+  </div>
+  <div class="bar"><div class="fill" id="ckBar"></div></div>
+  <div class="stats" id="ckStats">尝试 0 · 耗时 0.0s · 速度 0 /s</div>
+  <div class="log" id="ckLog"><span class="l-dim">等待操作…</span></div>
+</section>
+</main>
+
+<script>
+(function(){
+'use strict';
+var W = window;
+function $(id){ return document.getElementById(id); }
+function now(){ return (W.performance && W.performance.now) ? W.performance.now() : Date.now(); }
+function fixed(n,d){ var p=Math.pow(10,d); return (Math.round(n*p)/p).toFixed(d); }
+function HAS_CRYPTO(){ return !!(W.crypto && W.crypto.subtle && W.crypto.subtle.deriveKey) && typeof TextEncoder!=='undefined' && typeof TextDecoder!=='undefined'; }
+
+/* ---------- 字节工具 ---------- */
+function tee(){ return new TextEncoder(); }
+function tdd(){ return new TextDecoder(); }
+function u8(str){ return new TextEncoder().encode(str); }
+function su8(buf){ return new TextDecoder().decode(buf); }
+function rnd(n){ var a=new Uint8Array(n); W.crypto.getRandomValues(a); return a; }
+function b64(buf){
+  var b=new Uint8Array(buf), s='', CH=0x8000;
+  for(var i=0;i<b.length;i+=CH){ s+=String.fromCharCode.apply(null, b.subarray(i,i+CH)); }
+  return W.btoa(s);
+}
+function unb64(str){
+  var bin=W.atob(str), out=new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++){ out[i]=bin.charCodeAt(i); }
+  return out;
+}
+function hex(buf){
+  var b=new Uint8Array(buf), s='', i, h;
+  for(i=0;i<b.length;i++){ h=b[i].toString(16); if(h.length<2){ h='0'+h; } s+=h; }
+  return s;
+}
+function h2b(s){
+  var n=Math.floor(s.length/2), out=new Uint8Array(n), i;
+  for(i=0;i<n;i++){ out[i]=parseInt(s.substr(i*2,2),16); }
+  return out;
+}
+
+/* ---------- 密码学核心 ---------- */
+function deriveKey(pw, salt, iter){
+  return W.crypto.subtle.importKey('raw', u8(pw), {name:'PBKDF2'}, false, ['deriveKey'])
+  .then(function(base){
+    return W.crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt:salt, iterations:iter, hash:'SHA-256'},
+      base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+  });
+}
+function sealLayer(pw, iter, plainStr){
+  var salt=rnd(16), iv=rnd(12);
+  return deriveKey(pw, salt, iter).then(function(key){
+    return W.crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, key, u8(plainStr));
+  }).then(function(ct){
+    return {salt:hex(salt), iv:hex(iv), iter:iter, ctlen:ct.byteLength, data:b64(ct)};
+  });
+}
+function openLayer(pw, meta, dataB64){
+  return deriveKey(pw, h2b(meta.salt), meta.iter).then(function(key){
+    return W.crypto.subtle.decrypt({name:'AES-GCM', iv:h2b(meta.iv)}, key, unb64(dataB64));
+  }).then(function(pl){ return su8(pl); });
+}
+
+/* 多层嵌套加密：层数越多，密文被反复包裹 */
+function encryptMulti(pw, iter, layers, plain, onStep){
+  var metas=[], cur=plain, chain=Promise.resolve(), i;
+  function step(k){
+    return sealLayer(pw, iter, cur).then(function(m){
+      metas.push({idx:k+1, alg:'AES-256-GCM', iter:m.iter, salt:m.salt, iv:m.iv, ctlen:m.ctlen});
+      cur=m.data;
+      if(onStep){ onStep(k+1, layers, m); }
+    });
+  }
+  for(i=0;i<layers;i++){ (function(k){ chain=chain.then(function(){ return step(k); }); })(i); }
+  return chain.then(function(){
+    return {v:1, app:'crypt-lab', created:new Date().toISOString(),
+            layers:layers, iter:iter, metas:metas, data:cur};
+  });
+}
+
+/* 解密：从最外层逐层剥离 */
+function decryptMulti(pw, blob, onStep){
+  var metas=blob.metas, cur=blob.data, chain=Promise.resolve();
+  for(var j=metas.length-1;j>=0;j--){
+    (function(j){
+      chain=chain.then(function(){
+        return openLayer(pw, metas[j], cur).then(function(p){
+          cur=p;
+          if(onStep){ onStep(j+1, metas.length); }
+        });
+      });
+    })(j);
+  }
+  return chain.then(function(){ return {plain:cur}; });
+}
+
+/* 字典攻击：逐个尝试字典密码，命中第一层即成功 */
+function crackDict(blob, words, hooks){
+  var meta=blob.metas[blob.metas.length-1];
+  var i=0, t0=now(), aborted=false;
+  function attempt(){
+    if(hooks && hooks.shouldStop && hooks.shouldStop()){ return Promise.resolve({found:false, tried:i, aborted:true}); }
+    if(i>=words.length){ return Promise.resolve({found:false, tried:i}); }
+    var w=words[i]; i++;
+    return openLayer(w, meta, blob.data).then(function(){
+      if(hooks && hooks.onHit){ hooks.onHit(w, i, now()-t0); }
+      return decryptMulti(w, blob).then(function(full){
+        return {found:true, pw:w, plain:full.plain, tried:i, ms:now()-t0};
+      });
+    }, function(){
+      if(hooks && hooks.onMiss){ hooks.onMiss(i, w, now()-t0); }
+      return attempt();
+    });
+  }
+  return attempt();
+}
+
+/* 暴露给自动化测试 */
+W.LAB = {
+  encryptMulti: encryptMulti, decryptMulti: decryptMulti, crackDict: crackDict,
+  sealLayer: sealLayer, openLayer: openLayer, deriveKey: deriveKey,
+  b64: b64, unb64: unb64, hex: hex, h2b: h2b,
+  HAS_CRYPTO: HAS_CRYPTO
+};
+
+/* ---------- 日志输出 ---------- */
+function logTo(el, msg, cls){
+  var span=document.createElement('div');
+  span.className = cls ? ('l-'+cls) : '';
+  span.textContent = msg;
+  el.appendChild(span);
+  el.scrollTop = el.scrollHeight;
+}
+function clearLog(el){ el.innerHTML=''; }
+
+/* ---------- 标签切换 ---------- */
+var tabs=document.querySelectorAll('.tab');
+for(var t=0;t<tabs.length;t++){
+  tabs[t].addEventListener('click', function(){
+    var k=this.getAttribute('data-t');
+    for(var a=0;a<tabs.length;a++){ tabs[a].className='tab'+(tabs[a]===this?' on':''); }
+    var ps=document.querySelectorAll('.panel');
+    for(var b=0;b<ps.length;b++){ ps[b].className='panel'+(ps[b].id==='panel-'+k?' on':''); }
+  });
+}
+
+/* ---------- 加密页 ---------- */
+$('encLayers').addEventListener('input', function(){ $('encLayersV').textContent=this.value; });
+$('encGo').addEventListener('click', function(){
+  if(!HAS_CRYPTO()){ return; }
+  var plain=$('encPlain').value, pw=$('encPw').value;
+  var layers=parseInt($('encLayers').value,10), iter=parseInt($('encIter').value,10);
+  if(!pw){ logTo($('encLog'),'× 请先输入主密码','err'); return; }
+  var el=$('encLog'); clearLog(el);
+  logTo(el,'▶ 开始 '+layers+' 层嵌套加密（PBKDF2 '+iter.toLocaleString()+' 轮/层）…','hi');
+  var t0=now();
+  this.disabled=true; var self=this;
+  encryptMulti(pw, iter, layers, plain, function(k, total, m){
+    logTo(el,'  ├ 第 '+k+'/'+total+' 层 · salt='+m.salt.slice(0,16)+'… · iv='+m.iv+' · ct='+m.ctlen+'B','ok');
+  }).then(function(blob){
+    blob.metas.forEach(function(m){
+      logTo(el,'  ├ 元数据 L'+m.idx+' · '+m.alg+' · '+(m.iter/1000)+'k轮 · ct='+m.ctlen+' 字节','dim');
+    });
+    var json=JSON.stringify(blob);
+    $('encOut').value=json;
+    logTo(el,'✔ 完成 · 总迭代 '+(iter*layers).toLocaleString()+' 轮 · 密文 '+json.length+' 字符 · 耗时 '+fixed(now()-t0,1)+'ms','ok');
+    logTo(el,'  最终密文长度：'+blob.data.length+' 字符（Base64）','hi');
+    self.disabled=false;
+  })['catch'](function(e){
+    logTo(el,'× 加密失败：'+(e && e.message ? e.message : e),'err'); self.disabled=false;
+  });
+});
+$('encCopy').addEventListener('click', function(){
+  var el=$('encOut'); el.select();
+  try{ document.execCommand('copy'); logTo($('encLog'),'✔ 密文已复制到剪贴板','ok'); }
+  catch(e){ logTo($('encLog'),'× 复制失败，请手动选择','err'); }
+});
+$('encDl').addEventListener('click', function(){
+  var v=$('encOut').value; if(!v){ return; }
+  var blob=new Blob([v], {type:'application/json'});
+  var url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download='secret-'+Date.now()+'.vault'; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1500);
+  logTo($('encLog'),'✔ 已下载 .vault 文件','ok');
+});
+
+/* ---------- 解密页 ---------- */
+$('decUse').addEventListener('click', function(){
+  var v=$('encOut').value; if(!v){ return; }
+  $('decIn').value=v; logTo($('decLog'),'← 已载入加密页结果','dim');
+});
+$('decGo').addEventListener('click', function(){
+  if(!HAS_CRYPTO()){ return; }
+  var el=$('decLog'); clearLog(el);
+  var blob; try{ blob=JSON.parse($('decIn').value); }catch(e){ logTo(el,'× JSON 解析失败','err'); return; }
+  var pw=$('decPw').value; if(pw===''){ logTo(el,'× 请输入主密码','err'); return; }
+  logTo(el,'▶ 开始逐层剥离（共 '+blob.metas.length+' 层）…','hi'); var t0=now();
+  decryptMulti(pw, blob, function(k,total){
+    logTo(el,'  ├ 剥离第 '+k+'/'+total+' 层成功','ok');
+  }).then(function(r){
+    $('decOut').value=r.plain;
+    logTo(el,'✔ 解密成功 · 明文 '+r.plain.length+' 字符 · 耗时 '+fixed(now()-t0,1)+'ms','ok');
+  })['catch'](function(){
+    $('decOut').value='';
+    logTo(el,'× 解密失败：主密码错误或文件已损坏（AES-GCM 认证不通过）','err');
+  });
+});
+
+/* ---------- 破解页 ---------- */
+var crackStop=false;
+$('ckUse').addEventListener('click', function(){
+  var v=$('encOut').value; if(!v){ return; }
+  $('ckIn').value=v; logTo($('ckLog'),'← 已载入加密页结果','dim');
+});
+$('ckStop').addEventListener('click', function(){ crackStop=true; this.disabled=true; });
+$('ckDemo').addEventListener('click', function(){
+  if(!HAS_CRYPTO()){ return; }
+  var el=$('ckLog'); clearLog(el);
+  logTo(el,'⚡ 生成弱密码样本（密码取自字典，迭代 10000）…','hi');
+  encryptMulti('shadow', 10000, 2, '弱密码演示：这条信息会被字典攻击还原。', null).then(function(blob){
+    var json=JSON.stringify(blob);
+    $('ckIn').value=json;
+    logTo(el,'✔ 已生成 · 该文件主密码是常见弱口令，试试用下方字典破开','ok');
+  });
+});
+$('ckGo').addEventListener('click', function(){
+  if(!HAS_CRYPTO()){ return; }
+  var el=$('ckLog'); clearLog(el);
+  var blob; try{ blob=JSON.parse($('ckIn').value); }catch(e){ logTo(el,'× JSON 解析失败','err'); return; }
+  var words=$('ckDict').value.split('\n').map(function(s){ return s.replace(/\r$/,''); }).filter(function(s){ return s.length>0; });
+  if(!words.length){ logTo(el,'× 字典为空','err'); return; }
+  crackStop=false; $('ckStop').disabled=false; this.disabled=true;
+  var self=this, t0=now(), bar=$('ckBar'), st=$('ckStats');
+  logTo(el,'☠ 字典攻击启动 · 目标层迭代 '+(blob.metas[blob.metas.length-1].iter/1000)+'k · 字典 '+words.length+' 条','warn');
+  crackDict(blob, words, {
+    shouldStop: function(){ return crackStop; },
+    onMiss: function(n, w, ms){
+      bar.style.width=Math.min(100, (n/words.length*100))+'%';
+      st.textContent='尝试 '+n+' · 耗时 '+fixed(ms/1000,1)+'s · 速度 '+fixed(n/Math.max(ms,1)*1000,0)+' /s';
+      if(n%5===0){ logTo(el,'  · 已试 '+n+' … 当前 "'+w+'" ✗','dim'); }
+    },
+    onHit: function(w, n, ms){ bar.style.width='100%'; }
+  }).then(function(r){
+    self.disabled=false; $('ckStop').disabled=true;
+    if(r.found){
+      logTo(el,'✔ 破解成功！密码 = "'+r.pw+'" （第 '+r.tried+' 次尝试 · '+fixed(r.ms/1000,2)+'s）','ok');
+      logTo(el,'  还原明文：'+r.plain,'hi');
+    }else if(r.aborted){
+      logTo(el,'■ 已手动停止 · 尝试 '+r.tried+' 次','warn');
+    }else{
+      logTo(el,'✗ 字典耗尽，未命中（'+r.tried+' 条全部失败）','err');
+      logTo(el,'  说明：强随机密码不在此字典中，穷举不可行。','warn');
+      var ent=blob.iter*blob.layers;
+      logTo(el,'  该文件密钥派生总成本 ≈ '+ent.toLocaleString()+' 轮 PBKDF2/次尝试。','dim');
+      logTo(el,'  若密码为 12 位随机（大小写+数字+符号 ≈ 94^12），穷举次数 ≈ 4.7e23，','dim');
+      logTo(el,'  按每秒 1000 次估算需 ≈ 1.5e13 年 ≫ 宇宙年龄。','dim');
+    }
+  })['catch'](function(e){ self.disabled=false; logTo(el,'× 攻击异常：'+(e&&e.message?e.message:e),'err'); });
+});
+
+/* ---------- 初始化 ---------- */
+clearLog($('encLog'));
+if(!HAS_CRYPTO()){
+  $('warn').style.display='block';
+  var ids=['encGo','decGo','ckGo','ckDemo'];
+  for(var q=0;q<ids.length;q++){ $(ids[q]).disabled=true; }
+  logTo($('encLog'),'× Web Crypto 不可用，功能已禁用','err');
+}else{
+  clearLog($('encLog'));
+  logTo($('encLog'),'环境就绪 · Web Crypto 可用 · AES-256-GCM + PBKDF2','ok');
+}
+})();
+</script>
+</body>
+</html>
