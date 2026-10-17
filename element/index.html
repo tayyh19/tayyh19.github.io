@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<title>ELEMENT LAB · 元素实验室</title>
+<style>
+:root{
+  --bg:#05070b; --panel:rgba(14,20,31,.82); --panel2:rgba(18,26,40,.92);
+  --line:rgba(120,180,255,.16); --line2:rgba(120,180,255,.30);
+  --txt:#dbe7ff; --dim:#7e90b4; --acc:#54e0ff; --acc2:#b06cff;
+  --ok:#5ef2a8; --warn:#ffd166;
+  --shadow:0 0 18px rgba(84,224,255,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--txt);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"PingFang SC","Microsoft YaHei",monospace;
+  -webkit-user-select:none;user-select:none}
+button{font-family:inherit;outline:none}
+.hide{display:none !important}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;z-index:1}
+#topbar{position:fixed;left:0;right:0;top:0;z-index:20;pointer-events:none;
+  padding:calc(8px + env(safe-area-inset-top)) 10px 0}
+#stats{position:absolute;left:10px;top:calc(8px + env(safe-area-inset-top));
+  display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:12px;
+  background:var(--panel);border:1px solid var(--line);font-size:12px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);pointer-events:auto}
+#stats .g{display:flex;align-items:center;gap:6px}
+#stats .g+.g{border-left:1px solid var(--line);padding-left:8px}
+#stats b{color:var(--acc);font-size:13px;font-weight:700}
+#stats span{color:var(--dim);font-size:11px}
+#ops{position:absolute;right:10px;top:calc(8px + env(safe-area-inset-top));
+  display:flex;gap:7px;pointer-events:auto}
+.ob{width:40px;height:40px;border-radius:12px;background:var(--panel);border:1px solid var(--line);
+  color:var(--txt);font-size:15px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ob:active{transform:scale(.93)}
+.ob.on{background:rgba(84,224,255,.18);border-color:rgba(84,224,255,.5);color:#c9f3ff;box-shadow:var(--shadow)}
+#curhint{position:fixed;left:50%;transform:translateX(-50%);top:calc(58px + env(safe-area-inset-top));z-index:19;
+  padding:6px 13px;border-radius:11px;background:var(--panel);border:1px solid var(--line2);font-size:11.5px;
+  color:var(--dim);backdrop-filter:blur(8px);pointer-events:none;white-space:nowrap}
+#curhint b{color:var(--acc)}
+/* 底部工作台 */
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:linear-gradient(180deg,rgba(10,15,24,.55),rgba(8,12,20,.96) 26%);
+  border-top:1px solid var(--line);border-radius:20px 20px 0 0;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transform:translateY(calc(100% - var(--peek,126px) - env(safe-area-inset-bottom)));
+  transition:transform .28s cubic-bezier(.2,.8,.3,1);will-change:transform}
+#sheet.open{transform:translateY(0)}
+#handle{height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#handle i{width:44px;height:4px;border-radius:2px;background:var(--line2)}
+#tabs{display:flex;gap:6px;padding:2px 10px 8px;overflow-x:auto;scrollbar-width:none}
+#tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:8px 13px;border-radius:11px;background:transparent;border:1px solid transparent;
+  color:var(--dim);font-size:12.5px;cursor:pointer}
+.tab.on{color:#eaf7ff;background:linear-gradient(135deg,rgba(84,224,255,.2),rgba(176,108,255,.2));
+  border-color:var(--line2);box-shadow:var(--shadow)}
+#panels{max-height:min(42vh,330px);overflow-y:auto;padding:4px 10px calc(14px + env(safe-area-inset-bottom));
+  overscroll-behavior:contain}
+.panel{display:none;padding-top:4px}
+.panel.on{display:block}
+.rows{display:flex;gap:7px;overflow-x:auto;padding:3px 1px;scrollbar-width:none}
+.rows::-webkit-scrollbar{display:none}
+.rows.wrap{flex-wrap:wrap;overflow:visible}
+.chip{flex:0 0 auto;padding:8px 12px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);
+  color:var(--txt);font-size:12.5px;cursor:pointer;white-space:nowrap;transition:transform .1s;
+  display:flex;align-items:center;gap:6px}
+.chip:active{transform:scale(.95)}
+.chip.on{background:linear-gradient(135deg,rgba(84,224,255,.22),rgba(176,108,255,.22));
+  border-color:rgba(120,220,255,.6);color:#eaf7ff;box-shadow:var(--shadow)}
+.sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.25);flex:0 0 auto}
+.sechead{font-size:11px;color:var(--dim);letter-spacing:1px;margin:10px 2px 4px}
+.sechead:first-child{margin-top:2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.card{padding:10px 12px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;
+  transition:transform .1s}
+.card:active{transform:scale(.97)}
+.card .t{font-size:12.5px;color:var(--txt);display:flex;align-items:center;gap:6px}
+.card .d{font-size:10.5px;color:var(--dim);margin-top:4px;line-height:1.5}
+.card .badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:8px}
+.card.done .badge{background:rgba(94,242,168,.18);color:var(--ok)}
+.card .badge.play{background:rgba(84,224,255,.16);color:var(--acc)}
+.card.locked{opacity:.45}
+.card.locked .badge{background:rgba(255,255,255,.08);color:var(--dim)}
+/* 弹窗/提示 */
+#modalWrap{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:rgba(3,5,9,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#modalWrap.on{display:flex}
+#modal{width:min(92vw,430px);max-height:76vh;display:flex;flex-direction:column;border-radius:18px;
+  background:rgba(12,18,29,.97);border:1px solid var(--line2);box-shadow:0 18px 60px rgba(0,0,0,.6);overflow:hidden}
+#modal .mhead{display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line);
+  font-size:14px;color:var(--acc);font-weight:700;letter-spacing:.5px}
+#modal .mhead .x{margin-left:auto;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);color:var(--txt);font-size:14px;cursor:pointer}
+#modal .mbody{padding:14px 16px;overflow-y:auto;font-size:12.5px;line-height:1.9;color:var(--txt)}
+#modal .mbody h4{color:var(--acc);font-size:13px;margin:12px 0 6px}
+#modal .mbody h4:first-child{margin-top:0}
+#modal .mbody ul{margin:4px 0 4px 18px;color:#c8d6ee}
+#modal .mbody .kv{color:var(--warn)}
+#toast{position:fixed;left:50%;bottom:calc(var(--peek,126px) + 66px);transform:translateX(-50%);
+  z-index:40;padding:8px 15px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);
+  font-size:12.5px;color:#cfe9ff;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:86vw;
+  overflow:hidden;text-overflow:ellipsis}
+#toast.on{opacity:1}
+#banner{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%) scale(.8);z-index:55;text-align:center;
+  opacity:0;transition:all .35s cubic-bezier(.2,1.4,.4,1);pointer-events:none}
+#banner.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#banner .t1{font-size:26px;font-weight:800;letter-spacing:3px;color:#fff;
+  text-shadow:0 0 24px var(--acc),0 0 60px var(--acc2)}
+#banner .t2{font-size:12.5px;color:#cfe9ff;margin-top:8px;letter-spacing:1px}
+#confetti{position:fixed;inset:0;z-index:54;pointer-events:none;overflow:hidden}
+.cf{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;opacity:.95;
+  animation:cfdrop var(--dur) linear forwards}
+@keyframes cfdrop{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(105vh) rotate(var(--rot))}}
+#hint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:70;width:min(88vw,390px);
+  padding:17px 19px;border-radius:18px;background:rgba(10,15,24,.95);border:1px solid var(--line2);
+  backdrop-filter:blur(10px);font-size:13px;line-height:1.85;color:var(--txt);box-shadow:0 20px 70px rgba(0,0,0,.55)}
+#hint h3{font-size:15px;margin-bottom:9px;color:var(--acc);letter-spacing:1px}
+#hint .k{color:var(--warn)}
+#hint .kk{color:var(--acc2)}
+#hint .foot{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+#hint button{padding:8px 15px;border-radius:10px;border:1px solid var(--line2);
+  background:rgba(84,224,255,.16);color:#eaf7ff;font-size:12.5px;cursor:pointer}
+@media (max-width:479px){
+  #ops{gap:5px}
+  .ob{width:36px;height:36px;font-size:14px;border-radius:11px}
+  #stats{padding:6px 9px}
+  #stats b{font-size:12px}
+  #stats span{font-size:10.5px}
+}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="topbar">
+  <div id="stats">
+    <span class="g"><b id="sFps">60</b><span>FPS</span></span>
+    <span class="g"><b id="sCnt">0</b><span>粒子</span></span>
+    <span class="g"><b id="sTmp">20°</b><span>光标温度</span></span>
+  </div>
+  <div id="ops">
+    <button class="ob" id="bPause" type="button">⏸</button>
+    <button class="ob" id="bClear" type="button">🔄</button>
+    <button class="ob" id="bHelp" type="button">❓</button>
+    <button class="ob on" id="bSound" type="button">🔊</button>
+  </div>
+</div>
+<div id="curhint">当前元素 <b id="curName">沙子</b> · 触摸屏幕绘制</div>
+<div id="sheet">
+  <div id="handle"><i></i></div>
+  <div id="tabs">
+    <button class="tab on" data-tab="pElems" type="button">🖌 元素</button>
+    <button class="tab" data-tab="pScenes" type="button">🧪 场景</button>
+    <button class="tab" data-tab="pAch" type="button">🏆 成就</button>
+    <button class="tab" data-tab="pSet" type="button">⚙️ 设置</button>
+  </div>
+  <div id="panels">
+    <div class="panel on" id="pElems">
+      <div class="sechead">元素 · 点选后在画布上绘制</div>
+      <div class="rows wrap" id="elemRow"></div>
+      <div class="sechead">笔刷大小</div>
+      <div class="rows" id="brushRow"></div>
+    </div>
+    <div class="panel" id="pScenes">
+      <div class="sechead">一键实验场景 · 载入后自动运行</div>
+      <div class="cards" id="sceneRow"></div>
+    </div>
+    <div class="panel" id="pAch">
+      <div class="sechead" id="achHead">实验记录 · 自动解锁</div>
+      <div class="cards" id="achRow"></div>
+    </div>
+    <div class="panel" id="pSet">
+      <div class="sechead">显示 / 音效</div>
+      <div class="rows wrap">
+        <button class="chip on" id="tGlow" type="button">✨ 辉光</button>
+        <button class="chip on" id="tSound" type="button">🔊 音效</button>
+        <button class="chip on" id="tSave" type="button">💾 自动保存</button>
+      </div>
+      <div class="sechead">数据</div>
+      <div class="rows">
+        <button class="chip" id="bShot" type="button">📷 导出图片</button>
+        <button class="chip" id="bWipe" type="button">♻️ 重置全部数据</button>
+      </div>
+      <div class="sechead">关于</div>
+      <div class="rows"><span style="font-size:11.5px;color:var(--dim);line-height:1.7">ELEMENT LAB · 元素实验室 v1 · 单文件零依赖<br>17 种元素 · 温度传导 · 反应矩阵 · 环形世界</span></div>
+    </div>
+  </div>
+</div>
+<div id="modalWrap"><div id="modal">
+  <div class="mhead"><span id="mTitle">帮助</span><button class="x" id="mX" type="button">✕</button></div>
+  <div class="mbody" id="mBody"></div>
+</div></div>
+<div id="toast"></div>
+<div id="banner"><div class="t1" id="bnT1">READY</div><div class="t2" id="bnT2"></div></div>
+<div id="confetti"></div>
+<div id="hint" class="hide"></div>
+<script>
+(function(){
+"use strict";
+/* ============================================================
+   ELEMENT LAB · 元素实验室 v1
+   144x240 细胞世界 · 物理粉末沙盘 · 温度传导 · 反应矩阵
+   ============================================================ */
+var W=144, H=240, N=W*H;
+var EMPTY=0,SAND=1,WATER=2,OIL=3,LAVA=4,FIRE=5,SMOKE=6,STEAM=7,PLANT=8,SEED=9,ICE=10,STONE=11,METAL=12,ACID=13,WOOD=14,GPOW=15,GLASS=16;
+var DEF=[];
+DEF[EMPTY]={n:'橡皮',c:[8,10,16],r:0,kind:0};
+DEF[SAND] ={n:'沙子',c:[224,198,118],r:5,kind:1};
+DEF[WATER]={n:'水',  c:[58,138,255],r:3,kind:2};
+DEF[OIL]  ={n:'油',  c:[126,92,54], r:2,kind:2};
+DEF[LAVA] ={n:'岩浆',c:[255,116,36],r:4,kind:2,hot:1};
+DEF[FIRE] ={n:'火焰',c:[255,152,42],r:1,kind:3,hot:1};
+DEF[SMOKE]={n:'烟雾',c:[108,108,122],r:1,kind:3};
+DEF[STEAM]={n:'蒸汽',c:[186,206,224],r:1,kind:3};
+DEF[PLANT]={n:'植物',c:[74,192,92], r:9,kind:4};
+DEF[SEED] ={n:'种子',c:[164,142,82],r:5,kind:1};
+DEF[ICE]  ={n:'冰',  c:[148,218,255],r:9,kind:4};
+DEF[STONE]={n:'石头',c:[122,126,138],r:9,kind:4};
+DEF[METAL]={n:'金属',c:[172,182,194],r:9,kind:4};
+DEF[ACID] ={n:'酸液',c:[178,255,86], r:3,kind:2};
+DEF[WOOD] ={n:'木头',c:[152,112,72], r:9,kind:4};
+DEF[GPOW] ={n:'火药',c:[96,86,86],  r:5,kind:1};
+DEF[GLASS]={n:'玻璃',c:[186,228,240],r:9,kind:4};
+/* 可放置列表（含橡皮） */
+var PALETTE=[SAND,WATER,OIL,LAVA,FIRE,SMOKE,STEAM,PLANT,SEED,ICE,STONE,METAL,ACID,WOOD,GPOW,GLASS,EMPTY];
+/* ---------- 状态 ---------- */
+var ty=new Uint8Array(N);      // 类型
+var tp=new Int16Array(N);      // 温度(℃)
+var tp2=new Int16Array(N);     // 扩散缓冲
+var cl=new Uint8Array(N);      // 色抖动
+var flag=new Uint8Array(N);    // 移动标记
+var parity=0, frame=0;
+var running=true, brush=4, curElem=SAND;
+var explTotal=0, glassTotal=0, acidDissTotal=0, fireSeen=0;
+var maxSim={};
+var shake=0, shakeX=0, shakeY=0;
+var set={glow:1,sound:1,autosave:1};
+var achGot=[];
+/* ---------- 载入存档 ---------- */
+try{
+  var _s=localStorage.getItem('el1_set'); if(_s){ var o2=JSON.parse(_s)||{}; for(var k0 in o2) set[k0]=o2[k0]; }
+  var _a=localStorage.getItem('el1_ach'); if(_a) achGot=JSON.parse(_a)||[];
+}catch(e){}
+function saveSet(){ try{ localStorage.setItem('el1_set', JSON.stringify(set)); }catch(e){} }
+function saveAch(){ try{ localStorage.setItem('el1_ach', JSON.stringify(achGot)); }catch(e){} }
+/* ---------- 音效 ---------- */
+var AC=null, lastBoom=0;
+function beep(f,d,type,vol,when){
+  if(!set.sound) return;
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    var t0=AC.currentTime+(when||0);
+    var o=AC.createOscillator(), g=AC.createGain();
+    o.type=type||'sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(vol||0.1, t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+(d||0.1));
+    o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0+(d||0.1)+0.03);
+  }catch(e){}
+}
+function boom(){
+  if(!set.sound) return;
+  var now=Date.now(); if(now-lastBoom<260) return; lastBoom=now;
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    var dur=0.34, sr=AC.sampleRate, len=(sr*dur)|0;
+    var buf=AC.createBuffer(1,len,sr), ch=buf.getChannelData(0);
+    for(var i=0;i<len;i++){ ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.2); }
+    var src=AC.createBufferSource(); src.buffer=buf;
+    var flt=AC.createBiquadFilter(); flt.type='lowpass'; flt.frequency.value=420;
+    var g=AC.createGain(); g.gain.value=0.5;
+    src.connect(flt); flt.connect(g); g.connect(AC.destination); src.start();
+  }catch(e){}
+}
+/* ---------- 基础工具 ---------- */
+function inb(x,y){ return x>=0&&x<W&&y>=0&&y<H; }
+function idx(x,y){ return y*W+x; }
+function rnd(){ return Math.random(); }
+function canSwap(s,d){ return DEF[d].r < DEF[s].r; }
+function tryMove(i,j){
+  var t=ty[i]; ty[i]=ty[j]; ty[j]=t;
+  var q=tp[i]; tp[i]=tp[j]; tp[j]=q;
+  var c=cl[i]; cl[i]=cl[j]; cl[j]=c;
+  flag[j]=parity;
+}
+/* ---------- 更新 ---------- */
+function stepOnce(){
+  parity^=1; frame++;
+  var x,y,k,i,t,d,dx,lr,s,nx,j,u;
+  for(y=H-1;y>=0;y--){
+    lr = rnd()<0.5;
+    for(k=0;k<W;k++){
+      x = lr? k : W-1-k;
+      i = y*W+x;
+      t = ty[i];
+      if(t===EMPTY) continue;
+      if(flag[i]===parity) continue;
+      d = DEF[t];
+      /* --- 反应 --- */
+      if(t===FIRE){
+        tp[i]=tp[i]<320?320:tp[i];
+        if(rnd()<0.055){ ty[i]= rnd()<0.55?SMOKE:EMPTY; continue; }
+        for(s=0;s<4;s++){
+          nx = x+DX[s]; var ny=y+DY[s];
+          if(!inb(nx,ny)) continue;
+          j = ny*W+nx; var tn=ty[j];
+          if(tn===WOOD||tn===PLANT||tn===SEED){ if(rnd()<0.14){ ty[j]=FIRE; tp[j]=330; } }
+          else if(tn===OIL){ if(rnd()<0.22){ ty[j]=FIRE; tp[j]=340; } }
+          else if(tn===GPOW){ explode(nx,ny); }
+          else if(tn===ICE){ if(rnd()<0.5){ ty[j]=WATER; } }
+          else if(tn===WATER){ if(rnd()<0.55){ ty[i]=STEAM; tp[i]=120; } }
+        }
+        if(ty[i]===FIRE&&y>0){ u=i-W; if(ty[u]===EMPTY&&rnd()<0.12) tryMove(i,u); }
+        continue;
+      }
+      if(t===LAVA){
+        tp[i]=tp[i]<1000?1000:tp[i];
+        var quench=false;
+        for(s=0;s<4;s++){
+          nx = x+DX[s]; var ny2=y+DY[s];
+          if(!inb(nx,ny2)) continue;
+          j = ny2*W+nx; var tl=ty[j];
+          if(tl===WATER){ ty[j]=STEAM; tp[j]=150; quench=true; }
+          else if(tl===WOOD||tl===PLANT||tl===SEED||tl===OIL){ if(rnd()<0.35){ ty[j]=FIRE; tp[j]=420; } }
+          else if(tl===GPOW){ explode(nx,ny2); }
+          else if(tl===ICE){ ty[j]=WATER; }
+          else if(tl===SAND){ if(rnd()<0.0018){ ty[j]=GLASS; glassTotal++; } }
+        }
+        if(quench&&rnd()<0.85){ ty[i]=STONE; tp[i]=380; continue; }
+        if(rnd()<0.5) liquidMove(x,y,i);
+        continue;
+      }
+      if(t===WATER){
+        if(tp[i]>100&&rnd()<0.12){ ty[i]=STEAM; tp[i]-=30; continue; }
+        if(tp[i]<-1&&rnd()<0.02){ ty[i]=ICE; continue; }
+        liquidMove(x,y,i);
+        continue;
+      }
+      if(t===OIL){ if(tp[i]>250&&rnd()<0.06){ ty[i]=FIRE; continue; } liquidMove(x,y,i); continue; }
+      if(t===ACID){
+        for(s=0;s<4;s++){
+          nx = x+DX[s]; var ny3=y+DY[s];
+          if(!inb(nx,ny3)) continue;
+          j = ny3*W+nx; var ta=ty[j];
+          var p=0;
+          if(ta===STONE)p=0.05; else if(ta===METAL)p=0.028; else if(ta===WOOD)p=0.045;
+          else if(ta===PLANT)p=0.06; else if(ta===ICE)p=0.1;
+          if(p>0&&rnd()<p){ ty[j]=EMPTY; acidDissTotal++; }
+        }
+        if(rnd()<0.30){ ty[i]=EMPTY; continue; }
+        liquidMove(x,y,i);
+        continue;
+      }
+      if(t===ICE){
+        if(tp[i]>0&&rnd()<0.10){ ty[i]=WATER; tp[i]=0; continue; }
+        if(rnd()<0.4) tp[i]=Math.round(tp[i]*0.9-1.2);
+        continue;
+      }
+      if(t===WOOD){ if(tp[i]>260&&rnd()<0.05){ ty[i]=FIRE; continue; } continue; }
+      if(t===PLANT){
+        if(tp[i]>250&&rnd()<0.06){ ty[i]=FIRE; continue; }
+        if(rnd()<0.015){
+          if(y>0){ u=i-W; if(ty[u]===EMPTY&&hasAdj(x,y,WATER)&&rnd()<0.4){ ty[u]=PLANT; } }
+          j = randAdj(x,y,WATER);
+          if(j>=0&&rnd()<0.3){ ty[j]=PLANT; }
+        }
+        continue;
+      }
+      if(t===SEED){
+        if(tp[i]>240&&rnd()<0.05){ ty[i]=FIRE; continue; }
+        j = randAdj(x,y,WATER);
+        if(j>=0&&rnd()<0.06){ ty[i]=PLANT; continue; }
+        powderMove(x,y,i);
+        continue;
+      }
+      if(t===GPOW){
+        if(tp[i]>200){ explode(x,y); continue; }
+        powderMove(x,y,i);
+        continue;
+      }
+      if(t===SAND){
+        if(tp[i]>800&&rnd()<0.004){ ty[i]=GLASS; glassTotal++; continue; }
+        powderMove(x,y,i);
+        continue;
+      }
+      if(t===SMOKE){
+        if(rnd()<0.004){ ty[i]=EMPTY; continue; }
+        gasMove(x,y,i); continue;
+      }
+      if(t===STEAM){
+        if(tp[i]<70&&rnd()<0.03){ ty[i]=WATER; continue; }
+        gasMove(x,y,i); continue;
+      }
+      /* STONE/METAL/GLASS 静态 */
+    }
+  }
+  diffusion();
+  if(shake>0){ shake*=0.88; if(shake<0.4) shake=0; }
+}
+var DX=[0,0,-1,1], DY=[-1,1,0,0];
+function hasAdj(x,y,t){
+  for(var s=0;s<4;s++){
+    var nx=x+DX[s], ny=y+DY[s];
+    if(inb(nx,ny)&&ty[ny*W+nx]===t) return true;
+  }
+  return false;
+}
+function randAdj(x,y,t){
+  var order=[[0,1],[1,-1],[2,1],[3,-1]];
+  for(var s=0;s<4;s++){
+    var p=order[Math.floor(rnd()*4)];
+    var nx=x+DX[p[0]], ny=y+DY[p[0]];
+    if(inb(nx,ny)&&ty[ny*W+nx]===t) return ny*W+nx;
+  }
+  return -1;
+}
+function powderMove(x,y,i){
+  if(y+1<H){
+    var b=i+W;
+    if(canSwap(ty[i],ty[b])){ tryMove(i,b); return; }
+    var first = rnd()<0.5?1:-1;
+    for(var s=0;s<2;s++){
+      var dx = s===0?first:-first;
+      var nx=x+dx;
+      if(nx<0||nx>=W) continue;
+      if(canSwap(ty[i],ty[b+dx])){ tryMove(i,b+dx); return; }
+    }
+  }
+}
+function liquidMove(x,y,i){
+  if(y+1<H){
+    var b=i+W;
+    if(canSwap(ty[i],ty[b])){ tryMove(i,b); return; }
+    var first = rnd()<0.5?1:-1;
+    for(var s=0;s<2;s++){
+      var dx = s===0?first:-first;
+      var nx=x+dx;
+      if(nx<0||nx>=W) continue;
+      if(canSwap(ty[i],ty[b+dx])){ tryMove(i,b+dx); return; }
+    }
+  }
+  var lr=rnd()<0.5?1:-1;
+  var t=ty[i];
+  for(s=0;s<2;s++){
+    var dx2 = s===0?lr:-lr;
+    var nx2=x+dx2;
+    if(nx2<0||nx2>=W) continue;
+    var jx=i+dx2;
+    /* 优先流向低处：看侧下两格 */
+    if(y+1<H){
+      var j2=(y+1)*W+nx2;
+      if(canSwap(t,ty[jx])&&canSwap(t,ty[j2])){ tryMove(i,j2); return; }
+    }
+    if(canSwap(t,ty[jx])){ tryMove(i,jx); return; }
+  }
+}
+function gasMove(x,y,i){
+  var t=ty[i];
+  if(y>0){
+    var u=i-W;
+    var tu=ty[u];
+    if(tu===EMPTY&&rnd()<0.85){ tryMove(i,u); return; }
+    if((tu===WATER||tu===OIL||tu===ACID)&&rnd()<0.5){ tryMove(i,u); return; }
+    var first=rnd()<0.5?1:-1;
+    for(var s=0;s<2;s++){
+      var dx=s===0?first:-first;
+      var nx=x+dx;
+      if(nx<0||nx>=W) continue;
+      if(ty[u+dx]===EMPTY&&rnd()<0.55){ tryMove(i,u+dx); return; }
+    }
+  }
+  if(rnd()<0.2){
+    var lr=rnd()<0.5?1:-1;
+    for(s=0;s<2;s++){
+      var dx2=s===0?lr:-lr;
+      var nx2=x+dx2;
+      if(nx2<0||nx2>=W) continue;
+      if(ty[i+dx2]===EMPTY){ tryMove(i,i+dx2); return; }
+    }
+  }
+}
+/* ---------- 温度扩散 ---------- */
+function diffusion(){
+  var x,y,i,t,s2,c2,avg,nt,k,tc;
+  for(y=0;y<H;y++){
+    for(x=0;x<W;x++){
+      i=y*W+x;
+      t=ty[i];
+      tc=tp[i];
+      s2=0;c2=0;
+      if(x>0){ s2+=tp[i-1]; c2++; }
+      if(x<W-1){ s2+=tp[i+1]; c2++; }
+      if(y>0){ s2+=tp[i-W]; c2++; }
+      if(y<H-1){ s2+=tp[i+W]; c2++; }
+      if(c2===0){ tp2[i]=tc; continue; }
+      avg=s2/c2;
+      if(t===METAL) k=0.55;
+      else if(t===WATER||t===ACID) k=0.26;
+      else if(t===EMPTY) k=0.14;
+      else if(t===LAVA||t===FIRE) k=0.30;
+      else k=0.11;
+      nt=tc+(avg-tc)*k;
+      nt+=(20-nt)*0.0016;
+      if(t===LAVA&&nt<1000) nt=1000;
+      if(t===FIRE&&nt<320) nt=320;
+      if(nt>1400) nt=1400;
+      if(nt<-120) nt=-120;
+      tp2[i]=nt|0;
+    }
+  }
+  var tmp=tp; tp=tp2; tp2=tmp;
+}
+/* ---------- 爆炸 ---------- */
+function explode(cx,cy){
+  explTotal++;
+  shake=Math.max(shake,7);
+  boom();
+  var r=4, x,y,i,t;
+  for(var dy=-r;dy<=r;dy++){
+    for(var dx=-r;dx<=r;dx++){
+      if(dx*dx+dy*dy>r*r) continue;
+      x=cx+dx; y=cy+dy;
+      if(!inb(x,y)) continue;
+      i=y*W+x; t=ty[i];
+      var nt=tp[i]+380+rnd()*220;
+      tp[i]=nt>1400?1400:nt;
+      if(t===GPOW){ if(rnd()<0.75){ ty[i]=FIRE; tp[i]=430; } }
+      else if(t===WOOD||t===PLANT||t===SEED||t===OIL){ if(rnd()<0.6){ ty[i]=FIRE; tp[i]=380; } }
+      else if(t===ICE){ if(rnd()<0.8) ty[i]=WATER; }
+    }
+  }
+}
+/* ---------- 绘制 ---------- */
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var cellCv=null, cellCtx=null, img=null, glowCv=null, glowCtx=null, gimg=null;
+var CW=0,CH=0,SC=1,CX=0,CY=0;
+var pal=null;
+function buildPal(){
+  pal=[];
+  for(var t=0;t<DEF.length;t++){
+    var c=DEF[t].c, arr=[];
+    for(var v=0;v<8;v++){
+      var j=(v-3.5)*3;
+      arr.push([
+        Math.max(0,Math.min(255,Math.round(c[0]+j+rnd()*6-3))),
+        Math.max(0,Math.min(255,Math.round(c[1]+j+rnd()*6-3))),
+        Math.max(0,Math.min(255,Math.round(c[2]+j+rnd()*6-3)))
+      ]);
+    }
+    pal.push(arr);
+  }
+  for(var i=0;i<N;i++) cl[i]=Math.floor(rnd()*8);
+}
+function mkCanvas(w,h){
+  var c=document.createElement('canvas'); c.width=w; c.height=h; return c;
+}
+function ensureBuffers(){
+  if(!cellCv){
+    cellCv=mkCanvas(W,H); cellCtx=cellCv.getContext('2d');
+    glowCv=mkCanvas(W,H); glowCtx=glowCv.getContext('2d');
+  }
+  if(!img){
+    img = cellCtx.createImageData? cellCtx.createImageData(W,H) : {width:W,height:H,data:new Uint8ClampedArray(W*H*4)};
+    gimg = glowCtx.createImageData? glowCtx.createImageData(W,H) : {width:W,height:H,data:new Uint8ClampedArray(W*H*4)};
+  }
+}
+function resize(){
+  var DPR=Math.min(2,window.devicePixelRatio||1);
+  var sw=window.innerWidth, sh=window.innerHeight;
+  var m=8, top=92, bot=150;
+  SC=Math.min((sw-2*m)/W,(sh-top-bot)/H);
+  CW=Math.round(W*SC); CH=Math.round(H*SC);
+  CX=Math.round((sw-CW)/2);
+  CY=Math.round(top+(sh-top-bot-CH)/2);
+  cv.width=Math.round(sw*DPR); cv.height=Math.round(sh*DPR);
+  cv.style.width=sw+'px'; cv.style.height=sh+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize',resize,false);
+window.addEventListener('orientationchange',function(){ setTimeout(resize,220); },false);
+var cur={};
+function render(){
+  ensureBuffers();
+  var d=img.data, gd=gimg.data;
+  var i,p,x,y,t,cc,tv,mix,v;
+  for(i=0;i<N;i++){
+    t=ty[i];
+    cc=pal[t][cl[i]];
+    var r=cc[0],g=cc[1],b=cc[2];
+    tv=tp[i];
+    if(tv>180&&t!==FIRE){
+      mix=Math.min(0.75,(tv-180)/700);
+      r=r+(255-r)*mix; g=g+(190-g)*mix; b=b+(90-b)*mix;
+    }else if(tv<-4){
+      mix=Math.min(0.5,(-4-tv)/60);
+      r=r+(150-r)*mix; g=g+(210-g)*mix; b=b+(255-b)*mix;
+    }
+    if(t===FIRE||t===LAVA){
+      var fl=0.75+rnd()*0.5;
+      r=Math.min(255,r*fl+35); g=Math.min(255,g*fl); b=Math.min(255,b*fl);
+    }
+    p=i*4;
+    d[p]=r; d[p+1]=g; d[p+2]=b; d[p+3]=255;
+    /* 辉光层 */
+    if(t===FIRE||t===LAVA||tv>300){
+      gd[p]=r; gd[p+1]=g; gd[p+2]=b; gd[p+3]=200;
+    }else{
+      gd[p+3]=0;
+    }
+  }
+  cellCtx.putImageData(img,0,0);
+  glowCtx.putImageData(gimg,0,0);
+  var sw=window.innerWidth, sh=window.innerHeight;
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#04060a';
+  ctx.fillRect(0,0,sw,sh);
+  ctx.setTransform(1,0,0,1,shakeX,shakeY);
+  ctx.imageSmoothingEnabled=false;
+  ctx.drawImage(cellCv,0,0,CW,CH);
+  if(set.glow){
+    ctx.save();
+    ctx.globalCompositeOperation='lighter';
+    ctx.globalAlpha=0.42;
+    try{ ctx.filter='blur(7px)'; }catch(e){}
+    ctx.drawImage(glowCv,0,0,CW,CH);
+    try{ ctx.filter='none'; }catch(e){}
+    ctx.restore();
+  }
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.strokeStyle='rgba(120,180,255,.25)';
+  ctx.lineWidth=1;
+  ctx.strokeRect(CX+0.5,CY+0.5,CW-1,CH-1);
+}
+/* ---------- 笔刷 / 输入 ---------- */
+function paint(x,y,r,t){
+  for(var dy=-r;dy<=r;dy++){
+    for(var dx=-r;dx<=r;dx++){
+      if(dx*dx+dy*dy>r*r) continue;
+      var nx=x+dx, ny=y+dy;
+      if(!inb(nx,ny)) continue;
+      var i=ny*W+nx;
+      ty[i]=t;
+      cl[i]=Math.floor(rnd()*8);
+      if(t===FIRE) tp[i]=330;
+      else if(t===LAVA) tp[i]=1000;
+      else if(t===ICE) tp[i]=-15;
+      else if(t===STEAM||t===SMOKE) tp[i]=90;
+      else if(t===EMPTY){} 
+      else tp[i]=20;
+    }
+  }
+}
+var painting=false,lastPX=null,lastPY=null,probeX=-1,probeY=-1;
+function toCell(e){
+  var rect=cv.getBoundingClientRect();
+  var px=(e.clientX-rect.left-CX)/SC;
+  var py=(e.clientY-rect.top-CY)/SC;
+  return {x:Math.floor(px), y:Math.floor(py)};
+}
+cv.addEventListener('pointerdown',function(e){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(err){} }
+  var c=toCell(e);
+  painting=true; lastPX=c.x; lastPY=c.y;
+  paint(c.x,c.y,brush,curElem);
+  try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+},false);
+cv.addEventListener('pointermove',function(e){
+  var c=toCell(e);
+  probeX=c.x; probeY=c.y;
+  if(painting){
+    if(lastPX!==null){
+      var dx=c.x-lastPX, dy=c.y-lastPY;
+      var steps=Math.max(Math.abs(dx),Math.abs(dy));
+      if(steps>0){
+        for(var s=1;s<=steps;s++){
+          paint(Math.round(lastPX+dx*s/steps), Math.round(lastPY+dy*s/steps), brush, curElem);
+        }
+      }
+    }
+    lastPX=c.x; lastPY=c.y;
+  }
+},false);
+function endPaint(){ painting=false; lastPX=null; lastPY=null; }
+cv.addEventListener('pointerup',endPaint,false);
+cv.addEventListener('pointercancel',endPaint,false);
+/* ---------- 成就 ---------- */
+var ACHS=[
+  {id:'fire1', n:'初燃',   d:'第一次看到火焰',      f:function(){ return fireSeen>0; }},
+  {id:'boom',  n:'大爆炸', d:'引爆一次火药',        f:function(){ return explTotal>0; }},
+  {id:'glass', n:'玻璃匠', d:'用岩浆烧出第一块玻璃',f:function(){ return glassTotal>0; }},
+  {id:'lake',  n:'小湖泊', d:'同屏 400 格水',       f:function(){ return (maxSim[WATER]|0)>=400; }},
+  {id:'jungle',n:'雨林',   d:'同屏 120 株植物',     f:function(){ return (maxSim[PLANT]|0)>=120; }},
+  {id:'ice',   n:'冰川',   d:'同屏 80 块冰',        f:function(){ return (maxSim[ICE]|0)>=80; }},
+  {id:'steam', n:'蒸汽时代',d:'同屏 150 格蒸汽',    f:function(){ return (maxSim[STEAM]|0)>=150; }},
+  {id:'magma', n:'熔岩湖', d:'同屏 200 格岩浆',     f:function(){ return (maxSim[LAVA]|0)>=200; }},
+  {id:'acid',  n:'酸蚀师', d:'酸液累计溶解 60 格',  f:function(){ return acidDissTotal>=60; }},
+  {id:'sand',  n:'沙尘暴', d:'同屏 600 粒沙',       f:function(){ return (maxSim[SAND]|0)>=600; }},
+  {id:'gold',  n:'炼金术士',d:'同屏 10 种元素',     f:function(){ var n=0,t; for(t=1;t<=16;t++) if((cur[t]|0)>0)n++; return n>=10; }},
+  {id:'watch', n:'时间的形状',d:'让沙漏流完一半',  f:function(){ return everHourglassHalf; }}
+];
+var everHourglassHalf=false;
+function checkAch(){
+  var changed=false;
+  for(var i=0;i<ACHS.length;i++){
+    var a=ACHS[i];
+    if(achGot.indexOf(a.id)<0 && a.f()){
+      achGot.push(a.id); changed=true;
+      toast('🏆 成就解锁 · '+a.n);
+      beep(880,0.12,'sine',0.12,0); beep(1320,0.22,'sine',0.12,0.1);
+      confettiBurst();
+    }
+  }
+  if(changed){ saveAch(); renderAch(); }
+}
+function renderAch(){
+  var row=document.getElementById('achRow');
+  row.innerHTML='';
+  for(var i=0;i<ACHS.length;i++){
+    var a=ACHS[i], got=achGot.indexOf(a.id)>=0;
+    var d=document.createElement('div');
+    d.className='card'+(got?' done':' locked');
+    d.innerHTML='<div class="t">'+(got?'🏆':'🔒')+' '+a.n+'<span class="badge">'+(got?'已解锁':'未解锁')+'</span></div><div class="d">'+a.d+'</div>';
+    row.appendChild(d);
+  }
+  document.getElementById('achHead').textContent='实验记录 '+achGot.length+' / '+ACHS.length+' · 自动解锁';
+}
+/* ---------- 场景 ---------- */
+function clearAll(silent){
+  ty.fill(0); tp.fill(20);
+  if(!silent){ toast('已清空'); }
+}
+function fillRect(x0,y0,x1,y1,t){
+  for(var y=y0;y<=y1;y++)for(var x=x0;x<=x1;x++){ if(inb(x,y)){ var i=y*W+x; ty[i]=t; tp[i]= t===LAVA?1000: t===ICE?-15:20; cl[i]=Math.floor(rnd()*8); } }
+}
+function brushLine(x0,y0,x1,y1,t,r){
+  var steps=Math.max(Math.abs(x1-x0),Math.abs(y1-y0));
+  for(var s=0;s<=steps;s++){
+    paint(Math.round(x0+(x1-x0)*s/steps), Math.round(y0+(y1-y0)*s/steps), r, t);
+  }
+}
+var PRESETS=[
+  {n:'迎宾台', d:'一个会自动运转的起步世界：沙漏沙柱、水池、冰与植物苗。', f:function(){
+    clearAll(true);
+    fillRect(0,H-6,W-1,H-1,STONE);            // 石地板
+    fillRect(10,H-40,60,H-7,SAND);            // 沙堆
+    fillRect(84,H-40,134,H-7,EMPTY);
+    fillRect(84,H-70,134,H-7,WATER);          // 水池
+    fillRect(30,20,60,26,STONE);              // 顶部石台
+    fillRect(34,8,44,18,SAND);                // 高处方块沙(落下)
+    fillRect(100,26,106,32,ICE);              // 浮冰
+    fillRect(74,H-44,76,H-38,SEED);           // 种子
+    ty[idx(120,H-12)]=PLANT; tp[idx(120,H-12)]=20;
+    ty[idx(126,H-12)]=PLANT; tp[idx(126,H-12)]=20;
+  }},
+  {n:'火山', d:'岩浆顺着山体流下，遇水生石；小心引燃旁边的树林。', f:function(){
+    clearAll(true);
+    fillRect(0,H-4,W-1,H-1,STONE);
+    for(var y=0;y<H-4;y++){
+      var half=Math.round(y*0.55);
+      for(var x=72-half;x<=72+half;x++){
+        if(x<0||x>=W) continue;
+        var i=y*W+x; ty[i]=STONE;
+        if(x>72-half+3&&x<72+half-3&&y>H*0.45) ty[i]= rnd()<0.25?LAVA:STONE;
+      }
+    }
+    fillRect(60,2,84,10,LAVA);                // 火山口
+    fillRect(0,H-30,W-1,H-5,EMPTY);
+    fillRect(96,H-26,140,H-5,WATER);          // 旁边湖泊
+    fillRect(10,H-30,24,H-10,WOOD);           // 小树林
+    fillRect(28,H-30,40,H-10,WOOD);
+    fillRect(6,H-34,44,H-31,PLANT);
+  }},
+  {n:'水族箱', d:'玻璃缸中的水下世界：植物蔓延、气泡上浮。', f:function(){
+    clearAll(true);
+    fillRect(0,0,W-1,H-1,EMPTY);
+    fillRect(8,40,W-8,44,GLASS);
+    fillRect(8,44,12,H-8,GLASS);
+    fillRect(W-12,44,W-8,H-8,GLASS);
+    fillRect(8,H-8,W-8,H-4,GLASS);
+    fillRect(14,H-20,W-14,H-9,SAND);
+    for(var x=20;x<W-20;x+=14) fillRect(x,H-30,x+1,H-20,PLANT);
+    fillRect(20,50,W-20,H-32,WATER);
+    fillRect(30,60,44,66,ICE);
+    fillRect(100,54,116,60,SEED);
+    fillRect(60,52,68,54,SAND);
+  }},
+  {n:'花园', d:'洒水浇灌，看种子发芽、藤蔓沿水面扩张。', f:function(){
+    clearAll(true);
+    fillRect(0,H-8,W-1,H-1,SAND);
+    fillRect(0,0,W-1,3,STONE);
+    fillRect(4,4,20,H-9,EMPTY);
+    for(var x=10;x<W-10;x+=9){ fillRect(x,H-10,x+1,H-9,SEED); }
+    fillRect(50,6,94,30,WATER);               // 蓄水池
+    fillRect(0,4,3,H-1,STONE);
+    fillRect(W-4,4,W-1,H-1,STONE);
+    fillRect(20,H-24,30,H-9,SAND);
+    fillRect(100,H-24,120,H-9,SAND);
+  }},
+  {n:'火药桶', d:'一根引线通到火药桶——点燃它，然后快跑。', f:function(){
+    clearAll(true);
+    fillRect(0,H-6,W-1,H-1,WOOD);
+    fillRect(20,H-60,24,H-6,WOOD);
+    fillRect(0,H-62,26,H-58,WOOD);
+    fillRect(26,H-62,122,H-58,WOOD);
+    fillRect(88,H-58,116,H-7,WOOD);
+    fillRect(92,H-56,112,H-10,GPOW);
+    fillRect(2,H-66,18,H-63,OIL);             // 油引线
+    ty[idx(4,H-65)]=FIRE; tp[idx(4,H-65)]=330;
+    ty[idx(9,H-65)]=FIRE; tp[idx(9,H-65)]=330;
+    ty[idx(14,H-65)]=FIRE; tp[idx(14,H-65)]=330;
+    ty[idx(30,H-60)]=FIRE; tp[idx(30,H-60)]=330;
+    ty[idx(44,H-60)]=FIRE; tp[idx(44,H-60)]=330;
+    ty[idx(58,H-60)]=FIRE; tp[idx(58,H-60)]=330;
+    ty[idx(72,H-60)]=FIRE; tp[idx(72,H-60)]=330;
+    ty[idx(84,H-60)]=FIRE; tp[idx(84,H-60)]=330;
+    fillRect(40,H-12,80,H-7,EMPTY);
+  }},
+  {n:'沙漏', d:'石框沙漏：细颈处的对流最考验物理。', f:function(){
+    clearAll(true);
+    var mid=H/2;
+    for(var y=8;y<=H-1;y++){
+      var d=Math.abs(y-mid);
+      var hw=Math.round(3+d*0.26);
+      var li=72-hw, ri=72+hw;
+      ty[y*W+li]=STONE; ty[y*W+li-1]=STONE;
+      ty[y*W+ri]=STONE; ty[y*W+ri+1]=STONE;
+    }
+    for(var y2=13;y2<mid-5;y2++){
+      var d2=Math.abs(y2-mid);
+      var hw2=Math.round(3+d2*0.26);
+      for(var x2=72-hw2+2;x2<=72+hw2-2;x2++){ if(inb(x2,y2)) ty[y2*W+x2]=SAND; }
+    }
+    everHourglassHalf=false;
+    hourglassCheckT=0;
+  }}
+];
+var hourglassCheckT=0;
+function loadPreset(i){
+  var p=PRESETS[i];
+  if(!p) return;
+  p.f();
+  explTotal=0; glassTotal=0; acidDissTotal=0; fireSeen=0;
+  toast('场景 · '+p.n);
+  if(set.autosave) setTimeout(autoSave,400);
+}
+/* ---------- 存读档（RLE） ---------- */
+function rle(){
+  var out=[],cur=ty[0],n=1,i;
+  for(i=1;i<N;i++){
+    if(ty[i]===cur&&n<99999) n++;
+    else{ out.push(cur+':'+n); cur=ty[i]; n=1; }
+  }
+  out.push(cur+':'+n);
+  return out.join(',');
+}
+function unrle(s){
+  var parts=s.split(','),i=0,v,c,k;
+  for(var p=0;p<parts.length;p++){
+    var seg=parts[p].split(':');
+    v=parseInt(seg[0],10); c=parseInt(seg[1],10);
+    if(isNaN(v)||isNaN(c)) continue;
+    for(k=0;k<c&&i<N;k++) ty[i++]=v;
+  }
+}
+var lastAutoSave=0;
+function autoSave(){
+  if(!set.autosave) return;
+  try{
+    localStorage.setItem('el1_world', rle());
+    localStorage.setItem('el1_world_t', String(Date.now()));
+    lastAutoSave=Date.now();
+  }catch(e){}
+}
+/* ---------- UI ---------- */
+function el(id){ return document.getElementById(id); }
+function toast(s){
+  var e=el('toast');
+  e.textContent=s; e.classList.add('on');
+  if(toast._t) clearTimeout(toast._t);
+  toast._t=setTimeout(function(){ e.classList.remove('on'); },1500);
+}
+function banner(t1,t2){
+  el('bnT1').textContent=t1; el('bnT2').textContent=t2||'';
+  el('banner').classList.add('on');
+  if(banner._t) clearTimeout(banner._t);
+  banner._t=setTimeout(function(){ el('banner').classList.remove('on'); },2200);
+}
+function confettiBurst(){
+  var e=el('confetti');
+  var cols=['#54e0ff','#b06cff','#5ef2a8','#ffd166','#ff8c5a','#eaf7ff'];
+  for(var i=0;i<56;i++){
+    var d=document.createElement('i');
+    d.className='cf';
+    d.style.left=(rnd()*100)+'vw';
+    d.style.background=cols[i%cols.length];
+    d.style.setProperty('--dur',(1.1+rnd()*1.3)+'s');
+    d.style.setProperty('--rot',(rnd()*720-360)+'deg');
+    d.style.animationDelay=(rnd()*0.35)+'s';
+    e.appendChild(d);
+    (function(n){ setTimeout(function(){ if(n.parentNode) n.parentNode.removeChild(n); },3100); })(d);
+  }
+}
+function css(rgb){ return 'rgb('+rgb[0]+','+rgb[1]+','+rgb[2]+')'; }
+function buildElems(){
+  var row=el('elemRow');
+  row.innerHTML='';
+  for(var i=0;i<PALETTE.length;i++){
+    (function(t){
+      var b=document.createElement('button');
+      b.type='button'; b.className='chip'+(t===curElem?' on':'');
+      b.innerHTML='<span class="sw" style="background:'+css(DEF[t].c)+'"></span>'+(t===EMPTY?'橡皮':DEF[t].n);
+      b.addEventListener('click',function(){
+        curElem=t;
+        var ch=row.children;
+        for(var j=0;j<ch.length;j++) ch[j].classList.remove('on');
+        b.classList.add('on');
+        el('curName').textContent=(t===EMPTY?'橡皮':DEF[t].n);
+        beep(520,0.04,'sine',0.05);
+      },false);
+      row.appendChild(b);
+    })(PALETTE[i]);
+  }
+}
+var BRUSHES=[['细',2],['中',4],['粗',7]];
+function buildBrush(){
+  var row=el('brushRow');
+  row.innerHTML='';
+  for(var i=0;i<BRUSHES.length;i++){
+    (function(nm,r){
+      var b=document.createElement('button');
+      b.type='button'; b.className='chip'+(r===brush?' on':'');
+      b.textContent=nm+' · r'+r;
+      b.addEventListener('click',function(){
+        brush=r;
+        var ch=row.children;
+        for(var j=0;j<ch.length;j++) ch[j].classList.remove('on');
+        b.classList.add('on');
+      },false);
+      row.appendChild(b);
+    })(BRUSHES[i][0],BRUSHES[i][1]);
+  }
+}
+function buildScenes(){
+  var row=el('sceneRow');
+  row.innerHTML='';
+  for(var i=0;i<PRESETS.length;i++){
+    (function(idx2){
+      var p=PRESETS[idx2];
+      var d=document.createElement('div');
+      d.className='card';
+      d.innerHTML='<div class="t">🧪 '+p.n+'<span class="badge play">载入</span></div><div class="d">'+p.d+'</div>';
+      d.addEventListener('click',function(){
+        loadPreset(idx2);
+        sheetEl.classList.remove('open');
+      },false);
+      row.appendChild(d);
+    })(i);
+  }
+}
+/* tabs */
+var tabs=document.querySelectorAll('#tabs .tab');
+for(var ti=0;ti<tabs.length;ti++){
+  (function(b){
+    b.addEventListener('click',function(){
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('on');
+      b.classList.add('on');
+      var ps=document.querySelectorAll('#panels .panel');
+      for(i=0;i<ps.length;i++) ps[i].classList.remove('on');
+      el(b.getAttribute('data-tab')).classList.add('on');
+      el('sheet').classList.add('open');
+    },false);
+  })(tabs[ti]);
+}
+var sheetEl=el('sheet');
+el('handle').addEventListener('click',function(){ sheetEl.classList.toggle('open'); },false);
+function layoutPeek(){
+  var h=el('handle'), t=el('tabs');
+  var hh=(h&&h.offsetHeight)||22, tt=(t&&t.offsetHeight)||43;
+  sheetEl.style.setProperty('--peek', Math.round(hh+tt+16)+'px');
+}
+layoutPeek();
+window.addEventListener('resize',layoutPeek,false);
+/* 顶栏按钮 */
+el('bPause').addEventListener('click',function(){
+  running=!running;
+  this.textContent=running?'⏸':'▶';
+  this.classList.toggle('on',!running);
+  toast(running?'继续':'已暂停 · 仍可绘制');
+},false);
+el('bClear').addEventListener('click',function(){
+  clearAll(false);
+  beep(300,0.08,'triangle',0.08);
+},false);
+el('bHelp').addEventListener('click',function(){ openHelp(); },false);
+el('bSound').addEventListener('click',function(){
+  set.sound=set.sound?0:1; saveSet();
+  this.classList.toggle('on',!!set.sound);
+  this.textContent=set.sound?'🔊':'🔇';
+  el('tSound').classList.toggle('on',!!set.sound);
+},false);
+el('tSound').addEventListener('click',function(){
+  set.sound=set.sound?0:1; saveSet();
+  this.classList.toggle('on',!!set.sound);
+  el('bSound').classList.toggle('on',!!set.sound);
+  el('bSound').textContent=set.sound?'🔊':'🔇';
+},false);
+el('tGlow').addEventListener('click',function(){
+  set.glow=set.glow?0:1; saveSet(); this.classList.toggle('on',!!set.glow);
+},false);
+el('tSave').addEventListener('click',function(){
+  set.autosave=set.autosave?0:1; saveSet(); this.classList.toggle('on',!!set.autosave);
+  if(set.autosave) autoSave();
+},false);
+el('bShot').addEventListener('click',function(){
+  try{
+    var url=cv.toDataURL('image/png');
+    var a=document.createElement('a');
+    a.href=url; a.download='element-lab.png'; a.click();
+    toast('已导出图片');
+  }catch(e){ toast('当前环境不支持导出'); }
+},false);
+el('bWipe').addEventListener('click',function(){
+  if(window.confirm('重置所有数据（世界/成就/设置）？')){
+    try{ localStorage.removeItem('el1_world'); localStorage.removeItem('el1_ach'); localStorage.removeItem('el1_set'); }catch(e){}
+    achGot=[]; renderAch(); clearAll(false);
+    toast('已重置');
+  }
+},false);
+/* 弹窗/帮助 */
+function openModal(title,html){
+  el('mTitle').textContent=title; el('mBody').innerHTML=html;
+  el('modalWrap').classList.add('on');
+}
+el('mX').addEventListener('click',function(){ el('modalWrap').classList.remove('on'); },false);
+el('modalWrap').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); },false);
+function openHelp(){
+  openModal('元素实验室 · 帮助',
+    '<h4>🧪 玩法</h4><ul><li>在底部「元素」里选一种材料，然后在画布上<b class="kv">按住拖动</b>即可绘制。</li><li>世界会自动运转——有些反应需要你来点火，有些会自己发生。</li></ul>'+
+    '<h4>🔥 反应小抄</h4><ul><li>岩浆 + 水 = 石头 + 蒸汽；岩浆能烧出<b class="kv">玻璃</b>（烧沙子）。</li><li>火焰会点燃木头/油/植物/种子；<b class="kv">火药</b>遇火直接爆炸。</li><li>酸液能溶解石头、金属、木头；植物遇水会生长蔓延。</li><li>冰遇热融化；蒸汽会上升，冷却后凝结成水。</li></ul>'+
+    '<h4>💡 技巧</h4><ul><li>暂停后照样可以绘制——适合先布景再播放。</li><li>试试「场景」页的火药桶：点着引线就跑。</li></ul>'+
+    '<h4>💾 数据</h4><ul><li>世界、成就、设置自动保存在本机。</li><li>右上 🔄 清空画布，⏸ 暂停/继续。</li></ul>');
+}
+/* ---------- 首屏 ---------- */
+function firstHint(){
+  var e=el('hint');
+  e.classList.remove('hide');
+  e.innerHTML='<h3>🧪 ELEMENT LAB · 元素实验室</h3>'+
+    '欢迎来到像素元素沙盘：<span class="k">17 种元素</span>、温度传导、真实反应矩阵。<br>'+
+    '按住屏幕绘制 · 试试「岩浆+水」或「火药+火」<br><br>'+
+    '<div class="foot"><button id="hGo">开始实验</button></div>';
+  el('hGo').addEventListener('click',function(){ e.classList.add('hide'); },false);
+}
+/* ---------- 主循环 ---------- */
+var fpsT=0,fpsN=0,fpsV=60;
+function loop(){
+  var now=performance.now();
+  if(running){ stepOnce(); }
+  render();
+  /* 统计 */
+  fpsN++;
+  if(now-fpsT>500){
+    fpsV=Math.round(fpsN*1000/(now-fpsT));
+    fpsT=now; fpsN=0;
+    el('sFps').textContent=Math.min(99,fpsV);
+  }
+  /* 粒子计数/成就巡检 */
+  if(frame%45===0){
+    cur={};
+    for(var i=0;i<N;i++){ cur[ty[i]]=(cur[ty[i]]||0)+1; }
+    el('sCnt').textContent=cur[SAND]+cur[WATER]+cur[OIL]+cur[LAVA]+cur[STONE]||0;
+    var tot=0,t;
+    for(t=1;t<=16;t++) tot+=cur[t]||0;
+    el('sCnt').textContent=tot;
+    for(t=1;t<=16;t++){
+      if((cur[t]|0)>(maxSim[t]|0)) maxSim[t]=cur[t];
+    }
+    if((cur[FIRE]|0)>0) fireSeen=1;
+    /* 沙漏检测 */
+    if(MODE_HOURGLASS()){}
+    checkAch();
+  }
+  /* 光标温度 */
+  if(probeX>=0&&probeX<W&&probeY>=0&&probeY<H){
+    el('sTmp').textContent=tp[probeY*W+probeX]+'°';
+  }
+  /* 震动 */
+  if(shake>0){ shakeX=(rnd()*2-1)*shake; shakeY=(rnd()*2-1)*shake; }
+  else{ shakeX=0; shakeY=0; }
+  /* 自动保存 */
+  if(set.autosave&&now-lastAutoSave>15000&&running){ autoSave(); }
+  requestAnimationFrame(loop);
+}
+function MODE_HOURGLASS(){
+  if(everHourglassHalf) return true;
+  /* 沙漏场景判定：下半部沙子>上半部即算流了一半 */
+  var up=0,down=0,i,x,y;
+  for(y=0;y<H/2;y++)for(x=0;x<W;x++) if(ty[y*W+x]===SAND) up++;
+  for(y=H/2;y<H;y++)for(x=0;x<W;x++) if(ty[y*W+x]===SAND) down++;
+  if(up+down>50&&up>50&&down>up*0.9){ everHourglassHalf=true; }
+  return everHourglassHalf;
+}
+/* ---------- 启动 ---------- */
+function boot(){
+  buildPal();
+  resize();
+  buildElems();
+  buildBrush();
+  buildScenes();
+  renderAch();
+  try{
+    var w0=localStorage.getItem('el1_world');
+    var t0=parseInt(localStorage.getItem('el1_world_t')||'0',10);
+    if(w0&&w0.length>10&&Date.now()-t0<1000*60*60*24*5){
+      clearAll(true);
+      unrle(w0);
+    }else{
+      loadPreset(0);
+    }
+  }catch(e){ loadPreset(0); }
+  el('tGlow').classList.toggle('on',!!set.glow);
+  el('tSound').classList.toggle('on',!!set.sound);
+  el('bSound').classList.toggle('on',!!set.sound);
+  el('bSound').textContent=set.sound?'🔊':'🔇';
+  el('tSave').classList.toggle('on',!!set.autosave);
+  firstHint();
+  loop();
+}
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&set.autosave) autoSave();
+},false);
+boot();
+/* ---------- 测试接口 ---------- */
+window.EL={
+  ver:'1.0', W:W, H:H,
+  T:{EMPTY:EMPTY,SAND:SAND,WATER:WATER,OIL:OIL,LAVA:LAVA,FIRE:FIRE,SMOKE:SMOKE,STEAM:STEAM,PLANT:PLANT,SEED:SEED,ICE:ICE,STONE:STONE,METAL:METAL,ACID:ACID,WOOD:WOOD,GPOW:GPOW,GLASS:GLASS},
+  get:function(x,y){ return ty[y*W+x]; },
+  temp:function(x,y){ return tp[y*W+x]; },
+  set:function(x,y,t){ var i=y*W+x; ty[i]=t; cl[i]=Math.floor(Math.random()*8); if(t===LAVA)tp[i]=1000; else if(t===FIRE)tp[i]=330; else if(t===ICE)tp[i]=-15; else tp[i]=20; },
+  paint:function(x,y,r,t){ paint(x,y,r,t); },
+  count:function(t){ var n=0; for(var i=0;i<N;i++) if(ty[i]===t) n++; return n; },
+  step:function(n){ for(var i=0;i<(n||1);i++) stepOnce(); },
+  clearAll:function(){ clearAll(true); },
+  preset:function(i){ loadPreset(i); },
+  presets:PRESETS,
+  stats:function(){ return {expl:explTotal, glass:glassTotal, acid:acidDissTotal, achs:achGot.slice(), maxSim:maxSim}; },
+  saveStr:function(){ return rle(); },
+  loadStr:function(s){ clearAll(true); unrle(s); },
+  setRunning:function(v){ running=!!v; },
+  setElem:function(t){ curElem=t; },
+  setBrush:function(r){ brush=r; },
+  explodeAt:function(x,y){ explode(x,y); }
+};
+})();
+</script>
+</body>
+</html>
