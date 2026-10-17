@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#05070b">
+<title>OPTICS LAB · 光学实验室</title>
+<style>
+:root{
+  --bg:#05070b; --panel:rgba(14,20,31,.8); --panel2:rgba(18,26,40,.92);
+  --line:rgba(120,180,255,.16); --line2:rgba(120,180,255,.30);
+  --txt:#dbe7ff; --dim:#7e90b4; --acc:#54e0ff; --acc2:#b06cff;
+  --ok:#5ef2a8; --warn:#ffd166; --bad:#ff6b81;
+  --shadow:0 0 18px rgba(84,224,255,.22);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--txt);
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"PingFang SC","Microsoft YaHei",monospace;
+  -webkit-user-select:none;user-select:none}
+button{font-family:inherit;outline:none}
+.hide{display:none !important}
+#cv{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;z-index:1}
+/* 顶栏 */
+#topbar{position:fixed;left:0;right:0;top:0;z-index:20;pointer-events:none;
+  padding:calc(8px + env(safe-area-inset-top)) 10px 0}
+#stats{position:absolute;left:10px;top:calc(8px + env(safe-area-inset-top));
+  display:flex;align-items:center;gap:8px;padding:7px 11px;border-radius:12px;
+  background:var(--panel);border:1px solid var(--line);font-size:12px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#stats .g{display:flex;align-items:center;gap:7px}
+#stats .g+.g{border-left:1px solid var(--line);padding-left:8px}
+#stats b{color:var(--acc);font-size:13px;font-weight:700}
+#stats span{color:var(--dim);font-size:11px}
+#ops{position:absolute;right:10px;top:calc(8px + env(safe-area-inset-top));
+  display:flex;gap:7px;pointer-events:auto}
+.ob{width:40px;height:40px;border-radius:12px;background:var(--panel);border:1px solid var(--line);
+  color:var(--txt);font-size:15px;cursor:pointer;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.ob:active{transform:scale(.93)}
+.ob.on{background:rgba(84,224,255,.18);border-color:rgba(84,224,255,.5);color:#c9f3ff;box-shadow:var(--shadow)}
+/* 目标提示条 */
+#goal{position:fixed;left:50%;transform:translateX(-50%);top:calc(58px + env(safe-area-inset-top));z-index:19;
+  padding:7px 14px;border-radius:12px;background:var(--panel);border:1px solid var(--line2);font-size:12px;
+  color:var(--txt);backdrop-filter:blur(8px);pointer-events:none;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+#goal b{color:var(--acc)}
+/* 底部工作台 */
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:30;
+  background:linear-gradient(180deg,rgba(10,15,24,.55),rgba(8,12,20,.96) 26%);
+  border-top:1px solid var(--line);border-radius:20px 20px 0 0;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  transform:translateY(calc(100% - var(--peek,126px) - env(safe-area-inset-bottom)));
+  transition:transform .28s cubic-bezier(.2,.8,.3,1);will-change:transform}
+#sheet.open{transform:translateY(0)}
+#handle{height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#handle i{width:44px;height:4px;border-radius:2px;background:var(--line2)}
+#tabs{display:flex;gap:6px;padding:2px 10px 8px;overflow-x:auto;scrollbar-width:none}
+#tabs::-webkit-scrollbar{display:none}
+.tab{flex:0 0 auto;padding:8px 13px;border-radius:11px;background:transparent;border:1px solid transparent;
+  color:var(--dim);font-size:12.5px;cursor:pointer}
+.tab.on{color:#eaf7ff;background:linear-gradient(135deg,rgba(84,224,255,.2),rgba(176,108,255,.2));
+  border-color:var(--line2);box-shadow:var(--shadow)}
+#panels{max-height:min(40vh,320px);overflow-y:auto;padding:4px 10px calc(14px + env(safe-area-inset-bottom));
+  overscroll-behavior:contain}
+.panel{display:none;padding-top:4px}
+.panel.on{display:block}
+.rows{display:flex;gap:7px;overflow-x:auto;padding:3px 1px;scrollbar-width:none}
+.rows::-webkit-scrollbar{display:none}
+.rows.wrap{flex-wrap:wrap;overflow:visible}
+.chip{flex:0 0 auto;padding:9px 13px;border-radius:11px;background:var(--panel2);border:1px solid var(--line);
+  color:var(--txt);font-size:12.5px;cursor:pointer;white-space:nowrap;transition:transform .1s}
+.chip:active{transform:scale(.95)}
+.chip.on{background:linear-gradient(135deg,rgba(84,224,255,.22),rgba(176,108,255,.22));
+  border-color:rgba(120,220,255,.6);color:#eaf7ff;box-shadow:var(--shadow)}
+.sechead{font-size:11px;color:var(--dim);letter-spacing:1px;margin:10px 2px 4px}
+.sechead:first-child{margin-top:2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.card{padding:10px 12px;border-radius:12px;background:var(--panel2);border:1px solid var(--line);cursor:pointer;
+  transition:transform .1s}
+.card:active{transform:scale(.97)}
+.card .t{font-size:12.5px;color:var(--txt);display:flex;align-items:center;gap:6px}
+.card .d{font-size:10.5px;color:var(--dim);margin-top:4px;line-height:1.5}
+.card .badge{margin-left:auto;font-size:10px;padding:2px 7px;border-radius:8px}
+.card.locked{opacity:.45}
+.card.done .badge{background:rgba(94,242,168,.18);color:var(--ok)}
+.card .badge.play{background:rgba(84,224,255,.16);color:var(--acc)}
+.card.locked .badge{background:rgba(255,255,255,.08);color:var(--dim)}
+.card.cur{border-color:rgba(120,220,255,.6);box-shadow:var(--shadow)}
+/* 选中浮动工具条 */
+#selbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--peek,126px) + 12px);z-index:29;
+  display:none;align-items:center;gap:8px;padding:7px 10px;border-radius:14px;background:var(--panel2);
+  border:1px solid var(--line2);backdrop-filter:blur(8px);box-shadow:var(--shadow)}
+#selbar.on{display:flex}
+#selbar button{width:40px;height:36px;border-radius:10px;background:rgba(255,255,255,.06);border:1px solid var(--line);
+  color:var(--txt);font-size:15px;cursor:pointer}
+#selbar button:active{transform:scale(.93)}
+#selbar #sA{min-width:52px;text-align:center;color:var(--acc);font-size:12.5px}
+#selbar #sD{width:auto;padding:0 12px;font-size:12.5px;color:#ffd7de}
+/* 弹窗/提示 */
+#modalWrap{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  background:rgba(3,5,9,.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#modalWrap.on{display:flex}
+#modal{width:min(92vw,430px);max-height:76vh;display:flex;flex-direction:column;border-radius:18px;
+  background:rgba(12,18,29,.97);border:1px solid var(--line2);box-shadow:0 18px 60px rgba(0,0,0,.6);overflow:hidden}
+#modal .mhead{display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid var(--line);
+  font-size:14px;color:var(--acc);font-weight:700;letter-spacing:.5px}
+#modal .mhead .x{margin-left:auto;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);
+  background:rgba(255,255,255,.04);color:var(--txt);font-size:14px;cursor:pointer}
+#modal .mbody{padding:14px 16px;overflow-y:auto;font-size:12.5px;line-height:1.9;color:var(--txt)}
+#modal .mbody h4{color:var(--acc);font-size:13px;margin:12px 0 6px}
+#modal .mbody h4:first-child{margin-top:0}
+#modal .mbody ul{margin:4px 0 4px 18px;color:#c8d6ee}
+#modal .mbody .kv{color:var(--warn)}
+#modal .mfoot{display:flex;gap:8px;justify-content:flex-end;padding:11px 16px;border-top:1px solid var(--line)}
+#modal .mfoot button{padding:8px 16px;border-radius:10px;border:1px solid var(--line2);
+  background:rgba(84,224,255,.14);color:#eaf7ff;font-size:12.5px;cursor:pointer}
+#toast{position:fixed;left:50%;bottom:calc(var(--peek,126px) + 66px);transform:translateX(-50%);
+  z-index:40;padding:8px 15px;border-radius:20px;background:var(--panel2);border:1px solid var(--line);
+  font-size:12.5px;color:#cfe9ff;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:86vw;
+  overflow:hidden;text-overflow:ellipsis}
+#toast.on{opacity:1}
+#banner{position:fixed;left:50%;top:26%;transform:translate(-50%,-50%) scale(.8);z-index:55;text-align:center;
+  opacity:0;transition:all .35s cubic-bezier(.2,1.4,.4,1);pointer-events:none}
+#banner.on{opacity:1;transform:translate(-50%,-50%) scale(1)}
+#banner .t1{font-size:26px;font-weight:800;letter-spacing:3px;color:#fff;
+  text-shadow:0 0 24px var(--acc),0 0 60px var(--acc2)}
+#banner .t2{font-size:12.5px;color:#cfe9ff;margin-top:8px;letter-spacing:1px}
+#confetti{position:fixed;inset:0;z-index:54;pointer-events:none;overflow:hidden}
+.cf{position:absolute;top:-12px;width:8px;height:12px;border-radius:2px;opacity:.95;
+  animation:cfdrop var(--dur) linear forwards}
+@keyframes cfdrop{0%{transform:translateY(-20px) rotate(0)}100%{transform:translateY(105vh) rotate(var(--rot))}}
+#hint{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:70;width:min(88vw,390px);
+  padding:17px 19px;border-radius:18px;background:rgba(10,15,24,.95);border:1px solid var(--line2);
+  backdrop-filter:blur(10px);font-size:13px;line-height:1.85;color:var(--txt);box-shadow:0 20px 70px rgba(0,0,0,.55)}
+#hint h3{font-size:15px;margin-bottom:9px;color:var(--acc);letter-spacing:1px}
+#hint .k{color:var(--warn)}
+#hint .kk{color:var(--acc2)}
+#hint .foot{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+#hint button{padding:8px 15px;border-radius:10px;border:1px solid var(--line2);
+  background:rgba(84,224,255,.16);color:#eaf7ff;font-size:12.5px;cursor:pointer}
+@media (max-width:479px){
+  #ops{gap:5px}
+  .ob{width:36px;height:36px;font-size:14px;border-radius:11px}
+}
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="topbar">
+  <div id="stats">
+    <span class="g"><b id="sRay">0</b><span>光路</span></span>
+    <span class="g"><b id="sBnc">0</b><span>反射</span></span>
+    <span class="g"><b id="sHit">0</b><span>命中</span></span>
+  </div>
+  <div id="ops">
+    <button class="ob" id="bReset" type="button">🔄</button>
+    <button class="ob" id="bHelp" type="button">❓</button>
+    <button class="ob on" id="bSound" type="button">🔊</button>
+  </div>
+</div>
+<div id="goal" class="hide"></div>
+<div id="selbar">
+  <button id="sL" type="button">⟲</button>
+  <b id="sA">0°</b>
+  <button id="sR" type="button">⟳</button>
+  <button id="sD" type="button">🗑 删除</button>
+</div>
+<div id="sheet">
+  <div id="handle"><i></i></div>
+  <div id="tabs">
+    <button class="tab on" data-tab="pTools" type="button">🛠 工具</button>
+    <button class="tab" data-tab="pLevels" type="button">🎯 关卡</button>
+    <button class="tab" data-tab="pSet" type="button">⚙️ 设置</button>
+  </div>
+  <div id="panels">
+    <div class="panel on" id="pTools">
+      <div class="sechead">放置 · 点选后触摸屏幕放置</div>
+      <div class="rows" id="toolRow"></div>
+      <div class="sechead" id="budHead">操作 · 拖动移动 / 拖动圆点旋转</div>
+      <div class="rows">
+        <button class="chip" id="bClear" type="button">🧹 清空自放件</button>
+        <button class="chip" id="bSand" type="button">🧪 回到沙盒</button>
+      </div>
+    </div>
+    <div class="panel" id="pLevels">
+      <div class="sechead">挑战关卡 · 让所有目标亮起来</div>
+      <div class="cards" id="levelRow"></div>
+    </div>
+    <div class="panel" id="pSet">
+      <div class="sechead">显示 / 音效</div>
+      <div class="rows wrap">
+        <button class="chip on" id="tGrid" type="button">▦ 网格</button>
+        <button class="chip on" id="tGlow" type="button">✨ 光晕</button>
+        <button class="chip on" id="tSound" type="button">🔊 音效</button>
+      </div>
+      <div class="sechead">数据</div>
+      <div class="rows">
+        <button class="chip" id="bResetProg" type="button">♻️ 重置关卡进度</button>
+      </div>
+      <div class="sechead">关于</div>
+      <div class="rows"><span style="font-size:11.5px;color:var(--dim);line-height:1.7">OPTICS LAB · 光学实验室 v1 · 单文件零依赖<br>真实光路模拟：反射 / 折射 / 色散 / 全反射</span></div>
+    </div>
+  </div>
+</div>
+<div id="modalWrap"><div id="modal">
+  <div class="mhead"><span id="mTitle">帮助</span><button class="x" id="mX" type="button">✕</button></div>
+  <div class="mbody" id="mBody"></div>
+</div></div>
+<div id="toast"></div>
+<div id="banner"><div class="t1" id="bnT1">READY</div><div class="t2" id="bnT2"></div></div>
+<div id="confetti"></div>
+<div id="hint" class="hide"></div>
+<script>
+(function(){
+"use strict";
+/* ============================================================
+   OPTICS LAB · 光学实验室 v1
+   世界 1000x640 · 光线追踪：反射/折射/色散/全反射
+   ============================================================ */
+var WW=1000, WH=640;
+var cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+var W=0,H=0,DPR=1,S=1,OX=0,OY=0;
+var dirty=true, frame=0;
+/* ---------- 状态 ---------- */
+var M={
+  mode:'sand', level:-1, tool:null, sel:null, delMode:false,
+  src:[], mir:[], pri:[], wal:[], tgt:[],
+  rays:[], bounceN:0, hitN:0, litNow:{}, cleared:[], curLit:false,
+  ghost:null, drag:null,
+  set:{grid:1,glow:1,sound:1}
+};
+try{
+  var _cl=localStorage.getItem('ll1_cleared'); if(_cl) M.cleared=JSON.parse(_cl)||[];
+  var _st=localStorage.getItem('ll1_set'); if(_st){var o=JSON.parse(_st)||{}; for(var k in o) M.set[k]=o[k];}
+}catch(e){}
+function saveCleared(){ try{ localStorage.setItem('ll1_cleared', JSON.stringify(M.cleared)); }catch(e){} }
+function saveSet(){ try{ localStorage.setItem('ll1_set', JSON.stringify(M.set)); }catch(e){} }
+/* ---------- 音效 ---------- */
+var AC=null;
+function beep(f,d,type,vol,when){
+  if(!M.set.sound) return;
+  try{
+    if(!AC) AC=new (window.AudioContext||window.webkitAudioContext)();
+    var t0=AC.currentTime+(when||0);
+    var o=AC.createOscillator(), g=AC.createGain();
+    o.type=type||'sine'; o.frequency.value=f;
+    g.gain.setValueAtTime(0,t0);
+    g.gain.linearRampToValueAtTime(vol||0.12, t0+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+(d||0.12));
+    o.connect(g); g.connect(AC.destination); o.start(t0); o.stop(t0+(d||0.12)+0.03);
+  }catch(e){}
+}
+/* ---------- 视图 ---------- */
+function resize(){
+  DPR=Math.min(2,window.devicePixelRatio||1);
+  W=window.innerWidth; H=window.innerHeight;
+  cv.width=Math.round(W*DPR); cv.height=Math.round(H*DPR);
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  var m=14, top=96, bot=160;
+  S=Math.min((W-2*m)/WW, (H-top-bot)/WH);
+  S=Math.max(S*0.999,0.12);
+  OX=(W-WW*S)/2;
+  OY=top+(H-top-bot-WH*S)/2;
+  dirty=true;
+}
+window.addEventListener('resize',resize,false);
+window.addEventListener('orientationchange',function(){ setTimeout(resize,220); },false);
+function wx(x){ return OX+x*S; }
+function wy(y){ return OY+y*S; }
+function toWorld(px,py){ return {x:(px-OX)/S, y:(py-OY)/S}; }
+/* ---------- 几何工具 ---------- */
+function segOf(x,y,ang,len){
+  var c=Math.cos(ang), s=Math.sin(ang), h=len/2;
+  return {ax:x-c*h, ay:y-s*h, bx:x+c*h, by:y+s*h};
+}
+function prismVerts(p){
+  var r=p.r, a=p.a||0, c=Math.cos(a), s=Math.sin(a);
+  var pts=[[r,0],[-r/2,r*0.866],[-r/2,-r*0.866]];
+  var out=[];
+  for(var i=0;i<3;i++){
+    var vx=pts[i][0]*c-pts[i][1]*s, vy=pts[i][0]*s+pts[i][1]*c;
+    out.push([p.x+vx, p.y+vy]);
+  }
+  return out;
+}
+/* 射线-线段 */
+function raySeg(px,py,dx,dy,ax,ay,bx,by){
+  var sx=bx-ax, sy=by-ay;
+  var den=dx*sy-dy*sx;
+  if(den>-1e-9&&den<1e-9) return null;
+  var qx=ax-px, qy=ay-py;
+  var t=(qx*sy-qy*sx)/den;
+  var u=(qx*dy-qy*dx)/den;
+  if(t<=2e-3||u<-1e-4||u>1+1e-4) return null;
+  return {t:t, x:px+dx*t, y:py+dy*t, nx:sy, ny:-sx};
+}
+function norm(dx,dy){ var l=Math.sqrt(dx*dx+dy*dy)||1; return [dx/l,dy/l]; }
+/* ---------- 光学追踪 ---------- */
+var MAXD=48, MAXR=110;
+function buildSegs(){
+  var segs=[];
+  segs.push({t:'wall', ax:0,ay:0, bx:WW,by:0});
+  segs.push({t:'wall', ax:WW,ay:0, bx:WW,by:WH});
+  segs.push({t:'wall', ax:WW,ay:WH, bx:0,by:WH});
+  segs.push({t:'wall', ax:0,ay:WH, bx:0,by:0});
+  var i,o;
+  for(i=0;i<M.wal.length;i++){ o=M.wal[i]; var s0=segOf(o.x,o.y,o.a,o.len); segs.push({t:'wall', ax:s0.ax,ay:s0.ay,bx:s0.bx,by:s0.by}); }
+  for(i=0;i<M.mir.length;i++){ o=M.mir[i]; var s1=segOf(o.x,o.y,o.a,o.len); segs.push({t:'mir', o:o, ax:s1.ax,ay:s1.ay,bx:s1.bx,by:s1.by}); }
+  for(i=0;i<M.pri.length;i++){
+    o=M.pri[i]; var v=prismVerts(o);
+    for(var e=0;e<3;e++){
+      var v1=v[e], v2=v[(e+1)%3];
+      segs.push({t:'pri', o:o, ax:v1[0],ay:v1[1],bx:v2[0],by:v2[1]});
+    }
+  }
+  return segs;
+}
+function trace(){
+  frame++;
+  M.rays=[]; M.bounceN=0; M.hitN=0; M.litNow={};
+  var segs=buildSegs();
+  var budget={n:0};
+  var i;
+  for(i=0;i<M.src.length;i++){
+    var s=M.src[i];
+    castRay(s.x,s.y,s.a,[1,1,1],false,segs,budget,0);
+  }
+  /* 目标亮否 */
+  var lit=0;
+  for(i=0;i<M.tgt.length;i++){
+    var t=M.tgt[i];
+    t.lit=!!M.litNow[t.uid||i];
+    if(t.lit) lit++;
+  }
+  M.hitN=lit;
+  var allOn = M.tgt.length>0 && lit===M.tgt.length;
+  if(allOn && !M.curLit && M.mode==='level'){ setTimeout(levelClear, 120); }
+  M.curLit=allOn;
+  /* 统计 */
+  elSet('sRay', String(M.rays.length));
+  elSet('sBnc', String(M.bounceN));
+  elSet('sHit', lit+'/'+M.tgt.length);
+  dirty=false;
+}
+function castRay(x,y,ang,rgb,inside,segs,budget,depth){
+  if(depth>MAXD||budget.n>MAXR) return;
+  budget.n++;
+  var dir=[Math.cos(ang),Math.sin(ang)];
+  var pts=[[x,y]];
+  var rr=[rgb[0],rgb[1],rgb[2]];
+  var guard=0;
+  while(guard++<MAXD){
+    if(Math.max(rr[0],rr[1],rr[2])<0.045) break;
+    var best=null, bestT=1e12, hitTgt=-1;
+    var i,hit;
+    for(i=0;i<segs.length;i++){
+      var sg=segs[i];
+      hit=raySeg(x,y,dir[0],dir[1],sg.ax,sg.ay,sg.bx,sg.by);
+      if(hit&&hit.t<bestT){ bestT=hit.t; best={sg:sg,hit:hit}; }
+    }
+    /* 靶子 */
+    for(i=0;i<M.tgt.length;i++){
+      var t=M.tgt[i];
+      var ox=x-t.x, oy=y-t.y;
+      var b=ox*dir[0]+oy*dir[1];
+      var c=ox*ox+oy*oy-t.r*t.r;
+      var disc=b*b-c;
+      if(disc>0){
+        var tt=-b-Math.sqrt(disc);
+        if(tt<2e-3) tt=-b+Math.sqrt(disc);
+        if(tt>2e-3&&tt<bestT){ bestT=tt; best=null; hitTgt=i; }
+      }
+    }
+    if(hitTgt>=0){
+      var tt2=M.tgt[hitTgt];
+      var hx=x+dir[0]*bestT, hy=y+dir[1]*bestT;
+      /* 通道判定 */
+      var ok=false, ci=-1;
+      if(tt2.c==='r') ci=0; else if(tt2.c==='g') ci=1; else if(tt2.c==='b') ci=2;
+      if(ci<0) ok=Math.max(rr[0],rr[1],rr[2])>0.16;
+      else ok=rr[ci]>0.19;
+      if(ok){
+        pts.push([hx,hy]);
+        M.litNow[tt2.uid||hitTgt]=frame;
+        spark(hx,hy, tt2.c);
+        break;
+      }
+      /* 异色/过暗：穿透目标继续传播 */
+      var ox2=x-tt2.x, oy2=y-tt2.y;
+      var b2=ox2*dir[0]+oy2*dir[1];
+      var c2=ox2*ox2+oy2*oy2-tt2.r*tt2.r;
+      var d2=b2*b2-c2;
+      var tex=d2>0?(-b2+Math.sqrt(d2)):bestT;
+      pts.push([hx,hy]);
+      x=x+dir[0]*(tex+3); y=y+dir[1]*(tex+3);
+      continue;
+    }
+    if(!best){
+      pts.push([x+dir[0]*2400, y+dir[1]*2400]);
+      break;
+    }
+    var h=best.hit, sg2=best.sg;
+    var nx=h.nx, ny=h.ny;
+    var nl=Math.sqrt(nx*nx+ny*ny)||1; nx/=nl; ny/=nl;
+    if(dir[0]*nx+dir[1]*ny>0){ nx=-nx; ny=-ny; }
+    pts.push([h.x,h.y]);
+    x=h.x; y=h.y;
+    if(sg2.t==='wall'){ break; }
+    if(sg2.t==='mir'){
+      var dot=dir[0]*nx+dir[1]*ny;
+      dir=[dir[0]-2*dot*nx, dir[1]-2*dot*ny];
+      rr[0]*=.965; rr[1]*=.965; rr[2]*=.965;
+      M.bounceN++;
+      continue;
+    }
+    if(sg2.t==='pri'){
+      var cosi=-(dir[0]*nx+dir[1]*ny);
+      var isWhite = rr[0]>0.15&&rr[1]>0.15&&rr[2]>0.15;
+      var nG = sg2.o.ior||1.52;
+      if(isWhite && budget.n<MAXR-4){
+        /* 色散三束 */
+        for(var ch=0; ch<3; ch++){
+          var nch = nG + (ch-1)*0.055;
+          var dd = refr(dir[0],dir[1],nx,ny,inside?nch:1,inside?1:nch);
+          if(!dd){ dd=[dir[0]-2*(-cosi)*nx*-1,0]; dd=[dir[0]-2*(dir[0]*nx+dir[1]*ny)*nx, dir[1]-2*(dir[0]*nx+dir[1]*ny)*ny]; }
+          var rgb2=[0,0,0]; rgb2[ch]=rr[ch]*0.92;
+          castRay(x+dd[0]*.8, y+dd[1]*.8, Math.atan2(dd[1],dd[0]), rgb2, !inside, segs, budget, depth+1);
+        }
+        pts.push([x+dir[0]*1.2, y+dir[1]*1.2]);
+        break;
+      }
+      var outd=refr(dir[0],dir[1],nx,ny,inside?nG:1,inside?1:nG);
+      if(!outd){
+        var dot2=dir[0]*nx+dir[1]*ny;
+        dir=[dir[0]-2*dot2*nx, dir[1]-2*dot2*ny];
+        rr[0]*=.9; rr[1]*=.9; rr[2]*=.9;
+      }else{
+        dir=outd; inside=!inside;
+        rr[0]*=.92; rr[1]*=.92; rr[2]*=.92;
+      }
+      continue;
+    }
+    break;
+  }
+  if(pts.length>1) M.rays.push({pts:pts, rgb:rr});
+}
+function refr(dx,dy,nx,ny,n1,n2){
+  var eta=n1/n2;
+  var cosi=-(dx*nx+dy*ny);
+  if(cosi<0) cosi=-cosi;
+  var k=1-eta*eta*(1-cosi*cosi);
+  if(k<0) return null;
+  var kk=Math.sqrt(k);
+  return [eta*dx+(eta*cosi-kk)*nx, eta*dy+(eta*cosi-kk)*ny];
+}
+/* ---------- 渲染 ---------- */
+function rr2css(r,g,b,a,boost){
+  var f=function(v){ v=Math.min(1,v*(boost||1)); return Math.round(255*Math.pow(v,0.85)); };
+  return 'rgba('+f(r)+','+f(g)+','+f(b)+','+(a==null?1:a)+')';
+}
+function draw(){
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  /* 背景 */
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#070b12'); g.addColorStop(1,'#04060a');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  /* 世界面板 */
+  ctx.save();
+  ctx.translate(OX,OY); ctx.scale(S,S);
+  ctx.fillStyle='rgba(10,16,26,.72)';
+  roundRect(ctx,0,0,WW,WH,14); ctx.fill();
+  ctx.strokeStyle='rgba(120,180,255,.22)'; ctx.lineWidth=1.5/S*S/1; ctx.lineWidth=1.2/S; roundRect(ctx,0,0,WW,WH,14); ctx.stroke();
+  if(M.set.grid) drawGrid(ctx);
+  /* 光路 */
+  drawBeams(ctx);
+  /* 哑光物件底层：棱镜/墙 */
+  var i;
+  for(i=0;i<M.wal.length;i++) drawWall(ctx,M.wal[i]);
+  for(i=0;i<M.pri.length;i++) drawPrism(ctx,M.pri[i]);
+  /* 靶 */
+  for(i=0;i<M.tgt.length;i++) drawTarget(ctx,M.tgt[i]);
+  /* 镜/源 */
+  for(i=0;i<M.mir.length;i++) drawMirror(ctx,M.mir[i]);
+  for(i=0;i<M.src.length;i++) drawSource(ctx,M.src[i]);
+  /* 选中/手柄 */
+  if(M.sel) drawSel(ctx,M.sel);
+  /* 幽灵 */
+  if(M.ghost) drawGhost(ctx,M.ghost);
+  ctx.restore();
+  /* 屏幕层火花 */
+  drawSparks();
+}
+function roundRect(c,x,y,w,h,r){
+  c.beginPath();
+  c.moveTo(x+r,y); c.arcTo(x+w,y,x+w,y+h,r); c.arcTo(x+w,y+h,x,y+h,r);
+  c.arcTo(x,y+h,x,y,r); c.arcTo(x,y,x+w,y,r); c.closePath();
+}
+function drawGrid(c){
+  c.strokeStyle='rgba(120,180,255,.06)'; c.lineWidth=1/S;
+  c.beginPath();
+  for(var x=0;x<=WW;x+=50){ c.moveTo(x,0); c.lineTo(x,WH); }
+  for(var y=0;y<=WH;y+=50){ c.moveTo(0,y); c.lineTo(WW,y); }
+  c.stroke();
+}
+function drawBeams(c){
+  if(!M.rays.length) return;
+  c.save();
+  c.globalCompositeOperation='lighter';
+  c.lineCap='round'; c.lineJoin='round';
+  var pulse=0.78+0.22*Math.sin(frame*0.06);
+  for(var i=0;i<M.rays.length;i++){
+    var b=M.rays[i];
+    if(b.pts.length<2) continue;
+    var col=rr2css(b.rgb[0],b.rgb[1],b.rgb[2],1,1.6);
+    var colA=rr2css(b.rgb[0],b.rgb[1],b.rgb[2],1,1.2);
+    c.beginPath();
+    c.moveTo(b.pts[0][0],b.pts[0][1]);
+    for(var j=1;j<b.pts.length;j++) c.lineTo(b.pts[j][0],b.pts[j][1]);
+    if(M.set.glow){
+      c.strokeStyle=col; c.globalAlpha=0.10*pulse; c.lineWidth=9/S*S; c.lineWidth=9; c.stroke();
+      c.globalAlpha=0.22*pulse; c.lineWidth=4.5; c.stroke();
+    }
+    c.globalAlpha=0.95; c.strokeStyle=colA; c.lineWidth=1.6; c.stroke();
+  }
+  c.restore();
+  c.globalAlpha=1;
+}
+function drawMirror(c,m){
+  var s=segOf(m.x,m.y,m.a,m.len);
+  c.lineCap='round';
+  c.strokeStyle='rgba(150,200,255,.35)'; c.lineWidth=10;
+  c.beginPath(); c.moveTo(s.ax,s.ay); c.lineTo(s.bx,s.by); c.stroke();
+  var gr=c.createLinearGradient(s.ax,s.ay,s.bx,s.by);
+  gr.addColorStop(0,'#dff3ff'); gr.addColorStop(.5,'#9fc8ee'); gr.addColorStop(1,'#dff3ff');
+  c.strokeStyle=gr; c.lineWidth=5;
+  c.beginPath(); c.moveTo(s.ax,s.ay); c.lineTo(s.bx,s.by); c.stroke();
+  c.strokeStyle='rgba(20,30,45,.85)'; c.lineWidth=1.2;
+  c.beginPath(); c.moveTo(s.ax,s.ay); c.lineTo(s.bx,s.by); c.stroke();
+}
+function drawWall(c,w){
+  var s=segOf(w.x,w.y,w.a,w.len);
+  c.lineCap='round';
+  c.strokeStyle='#2a3347'; c.lineWidth=12;
+  c.beginPath(); c.moveTo(s.ax,s.ay); c.lineTo(s.bx,s.by); c.stroke();
+  c.strokeStyle='rgba(140,160,200,.35)'; c.lineWidth=2;
+  c.beginPath(); c.moveTo(s.ax,s.ay); c.lineTo(s.bx,s.by); c.stroke();
+}
+function drawPrism(c,p){
+  var v=prismVerts(p);
+  c.beginPath();
+  c.moveTo(v[0][0],v[0][1]); c.lineTo(v[1][0],v[1][1]); c.lineTo(v[2][0],v[2][1]); c.closePath();
+  var gr=c.createRadialGradient(p.x,p.y,4,p.x,p.y,p.r*1.3);
+  gr.addColorStop(0,'rgba(190,240,255,.20)'); gr.addColorStop(1,'rgba(120,200,255,.05)');
+  c.fillStyle=gr; c.fill();
+  c.strokeStyle='rgba(170,230,255,.65)'; c.lineWidth=2/S; c.stroke();
+  c.strokeStyle='rgba(255,255,255,.12)'; c.lineWidth=1/S;
+  c.beginPath(); c.moveTo((v[0][0]+v[2][0])/2,(v[0][1]+v[2][1])/2); c.lineTo(v[1][0],v[1][1]); c.stroke();
+}
+function drawTarget(c,t){
+  var lit=t.lit;
+  var col = t.c==='r'?'255,90,110': t.c==='g'?'110,240,150': t.c==='b'?'120,150,255':'84,224,255';
+  c.save();
+  if(lit){
+    c.shadowColor='rgba('+col+',.9)'; c.shadowBlur=26;
+  }
+  c.beginPath(); c.arc(t.x,t.y,t.r,0,6.2832);
+  c.fillStyle=lit?'rgba('+col+',.32)':'rgba(16,24,38,.72)';
+  c.fill();
+  c.shadowBlur=0;
+  c.lineWidth=2.4; c.strokeStyle=lit?'rgb('+col+')':'rgba(150,180,230,.5)';
+  c.stroke();
+  c.beginPath(); c.arc(t.x,t.y,t.r*0.55,0,6.2832);
+  c.strokeStyle=lit?'rgba(255,255,255,.85)':'rgba(150,180,230,.35)'; c.lineWidth=1.6; c.stroke();
+  if(lit){
+    c.beginPath(); c.arc(t.x,t.y,t.r*0.28,0,6.2832);
+    c.fillStyle='#fff'; c.fill();
+  }
+  c.restore();
+}
+function drawSource(c,s){
+  c.save();
+  c.translate(s.x,s.y); c.rotate(s.a);
+  roundRect(c,-16,-13,26,26,7);
+  c.fillStyle='#1b2940'; c.fill();
+  c.strokeStyle='rgba(120,220,255,.7)'; c.lineWidth=1.6; c.stroke();
+  c.beginPath(); c.arc(6,0,5,0,6.2832);
+  c.fillStyle='#54e0ff'; c.shadowColor='rgba(84,224,255,.9)'; c.shadowBlur=12; c.fill();
+  c.shadowBlur=0;
+  roundRect(c,10,-6,12,12,3); c.fillStyle='#2b405e'; c.fill();
+  c.restore();
+}
+function drawSel(c,o){
+  var cc=objCenter(o);
+  c.save();
+  c.setLineDash([6,5]); c.lineWidth=1.5/S;
+  c.strokeStyle='rgba(84,224,255,.85)';
+  c.beginPath(); c.arc(cc.x,cc.y, (objRadius(o)+14)/1,0,6.2832); c.stroke();
+  c.setLineDash([]);
+  if(canRot(o)){
+    var h=rotHandlePos(o);
+    c.beginPath(); c.arc(h.x,h.y,10,0,6.2832);
+    c.fillStyle='rgba(84,224,255,.28)'; c.fill();
+    c.strokeStyle='rgba(84,224,255,.9)'; c.lineWidth=2/S; c.stroke();
+    c.beginPath(); c.arc(h.x,h.y,3.2,0,6.2832); c.fillStyle='#eaf7ff'; c.fill();
+  }
+  c.restore();
+}
+function drawGhost(c,g){
+  c.save(); c.globalAlpha=.5;
+  if(g.kind==='mir') drawMirror(c,{x:g.x,y:g.y,a:g.a,len:120});
+  else if(g.kind==='wal') drawWall(c,{x:g.x,y:g.y,a:g.a,len:150});
+  else if(g.kind==='pri') drawPrism(c,{x:g.x,y:g.y,a:g.a,r:70});
+  else if(g.kind==='src') drawSource(c,{x:g.x,y:g.y,a:g.a});
+  else if(g.kind==='tgt') drawTarget(c,{x:g.x,y:g.y,r:30,c:g.c||'any',lit:false});
+  c.restore();
+}
+/* 火花 */
+var sparks=[];
+function spark(x,y,c){
+  if(sparks.length>120) return;
+  for(var i=0;i<6;i++){
+    var a=Math.random()*6.2832, v=40+Math.random()*90;
+    sparks.push({x:x,y:y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:1,c:c});
+  }
+}
+function drawSparks(){
+  if(!sparks.length) return;
+  ctx.save();
+  ctx.globalCompositeOperation='lighter';
+  for(var i=sparks.length-1;i>=0;i--){
+    var s=sparks[i];
+    s.x+=s.vx/60; s.y+=s.vy/60; s.life-=0.035;
+    if(s.life<=0){ sparks.splice(i,1); continue; }
+    var px=wx(s.x), py=wy(s.y);
+    var col=s.c==='r'?'255,90,110':s.c==='g'?'110,240,150':s.c==='b'?'120,150,255':'120,220,255';
+    ctx.globalAlpha=s.life*0.9;
+    ctx.fillStyle='rgba('+col+',1)';
+    ctx.beginPath(); ctx.arc(px,py,2.4*s.life*S,0,6.2832); ctx.fill();
+  }
+  ctx.restore(); ctx.globalAlpha=1;
+}
+/* ---------- 物件操作 ---------- */
+function objCenter(o){ return {x:o.x,y:o.y}; }
+function objRadius(o){
+  if(o.kind==='mir') return o.len/2;
+  if(o.kind==='wal') return o.len/2;
+  if(o.kind==='pri') return o.r;
+  if(o.kind==='tgt') return o.r;
+  return 20;
+}
+function canRot(o){ return o.kind==='mir'||o.kind==='pri'||o.kind==='src'||o.kind==='wal'; }
+function rotHandlePos(o){
+  var d=objRadius(o)+26;
+  if(o.kind==='mir'||o.kind==='wal'){
+    var s=segOf(o.x,o.y,o.a,o.len);
+    return {x:s.bx,y:s.by};
+  }
+  return {x:o.x+Math.cos(o.a||0)*d, y:o.y+Math.sin(o.a||0)*d};
+}
+function allObjs(){
+  var a=[];
+  var i;
+  for(i=0;i<M.src.length;i++) a.push(M.src[i]);
+  for(i=0;i<M.mir.length;i++) a.push(M.mir[i]);
+  for(i=0;i<M.pri.length;i++) a.push(M.pri[i]);
+  for(i=0;i<M.wal.length;i++) a.push(M.wal[i]);
+  for(i=0;i<M.tgt.length;i++) a.push(M.tgt[i]);
+  return a;
+}
+function distSeg(px,py,ax,ay,bx,by){
+  var vx=bx-ax, vy=by-ay, wx0=px-ax, wy0=py-ay;
+  var L=vx*vx+vy*vy;
+  var t=L>0?(wx0*vx+wy0*vy)/L:0;
+  t=Math.max(0,Math.min(1,t));
+  var xx=ax+vx*t, yy=ay+vy*t;
+  return Math.hypot(px-xx,py-yy);
+}
+function hitTest(p){
+  var best=null, bd=1e9;
+  var th=18/S;
+  for(var i=0;i<M.mir.length;i++){ var m=M.mir[i]; var s=segOf(m.x,m.y,m.a,m.len);
+    var d=distSeg(p.x,p.y,s.ax,s.ay,s.bx,s.by); if(d<Math.max(th,10)&&d<bd){bd=d;best=m;} }
+  for(i=0;i<M.wal.length;i++){ var w=M.wal[i]; var s2=segOf(w.x,w.y,w.a,w.len);
+    var d2=distSeg(p.x,p.y,s2.ax,s2.ay,s2.bx,s2.by); if(d2<Math.max(th,10)&&d2<bd){bd=d2;best=w;} }
+  for(i=0;i<M.pri.length;i++){ var pr=M.pri[i]; var d3=Math.hypot(p.x-pr.x,p.y-pr.y); if(d3<pr.r+8&&d3<bd){bd=d3;best=pr;} }
+  for(i=0;i<M.tgt.length;i++){ var t=M.tgt[i]; var d4=Math.hypot(p.x-t.x,p.y-t.y); if(d4<t.r+8&&d4<bd){bd=d4;best=t;} }
+  for(i=0;i<M.src.length;i++){ var s3=M.src[i]; var d5=Math.hypot(p.x-s3.x,p.y-s3.y); if(d5<26&&d5<bd){bd=d5;best=s3;} }
+  return best;
+}
+var KIND_BY=[['src','tgt'],['mir'],['pri'],['wal']];
+function removeObj(o){
+  var arrs=[M.src,M.mir,M.pri,M.wal,M.tgt];
+  for(var i=0;i<arrs.length;i++){
+    var k=arrs[i].indexOf(o);
+    if(k>=0){ arrs[i].splice(k,1); return true; }
+  }
+  return false;
+}
+function refund(o){
+  if(!o.bud) return;
+  var b=M.bud||{};
+  if(b[o.kind]!=null){ b[o.kind]=(b[o.kind]||0)+1; updBud(); }
+}
+/* ---------- 关卡 ---------- */
+function uid(){ return 'u'+Math.random().toString(36).slice(2,8); }
+function L(n,d,bud,src,walls,fixMir,fixPri,tgt,extra){
+  var o={n:n, d:d, bud:bud||{}, src:[], wal:[], mir:[], pri:[], tgt:[]};
+  var i;
+  for(i=0;i<(src||[]).length;i++) o.src.push({kind:'src', x:src[i][0],y:src[i][1],a:src[i][2],locked:true, uid:uid()});
+  for(i=0;i<(walls||[]).length;i++) o.wal.push({kind:'wal', x:walls[i][0],y:walls[i][1],a:walls[i][2],len:walls[i][3],locked:true, uid:uid()});
+  for(i=0;i<(fixMir||[]).length;i++) o.mir.push({kind:'mir', x:fixMir[i][0],y:fixMir[i][1],a:fixMir[i][2],len:fixMir[i][3]||120,locked:true, uid:uid()});
+  for(i=0;i<(fixPri||[]).length;i++) o.pri.push({kind:'pri', x:fixPri[i][0],y:fixPri[i][1],a:fixPri[i][2],r:fixPri[i][3]||70, uid:uid()});
+  for(i=0;i<(tgt||[]).length;i++) o.tgt.push({kind:'tgt', x:tgt[i][0],y:tgt[i][1],r:tgt[i][3]||30,c:tgt[i][2]||'any',locked:true, uid:uid()});
+  if(extra) for(var k in extra) o[k]=extra[k];
+  return o;
+}
+var LEVELS=[
+  L('第一折','把镜子放在光束尽头，旋转到 45°，让光拐向上方的目标。',
+    {mir:1},
+    [[70,320,0]], [], [], [],
+    [[930,180,'any']]),
+  L('台阶','横墙挡住了去路。先用一面镜子把光送上去，再拐回左边的目标。',
+    {mir:2},
+    [[70,500,0]], [[200,300,0,400]], [], [],
+    [[70,140,'any']]),
+  L('之字','光要绕过整面横墙，拐两个弯抵达右下角。',
+    {mir:2},
+    [[70,100,1.5708]], [[350,300,0,700]], [], [],
+    [[860,540,'any']]),
+  L('立柱','立柱拦腰截断光路，从上方绕过它。',
+    {mir:2},
+    [[70,560,0]], [[500,360,1.5708,400]], [], [],
+    [[930,80,'any']]),
+  L('绕廊','两根立柱排成走廊，找准两处反弹点。',
+    {mir:2},
+    [[70,560,0]], [[330,380,1.5708,360],[660,380,1.5708,360]], [], [],
+    [[930,60,'any']]),
+  L('双光奇缘','两束光同时出发，各拐两个弯，分别点亮上下两个目标。',
+    {mir:4},
+    [[70,160,0],[70,480,0]], [[500,330,1.5708,380]], [], [],
+    [[930,80,'any'],[930,560,'any']]),
+  L('初识棱镜','拖动或旋转棱镜，让分光后的光束同时扫过三个目标。',
+    {mir:0},
+    [[70,320,0]], [], [], [],
+    []),
+  L('三色空间','棱镜分出的红、绿、蓝三束光，要分别落在同色目标上。旋转棱镜找到角度。',
+    {mir:0},
+    [[70,320,0]], [], [], [],
+    []),
+  L('色散迷宫','初始角度不对——转动棱镜，让光谱掠过排成一线的三个彩靶。',
+    {mir:0},
+    [[70,320,0]], [], [], [],
+    []),
+  L('光谱终曲','最终的调律：转动棱镜，让三色准确命中三个小靶。',
+    {mir:0},
+    [[70,320,0]], [], [], [],
+    [])
+];
+var PRISM_LEVEL_TUNE={
+  6:{pri:[[520,300,0,70]], tgt:[[690,248,30,'r'],[805,179,30,'g'],[920,108,30,'b']]},
+  7:{pri:[[460,340,0,60]], tgt:[[690,408,30,'r'],[805,462,30,'g'],[920,520,30,'b']]},
+  8:{pri:[[560,300,0,66]], tgt:[[690,251,30,'r'],[805,166,30,'g'],[920,78,30,'b']]},
+  9:{pri:[[500,360,0,70]], tgt:[[690,423,30,'r'],[805,477,30,'g'],[920,535,30,'b']]}
+};
+var LEVEL_PRISM={6:1,7:1,8:1,9:1};
+function loadLevel(i){
+  var Lv=LEVELS[i];
+  if(!Lv) return;
+  M.mode='level'; M.level=i;
+  M.src=[]; M.mir=[]; M.pri=[]; M.wal=[]; M.tgt=[];
+  var j;
+  for(j=0;j<Lv.src.length;j++) M.src.push(Lv.src[j]);
+  for(j=0;j<Lv.wal.length;j++) M.wal.push(Lv.wal[j]);
+  for(j=0;j<Lv.mir.length;j++) M.mir.push(Lv.mir[j]);
+  for(j=0;j<Lv.pri.length;j++) M.pri.push(Lv.pri[j]);
+  for(j=0;j<Lv.tgt.length;j++) M.tgt.push(Lv.tgt[j]);
+  /* 棱镜关卡：应用调优数据 */
+  var tune=PRISM_LEVEL_TUNE[i];
+  if(tune){
+    for(j=0;j<tune.pri.length;j++) M.pri.push({kind:'pri', x:tune.pri[j][0],y:tune.pri[j][1],a:tune.pri[j][2],r:tune.pri[j][3], uid:uid()});
+    for(j=0;j<tune.tgt.length;j++) M.tgt.push({kind:'tgt', x:tune.tgt[j][0],y:tune.tgt[j][1],r:tune.tgt[j][2]||30,c:tune.tgt[j][3]||'any',locked:true, uid:uid()});
+  }
+  M.bud=null; M.budAll=Lv.bud; M.budUse={};
+  M.sel=null; M.tool=null; updToolChips();
+  M.curLit=false;
+  var g=document.getElementById('goal');
+  if(M.tgt.length){ g.classList.remove('hide'); g.innerHTML='<b>'+Lv.n+'</b> · '+Lv.d; }
+  else g.classList.add('hide');
+  dirty=true; updBud();
+  toast('关卡 '+(i+1)+' · '+Lv.n);
+}
+function updBud(){
+  var head=document.getElementById('budHead');
+  var s='操作 · 拖动移动 / 拖动圆点旋转';
+  if(M.mode==='level'){
+    var b=M.budAll||{}, u=M.budUse||{};
+    var parts=[];
+    var names={mir:'镜子',pri:'棱镜',wal:'墙壁',tgt:'目标',src:'光源'};
+    for(var k in b){
+      if(b[k]>0){
+        var left=b[k]-(u[k]||0);
+        parts.push(names[k]+' '+left+'/'+b[k]);
+      }
+    }
+    if(parts.length) s='本关库存 · '+parts.join(' · ');
+    else s='本关无库存 · 动动现有的东西';
+  }
+  head.textContent=s;
+}
+function levelClear(){
+  if(M.mode!=='level'||M.level<0) return;
+  if(M.cleared.indexOf(M.level)<0){
+    M.cleared.push(M.level); saveCleared();
+  }
+  confettiBurst();
+  banner('关卡完成!', LEVELS[M.level].n+' · 已点亮全部目标');
+  beep(523,0.16,'sine',0.14,0); beep(659,0.16,'sine',0.14,0.09);
+  beep(784,0.16,'sine',0.14,0.18); beep(1046,0.3,'sine',0.16,0.27);
+  renderLevels();
+}
+/* ---------- 沙盒 ---------- */
+function saveSand(){
+  try{
+    var o={src:M.src,mir:M.mir,pri:M.pri,wal:M.wal,tgt:M.tgt};
+    localStorage.setItem('ll1_sand', JSON.stringify(o));
+  }catch(e){}
+}
+function loadSand(){
+  M.mode='sand'; M.level=-1; M.sel=null; M.tool=null;
+  try{
+    var s=localStorage.getItem('ll1_sand');
+    if(s){
+      var o=JSON.parse(s);
+      M.src=o.src||[]; M.mir=o.mir||[]; M.pri=o.pri||[]; M.wal=o.wal||[]; M.tgt=o.tgt||[];
+      var i; for(i=0;i<M.tgt.length;i++) M.tgt[i].lit=false;
+    }
+  }catch(e){}
+  if(!M.src.length){ M.src.push({kind:'src',x:70,y:320,a:0,uid:uid()}); }
+  if(!M.tgt.length){ M.tgt.push({kind:'tgt',x:930,y:320,r:30,c:'any',uid:uid()}); }
+  M.budAll=null; M.curLit=false;
+  document.getElementById('goal').classList.add('hide');
+  updBud(); dirty=true;
+}
+/* ---------- 交互 ---------- */
+var activePtr=null;
+cv.addEventListener('pointerdown',function(e){
+  if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(err){} }
+  var px=e.clientX, py=e.clientY;
+  var p=toWorld(px,py);
+  activePtr=e.pointerId;
+  try{ cv.setPointerCapture(e.pointerId); }catch(err){}
+  /* 1. 选中物的旋转手柄 */
+  if(M.sel){
+    var h=canRot(M.sel)?rotHandlePos(M.sel):null;
+    if(h&&Math.hypot(p.x-h.x,p.y-h.y)<26/S){
+      M.drag={mode:'rot', o:M.sel};
+      return;
+    }
+  }
+  /* 2. 点中物件 */
+  var o=hitTest(p);
+  if(o){
+    if(M.tool==='del'||M.delMode){
+      if(!o.locked){ removeObj(o); refund(o); beep(300,0.1,'triangle',0.12); dirty=true; saveSand(); }
+      else toast('这部分是固定的');
+      return;
+    }
+    M.sel=o; updSel(); beep(520,0.05,'sine',0.06);
+    if(!o.locked){ M.drag={mode:'move', o:o, ox:p.x-o.x, oy:p.y-o.y}; }
+    return;
+  }
+  /* 3. 放置 */
+  if(M.tool&&M.tool!=='del'){
+    placeAt(p, M.tool);
+    return;
+  }
+  M.sel=null; updSel();
+},false);
+cv.addEventListener('pointermove',function(e){
+  var p=toWorld(e.clientX,e.clientY);
+  if(M.tool&&M.tool!=='del'&&!M.drag){ M.ghost={kind:ghostKind(M.tool),x:p.x,y:p.y,a:defAng(M.tool)}; dirty=true; }
+  if(activePtr===null) return;
+  if(!M.drag) return;
+  var d=M.drag, o=d.o;
+  if(d.mode==='move'){
+    o.x=Math.max(10,Math.min(WW-10,p.x-d.ox));
+    o.y=Math.max(10,Math.min(WH-10,p.y-d.oy));
+    dirty=true;
+  }else if(d.mode==='rot'){
+    var ang=Math.atan2(p.y-o.y,p.x-o.x);
+    if(o.kind==='mir'||o.kind==='wal'){
+      var s=segOf(o.x,o.y,o.a,o.len);
+    }
+    ang=snapAng(ang);
+    o.a=ang;
+    if(o.kind==='mir'||o.kind==='pri'||o.kind==='wal'||o.kind==='src'){}
+    updSel(); dirty=true;
+  }
+},false);
+function endPtr(e){
+  if(activePtr===e.pointerId||e.type==='pointercancel'){ activePtr=null; }
+  if(M.drag){ M.drag=null; beep(440,0.05,'sine',0.05); saveSand(); }
+}
+cv.addEventListener('pointerup',endPtr,false);
+cv.addEventListener('pointercancel',endPtr,false);
+function snapAng(a){
+  var deg=a*180/Math.PI;
+  var near=Math.round(deg/45)*45;
+  if(Math.abs(((deg-near+540)%360)-180)<6) deg=near;
+  else deg=Math.round(deg/3)*3;
+  return deg*Math.PI/180;
+}
+function defAng(kind){
+  if(kind==='mir') return -Math.PI/4;
+  return 0;
+}
+function ghostKind(t){ return t; }
+function placeAt(p,tool){
+  var kind=tool;
+  var o={kind:kind, x:Math.max(20,Math.min(WW-20,p.x)), y:Math.max(20,Math.min(WH-20,p.y)), uid:uid()};
+  if(kind==='mir'){ o.a=defAng('mir'); o.len=120; }
+  if(kind==='pri'){ o.a=0; o.r=70; }
+  if(kind==='wal'){ o.a=0; o.len=150; }
+  if(kind==='src'){ o.a=0; }
+  if(kind==='tgt'){ o.r=30; o.c='any'; }
+  /* 库存检查 */
+  if(M.mode==='level'){
+    var b=M.budAll||{};
+    if((b[kind]||0)<=0){ toast('本关没有这种零件的库存'); beep(180,0.12,'square',0.1); return; }
+    M.budUse[kind]=(M.budUse[kind]||0)+1;
+    if(M.budUse[kind]>b[kind]){ M.budUse[kind]--; toast('库存用完了'); beep(180,0.12,'square',0.1); return; }
+  }
+  var arr = kind==='src'?M.src : kind==='mir'?M.mir : kind==='pri'?M.pri : kind==='wal'?M.wal : M.tgt;
+  arr.push(o);
+  M.sel=o; updSel(); updBud(); dirty=true;
+  beep(700,0.07,'sine',0.09); saveSand();
+  if(M.mode==='sand') toast('已放置 · 拖动可移动');
+}
+/* ---------- 选中工具条 ---------- */
+function updSel(){
+  var bar=document.getElementById('selbar');
+  if(M.sel){
+    bar.classList.add('on');
+    var a=M.sel.a||0;
+    var deg=Math.round(a*180/Math.PI);
+    document.getElementById('sA').textContent=deg+'°';
+  }else{
+    bar.classList.remove('on');
+  }
+}
+document.getElementById('sL').addEventListener('click',function(){ rotateSel(-Math.PI/12); },false);
+document.getElementById('sR').addEventListener('click',function(){ rotateSel(Math.PI/12); },false);
+document.getElementById('sD').addEventListener('click',function(){
+  if(M.sel){ if(!M.sel.locked){ removeObj(M.sel); refund(M.sel); M.sel=null; updSel(); dirty=true; saveSand(); beep(300,0.1,'triangle',0.12); } else toast('固定的，删不掉'); }
+},false);
+function rotateSel(d){
+  if(!M.sel) return;
+  if(!canRot(M.sel)){ toast('这个不能旋转'); return; }
+  M.sel.a=(M.sel.a||0)+d;
+  updSel(); dirty=true; beep(600,0.04,'sine',0.06); saveSand();
+}
+/* ---------- 面板 ---------- */
+var TOOLS=[
+  ['src','💡 光源'],['mir','🪞 镜子'],['pri','🔺 棱镜'],['wal','🧱 墙壁'],['tgt','🎯 目标'],['del','🗑 删除']
+];
+function buildTools(){
+  var row=document.getElementById('toolRow');
+  row.innerHTML='';
+  for(var i=0;i<TOOLS.length;i++){
+    (function(k,n){
+      var b=document.createElement('button');
+      b.type='button'; b.className='chip'; b.textContent=n;
+      b.addEventListener('click',function(){
+        if(k==='del'){ M.delMode=!M.delMode; M.tool=M.delMode?'del':null; }
+        else{
+          if(M.tool===k){ M.tool=null; M.delMode=false; }
+          else{ M.tool=k; M.delMode=false; toast('点屏幕放置'+n.slice(2)); }
+        }
+        updToolChips(); dirty=true;
+      },false);
+      row.appendChild(b);
+    })(TOOLS[i][0], TOOLS[i][1]);
+  }
+}
+function updToolChips(){
+  var row=document.getElementById('toolRow');
+  for(var i=0;i<row.children.length;i++){
+    var b=row.children[i];
+    var on=false;
+    if(TOOLS[i][0]==='del') on=!!M.delMode;
+    else on=(M.tool===TOOLS[i][0]);
+    b.classList.toggle('on',on);
+  }
+  M.ghost=null;
+}
+function elSet(id,v){ var e=document.getElementById(id); if(e) e.textContent=v; }
+/* tabs */
+var tabs=document.querySelectorAll('#tabs .tab');
+for(var ti=0; ti<tabs.length; ti++){
+  (function(b){
+    b.addEventListener('click',function(){
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('on');
+      b.classList.add('on');
+      var ps=document.querySelectorAll('#panels .panel');
+      for(i=0;i<ps.length;i++) ps[i].classList.remove('on');
+      var p=document.getElementById(b.getAttribute('data-tab'));
+      if(p) p.classList.add('on');
+      var sh=document.getElementById('sheet');
+      if(sh) sh.classList.add('open');
+    },false);
+  })(tabs[ti]);
+}
+/* sheet 展开 */
+var sheetEl=document.getElementById('sheet');
+document.getElementById('handle').addEventListener('click',function(){ sheetEl.classList.toggle('open'); },false);
+/* 收起露出高度测量 */
+function layoutPeek(){
+  var h=document.getElementById('handle'), t=document.getElementById('tabs');
+  var hh=(h&&h.offsetHeight)||22, tt=(t&&t.offsetHeight)||43;
+  sheetEl.style.setProperty('--peek', Math.round(hh+tt+16)+'px');
+}
+layoutPeek();
+window.addEventListener('resize',layoutPeek,false);
+window.addEventListener('orientationchange',function(){ setTimeout(layoutPeek,220); },false);
+/* ---------- 关卡列表 ---------- */
+function renderLevels(){
+  var row=document.getElementById('levelRow');
+  row.innerHTML='';
+  for(var i=0;i<LEVELS.length;i++){
+    (function(idx){
+      var Lv=LEVELS[idx];
+      var done=M.cleared.indexOf(idx)>=0;
+      var locked=idx>0 && M.cleared.indexOf(idx-1)<0 && !done;
+      var d=document.createElement('div');
+      d.className='card'+(done?' done':'')+(locked?' locked':'')+(M.mode==='level'&&M.level===idx?' cur':'');
+      var badge=done?'<span class="badge">✅</span>':(locked?'<span class="badge">🔒</span>':'<span class="badge play">挑战</span>');
+      d.innerHTML='<div class="t">#'+(idx+1)+' '+Lv.n+badge+'</div><div class="d">'+(locked?'完成上一关解锁':Lv.d)+'</div>';
+      d.addEventListener('click',function(){
+        if(locked){ toast('先完成上一关'); beep(180,0.12,'square',0.1); return; }
+        loadLevel(idx);
+        sheetEl.classList.remove('open');
+      },false);
+      row.appendChild(d);
+    })(i);
+  }
+}
+/* ---------- 顶栏按钮 ---------- */
+document.getElementById('bReset').addEventListener('click',function(){
+  if(M.mode==='level') loadLevel(M.level);
+  else{ localStorage.removeItem('ll1_sand'); M.src=[];M.mir=[];M.pri=[];M.wal=[];M.tgt=[]; loadSand(); }
+  toast('已重置');
+},false);
+document.getElementById('bHelp').addEventListener('click',function(){ openHelp(); },false);
+document.getElementById('bSound').addEventListener('click',function(){
+  M.set.sound=M.set.sound?0:1; saveSet();
+  document.getElementById('bSound').classList.toggle('on',!!M.set.sound);
+  document.getElementById('bSound').textContent=M.set.sound?'🔊':'🔇';
+  document.getElementById('tSound').classList.toggle('on',!!M.set.sound);
+},false);
+document.getElementById('tSound').addEventListener('click',function(){
+  M.set.sound=M.set.sound?0:1; saveSet();
+  this.classList.toggle('on',!!M.set.sound);
+  document.getElementById('bSound').classList.toggle('on',!!M.set.sound);
+  document.getElementById('bSound').textContent=M.set.sound?'🔊':'🔇';
+},false);
+document.getElementById('tGrid').addEventListener('click',function(){
+  M.set.grid=M.set.grid?0:1; saveSet(); this.classList.toggle('on',!!M.set.grid); dirty=true;
+},false);
+document.getElementById('tGlow').addEventListener('click',function(){
+  M.set.glow=M.set.glow?0:1; saveSet(); this.classList.toggle('on',!!M.set.glow); dirty=true;
+},false);
+document.getElementById('bResetProg').addEventListener('click',function(){
+  if(window.confirm('重置全部关卡进度？')){ M.cleared=[]; saveCleared(); renderLevels(); toast('进度已重置'); }
+},false);
+document.getElementById('bClear').addEventListener('click',function(){
+  if(M.mode==='level'){ toast('关卡模式请直接重开'); return; }
+  M.mir=[];M.pri=[];M.wal=[];M.tgt=[];M.sel=null;updSel();dirty=true;saveSand();toast('已清空');
+},false);
+document.getElementById('bSand').addEventListener('click',function(){
+  loadSand(); toast('回到沙盒模式'); sheetEl.classList.remove('open');
+},false);
+/* ---------- 弹窗/帮助 ---------- */
+function openModal(title,html){
+  document.getElementById('mTitle').textContent=title;
+  document.getElementById('mBody').innerHTML=html;
+  document.getElementById('modalWrap').classList.add('on');
+}
+document.getElementById('mX').addEventListener('click',function(){ document.getElementById('modalWrap').classList.remove('on'); },false);
+document.getElementById('modalWrap').addEventListener('click',function(e){ if(e.target===this) this.classList.remove('on'); },false);
+function openHelp(){
+  openModal('光学实验室 · 帮助',
+    '<h4>🎯 目标</h4><ul><li>关卡模式下，让<b class="kv">所有目标</b>被光照亮即可过关。</li><li>光源发出白色光，遇到镜子反射、遇到棱镜<b class="kv">色散</b>成红绿蓝三束。</li></ul>'+
+    '<h4>🛠 操作</h4><ul><li>工具面板点选零件 → 触摸屏幕放置。</li><li>拖动零件移动；拖动<b class="kv">蓝色圆点</b>旋转（自动吸附 5°/45°）。</li><li>选中后可用底部浮动条微调角度或删除。</li><li>「删除」模式：点选零件直接移除。</li></ul>'+
+    '<h4>🔺 棱镜小抄</h4><ul><li>旋转棱镜可以扫描整片区域——色散角度随角度而变。</li><li>玻璃有全反射：入射角太斜时，光会在棱镜内部弹跳。</li></ul>'+
+    '<h4>💾 数据</h4><ul><li>沙盒内容与关卡进度自动保存在本机。</li><li>右上 🔄 重置当前场景，🔊 切换音效。</li></ul>');
+}
+/* ---------- 提示 ---------- */
+var toastT=null;
+function toast(s){
+  var e=document.getElementById('toast');
+  e.textContent=s; e.classList.add('on');
+  if(toastT) clearTimeout(toastT);
+  toastT=setTimeout(function(){ e.classList.remove('on'); },1400);
+}
+var bannerT=null;
+function banner(t1,t2){
+  var e=document.getElementById('banner');
+  document.getElementById('bnT1').textContent=t1;
+  document.getElementById('bnT2').textContent=t2||'';
+  e.classList.add('on');
+  if(bannerT) clearTimeout(bannerT);
+  bannerT=setTimeout(function(){ e.classList.remove('on'); },2300);
+}
+function confettiBurst(){
+  var e=document.getElementById('confetti');
+  var cols=['#54e0ff','#b06cff','#5ef2a8','#ffd166','#ff6b81','#eaf7ff'];
+  for(var i=0;i<64;i++){
+    var d=document.createElement('i');
+    d.className='cf';
+    d.style.left=(Math.random()*100)+'vw';
+    d.style.background=cols[i%cols.length];
+    d.style.setProperty('--dur',(1.2+Math.random()*1.4)+'s');
+    d.style.setProperty('--rot',(Math.random()*720-360)+'deg');
+    d.style.animationDelay=(Math.random()*0.4)+'s';
+    e.appendChild(d);
+    (function(n){ setTimeout(function(){ if(n.parentNode) n.parentNode.removeChild(n); }, 3200); })(d);
+  }
+}
+/* ---------- 首屏引导 ---------- */
+function firstHint(){
+  var e=document.getElementById('hint');
+  e.classList.remove('hide');
+  e.innerHTML='<h3>💡 OPTICS LAB · 光学实验室</h3>'+
+    '用镜子弯折激光、用棱镜做色散，把光送进每一个目标。<br>'+
+    '<span class="k">触摸放置</span>零件 · <span class="k">拖动</span>移动 · <span class="kk">拖蓝点</span>旋转<br><br>'+
+    '<div class="foot"><button id="hGo">开始实验</button></div>';
+  document.getElementById('hGo').addEventListener('click',function(){
+    e.classList.add('hide');
+  },false);
+}
+/* ---------- 主循环 ---------- */
+function loop(){
+  if(dirty) trace();
+  draw();
+  frame++;
+  requestAnimationFrame(loop);
+}
+/* ---------- 启动 ---------- */
+resize();
+buildTools();
+renderLevels();
+loadSand();
+firstHint();
+/* 调试/测试接口 */
+window.LL={
+  ver:'1.0',
+  state:M,
+  dirty:function(){ dirty=true; },
+  trace:trace,
+  loadLevel:loadLevel,
+  LEVELS:LEVELS,
+  resize:resize,
+  setPrismAng:function(i,ang){ if(M.pri[i]){ M.pri[i].a=ang; dirty=true; } },
+  addPiece:function(kind,x,y,a){ placeAt({x:x,y:y},kind); if(a!=null&&M.sel){ M.sel.a=a; } updSel(); dirty=true; },
+  solveCheck:function(){ trace(); var n=0; for(var i=0;i<M.tgt.length;i++) if(M.tgt[i].lit) n++; return {lit:n, total:M.tgt.length}; }
+};
+loop();
+})();
+</script>
+</body>
+</html>
