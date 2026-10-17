@@ -7,94 +7,104 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Tayyh19 · 作品集</title>
+<title>Tayyh19</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;background:#08080f;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 body{min-height:100vh}
-.glow{position:fixed;border-radius:50%;filter:blur(70px);opacity:.5;pointer-events:none;z-index:0}
-.g1{width:300px;height:300px;background:#5b7cfa;top:-120px;left:-90px}
-.g2{width:260px;height:260px;background:#d946ef;top:200px;right:-120px;opacity:.35}
-.g3{width:280px;height:280px;background:#22d3ee;bottom:-100px;left:-60px;opacity:.25}
-.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(18px + env(safe-area-inset-top,0px)) 16px calc(96px + env(safe-area-inset-bottom,0px))}
+.glow{position:fixed;border-radius:50%;filter:blur(75px);opacity:.5;pointer-events:none;z-index:0}
+.g1{width:310px;height:310px;background:#5b7cfa;top:-130px;left:-100px}
+.g2{width:270px;height:270px;background:#d946ef;top:240px;right:-130px;opacity:.32}
+.g3{width:290px;height:290px;background:#22d3ee;bottom:-110px;left:-70px;opacity:.22}
+.app{position:relative;z-index:1;max-width:520px;margin:0 auto;padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(100px + env(safe-area-inset-bottom,0px))}
 .page{display:none}
 .page.on{display:block;animation:fade .26s ease}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.hero{padding:6px 4px 20px}
-.avatar{width:62px;height:62px;border-radius:20px;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:600;background:linear-gradient(135deg,rgba(139,92,246,.9),rgba(217,70,239,.8));border:1px solid rgba(255,255,255,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 10px 28px rgba(139,92,246,.35);margin-bottom:14px}
-h1{font-size:27px;margin:0 0 6px;font-weight:650;letter-spacing:.5px}
-.tagline{font-size:13.5px;color:rgba(255,255,255,.58);margin:0 0 14px;line-height:1.6}
-.pills{display:flex;gap:8px;flex-wrap:wrap}
-.pills span{font-size:11px;padding:5px 11px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.76)}
-.feature{position:relative;padding:21px 19px;border-radius:25px;margin-bottom:24px;overflow:hidden;background:linear-gradient(150deg,rgba(255,255,255,.16),rgba(255,255,255,.05));border:1px solid rgba(255,255,255,.26);backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 16px 44px rgba(0,0,0,.4);transition:transform .16s;text-decoration:none;color:inherit;display:block}
-.feature:active{transform:scale(.985)}
-.feature::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 85% 0%,rgba(34,211,238,.28),transparent 55%);pointer-events:none}
-.fbadge{position:absolute;top:15px;right:15px;font-size:10px;letter-spacing:1px;padding:4px 10px;border-radius:999px;background:linear-gradient(135deg,#22d3ee,#3b82f6);color:#001018;font-weight:700}
-.ficon{width:42px;height:42px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:19px;background:rgba(34,211,238,.16);border:1px solid rgba(34,211,238,.4);color:#67e8f9;margin-bottom:13px}
-.feature h2{font-size:20px;margin:0 0 7px;font-weight:650;letter-spacing:.4px}
-.feature p{font-size:13px;line-height:1.7;color:rgba(255,255,255,.7);margin:0 0 10px}
-.fmeta{font-size:10.5px;color:rgba(255,255,255,.46)}
-.gTitle{font-size:11.5px;color:rgba(255,255,255,.42);letter-spacing:2px;margin:18px 0 10px 3px;display:flex;align-items:center;gap:8px}
-.gTitle::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.12),transparent)}
-.item{display:flex;align-items:center;gap:12px;padding:14px 13px;border-radius:17px;margin-bottom:8px;background:linear-gradient(150deg,rgba(255,255,255,.1),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);box-shadow:inset 0 1px 0 rgba(255,255,255,.2);transition:transform .14s,background .14s;text-decoration:none;color:inherit}
-.item:active{transform:scale(.985);background:rgba(255,255,255,.16)}
-.ico{width:40px;height:40px;border-radius:12px;flex:none;display:flex;align-items:center;justify-content:center;font-size:16px;border:1px solid rgba(255,255,255,.2)}
-.item .txt{flex:1;min-width:0;display:flex;flex-direction:column}
-.item .nm{font-size:13.5px;font-weight:600;margin-bottom:3px}
-.item .ds{font-size:10.5px;color:rgba(255,255,255,.46);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.item .go{font-size:17px;color:rgba(255,255,255,.3);flex:none;line-height:1}
-.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 14px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+
+.hero{display:flex;align-items:center;gap:14px;padding:2px 2px 20px}
+.avatar{width:56px;height:56px;border-radius:18px;flex:none;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;background:linear-gradient(135deg,#8b5cf6,#d946ef);border:1px solid rgba(255,255,255,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.45),0 10px 26px rgba(139,92,246,.4)}
+.hname{font-size:21px;font-weight:650;margin:0 0 3px;letter-spacing:.3px}
+.hsub{font-size:11px;color:rgba(255,255,255,.5);margin:0}
+
+.banner{display:flex;align-items:center;gap:14px;padding:17px 16px;border-radius:24px;margin-bottom:24px;background:linear-gradient(135deg,rgba(34,211,238,.2),rgba(59,130,246,.12));border:1px solid rgba(34,211,238,.34);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);box-shadow:inset 0 1px 0 rgba(255,255,255,.22);text-decoration:none;color:inherit;transition:transform .15s}
+.banner:active{transform:scale(.985)}
+.bic{width:52px;height:52px;border-radius:16px;flex:none;display:flex;align-items:center;justify-content:center;font-size:23px;background:linear-gradient(135deg,#22d3ee,#3b82f6);box-shadow:0 8px 20px rgba(34,211,238,.4),inset 0 1px 0 rgba(255,255,255,.4)}
+.bt{flex:1;min-width:0}
+.bn{font-size:15.5px;font-weight:650;margin-bottom:3px;display:flex;align-items:center;gap:7px}
+.bn .nb{font-size:8.5px;letter-spacing:.8px;padding:3px 7px;border-radius:6px;background:rgba(34,211,238,.9);color:#001018;font-weight:700}
+.bd{font-size:10.5px;color:rgba(255,255,255,.58);line-height:1.5}
+.bg2{font-size:19px;color:rgba(255,255,255,.35);flex:none}
+
+.gTitle{display:flex;align-items:center;gap:9px;font-size:11px;letter-spacing:2.5px;color:rgba(255,255,255,.42);margin:24px 0 15px 2px}
+.gTitle::after{content:"";flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,.13),transparent)}
+.gTitle .gdot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.3)}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px 10px;margin-bottom:6px}
+.item{display:flex;flex-direction:column;align-items:center;gap:8px;text-decoration:none;color:inherit}
+.item:active .ic{transform:scale(.9)}
+.ic{width:60px;height:60px;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;box-shadow:0 8px 18px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.35);transition:transform .14s}
+.nm{font-size:10.5px;color:rgba(255,255,255,.82);text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.chips{display:flex;gap:7px;overflow-x:auto;padding:2px 0 16px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
 .chips::-webkit-scrollbar{display:none}
-.chip{flex:none;padding:8px 14px;border-radius:999px;font-size:11.5px;color:rgba(255,255,255,.62);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);cursor:pointer;font-family:inherit;white-space:nowrap}
+.chip{flex:none;padding:8px 14px;border-radius:999px;font-size:11.5px;color:rgba(255,255,255,.6);background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);cursor:pointer;font-family:inherit;white-space:nowrap}
 .chip.on{color:#fff;background:linear-gradient(135deg,rgba(139,92,246,.9),rgba(217,70,239,.85));border-color:rgba(255,255,255,.3)}
-.foot{text-align:center;font-size:10.5px;color:rgba(255,255,255,.24);padding:14px 0 4px}
-.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));gap:8px;z-index:50;background:linear-gradient(180deg,rgba(8,8,15,0),rgba(8,8,15,.93) 45%);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-.tab{flex:1;padding:10px 4px;border:none;border-radius:15px;background:transparent;color:rgba(255,255,255,.42);font-size:10.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.18s}
+
+.foot{text-align:center;font-size:10.5px;color:rgba(255,255,255,.24);padding:22px 0 4px}
+.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:520px;display:flex;padding:8px 14px calc(8px + env(safe-area-inset-bottom,0px));gap:8px;z-index:50;background:linear-gradient(180deg,rgba(8,8,15,0),rgba(8,8,15,.93) 45%);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.tab{flex:1;padding:9px 4px;border:none;border-radius:15px;background:transparent;color:rgba(255,255,255,.42);font-size:10.5px;font-family:inherit;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;transition:.18s}
 .tab .ti{font-size:16px;line-height:1}
 .tab.on{color:#fff;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.13)}
-.aboutCard{padding:19px;border-radius:23px;background:linear-gradient(150deg,rgba(255,255,255,.1),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+
+.aboutCard{padding:20px;border-radius:23px;background:linear-gradient(150deg,rgba(255,255,255,.1),rgba(255,255,255,.035));border:1px solid rgba(255,255,255,.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 .aboutCard p{font-size:13px;line-height:1.85;color:rgba(255,255,255,.7);margin:0 0 15px}
 .row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-top:1px solid rgba(255,255,255,.08);font-size:12.5px}
 .row .k{color:rgba(255,255,255,.48)}
 .row .v{color:#fff}
 a.lnk{color:#67e8f9;text-decoration:none}
-@media(min-width:521px){.app{padding-top:32px}}
+
+@media(min-width:521px){.app{padding-top:34px}.ic{width:68px;height:68px;font-size:27px}}
 </style>
 </head>
 <body>
 <div class="glow g1"></div><div class="glow g2"></div><div class="glow g3"></div>
+
 <div class="app">
   <section id="home" class="page on">
     <div class="hero">
       <div class="avatar">T</div>
-      <h1>Tayyh19</h1>
-      <p class="tagline">全部单文件 · 零依赖 · 手机打开即用</p>
-      <div class="pills"><span>AI 视觉</span><span>交互界面</span><span>18 个作品</span></div>
+      <div>
+        <div class="hname">Tayyh19</div>
+        <div class="hsub">单文件 · 零依赖 · 手机即用</div>
+      </div>
     </div>
-    <a class="feature" href="ai-lens/">
-      <div class="fbadge">NEW</div>
-      <div class="ficon">◉</div>
-      <h2>AI LENS</h2>
-      <p>实时目标识别 + 多人骨骼 + 变焦 + 拍照录像，浏览器里直接跑</p>
-      <div class="fmeta">纯浏览器 · 免安装 · 免登录</div>
+
+    <a class="banner" href="ai-lens/">
+      <div class="bic">◉</div>
+      <div class="bt">
+        <div class="bn">AI LENS <span class="nb">NEW</span></div>
+        <div class="bd">实时目标识别 · 多人骨骼 · 拍照录像</div>
+      </div>
+      <div class="bg2">›</div>
     </a>
-    <div id="homeList"></div>
+
+    <div id="homeGrid"></div>
     <div class="foot">Operit AI · 2026</div>
   </section>
 
   <section id="works" class="page">
-    <div class="secTitle" style="font-size:13px;color:rgba(255,255,255,.5);letter-spacing:2px;margin:0 0 12px 3px">全部作品</div>
+    <div class="gTitle" style="margin-top:4px"><span class="gdot"></span>全部作品</div>
     <div class="chips" id="chips"></div>
-    <div id="workList"></div>
+    <div class="grid" id="workGrid"></div>
     <div class="foot">共 18 个作品</div>
   </section>
 
   <section id="about" class="page">
-    <div class="secTitle" style="font-size:13px;color:rgba(255,255,255,.5);letter-spacing:2px;margin:0 0 12px 3px">关于</div>
+    <div class="gTitle" style="margin-top:4px"><span class="gdot"></span>关于</div>
     <div class="aboutCard">
-      <p>自己做东西的人。做的东西全部是单文件、零依赖、打开即用——从 AI 视觉到系统复刻、商务后台、实验可视化。</p>
+      <p>自己做东西的人。作品全部是单文件、零依赖、手机打开即用——从 AI 视觉到系统复刻、商务后台、实验可视化。</p>
       <div class="row"><span class="k">代号</span><span class="v">Tayyh19</span></div>
-      <div class="row"><span class="k">作品数</span><span class="v">18</span></div>
+      <div class="row"><span class="k">作品</span><span class="v">18 个单文件应用</span></div>
       <div class="row"><span class="k">技术</span><span class="v">HTML / JS / Canvas / WebGL</span></div>
       <div class="row"><span class="k">GitHub</span><span class="v"><a class="lnk" href="https://github.com/tayyh19" target="_blank">github.com/tayyh19</a></span></div>
     </div>
@@ -111,59 +121,61 @@ a.lnk{color:#67e8f9;text-decoration:none}
 <script>
 (function(){
   var APPS=[
-    {k:'ai-lens', n:'AI LENS', d:'实时目标识别 + 多人骨骼 + 拍照录像', g:'AI', i:'◉', c:'#22d3ee'},
-    {k:'ios26', n:'iOS 26 桌面', d:'液态玻璃桌面 · 多页 · App 内页', g:'系统', i:'◐', c:'#8b5cf6'},
-    {k:'ios27', n:'iOS 27 超级版', d:'桌面 + Telegram + 商城 三合一', g:'系统', i:'◑', c:'#a78bfa'},
-    {k:'kraken-ops', n:'KRAKEN OPS', d:'单机枪战 · 霓虹战场', g:'游戏', i:'▣', c:'#f472b6'},
-    {k:'vault', n:'VAULT', d:'本地密码保险库', g:'安全', i:'◆', c:'#34d399'},
-    {k:'crypt-lab', n:'CRYPT LAB', d:'密码学实验室 · 加解密演示', g:'安全', i:'◇', c:'#34d399'},
-    {k:'suite', n:'SUITE', d:'一体化工作台 · 双引擎', g:'商务', i:'▤', c:'#38bdf8'},
-    {k:'axiom', n:'AXIOM', d:'液态玻璃商务控制台', g:'商务', i:'◈', c:'#38bdf8'},
-    {k:'nexus', n:'NEXUS', d:'客服工单中台 · SLA 监控', g:'商务', i:'◈', c:'#38bdf8'},
-    {k:'aegis', n:'AEGIS', d:'DDoS 防护运维控制台', g:'商务', i:'◈', c:'#38bdf8'},
-    {k:'kraken', n:'KRAKEN', d:'红队攻击演练台', g:'商务', i:'◈', c:'#38bdf8'},
-    {k:'telegram', n:'Telegram', d:'聊天应用克隆', g:'商务', i:'✉', c:'#60a5fa'},
-    {k:'shop', n:'卡密商城', d:'商家版 · 卡密交易', g:'商务', i:'▦', c:'#fbbf24'},
-    {k:'gravity', n:'GRAVITY LAB X', d:'重力实验室 · 全功能版', g:'实验', i:'◍', c:'#fb923c'},
-    {k:'optics', n:'OPTICS LAB', d:'光学实验室 · 光线追踪', g:'实验', i:'◌', c:'#fbbf24'},
-    {k:'element', n:'ELEMENT LAB', d:'元素实验室 · 周期表交互', g:'实验', i:'⏣', c:'#4ade80'},
-    {k:'chroma', n:'CHROMA', d:'程序化艺术工坊', g:'实验', i:'❖', c:'#e879f9'},
-    {k:'arca', n:'ARCA', d:'知识图谱中枢', g:'实验', i:'△', c:'#67e8f9'},
-    {k:'orbit', n:'ORBIT', d:'太阳系交互可视化', g:'实验', i:'○', c:'#a5b4fc'}
+    {k:'ios26', n:'iOS 26', d:'液态玻璃桌面', g:'系统', i:'◐', c:['#8b5cf6','#6366f1']},
+    {k:'ios27', n:'iOS 27', d:'超级三合一', g:'系统', i:'◑', c:['#a78bfa','#7c3aed']},
+    {k:'kraken-ops', n:'KRAKEN OPS', d:'单机枪战', g:'游戏', i:'▣', c:['#f472b6','#ec4899']},
+    {k:'vault', n:'VAULT', d:'密码保险库', g:'安全', i:'◆', c:['#34d399','#059669']},
+    {k:'crypt-lab', n:'CRYPT LAB', d:'密码实验室', g:'安全', i:'◇', c:['#2dd4bf','#0d9488']},
+    {k:'suite', n:'SUITE', d:'一体化工作台', g:'商务', i:'▤', c:['#38bdf8','#0284c7']},
+    {k:'axiom', n:'AXIOM', d:'商务控制台', g:'商务', i:'◈', c:['#60a5fa','#2563eb']},
+    {k:'nexus', n:'NEXUS', d:'服务中枢', g:'商务', i:'◈', c:['#22d3ee','#0891b2']},
+    {k:'aegis', n:'AEGIS', d:'DDoS 防护', g:'商务', i:'◈', c:['#818cf8','#4f46e5']},
+    {k:'kraken', n:'KRAKEN', d:'红队演练', g:'商务', i:'◈', c:['#93c5fd','#1d4ed8']},
+    {k:'telegram', n:'Telegram', d:'聊天克隆', g:'商务', i:'✉', c:['#60a5fa','#3b82f6']},
+    {k:'shop', n:'卡密商城', d:'商家版', g:'商务', i:'▦', c:['#fbbf24','#f59e0b']},
+    {k:'gravity', n:'GRAVITY X', d:'重力实验室', g:'实验', i:'◍', c:['#fb923c','#f97316']},
+    {k:'optics', n:'OPTICS LAB', d:'光学实验室', g:'实验', i:'◌', c:['#fcd34d','#eab308']},
+    {k:'element', n:'ELEMENT LAB', d:'元素实验室', g:'实验', i:'⏣', c:['#4ade80','#22c55e']},
+    {k:'chroma', n:'CHROMA', d:'艺术工坊', g:'实验', i:'❖', c:['#e879f9','#c026d3']},
+    {k:'arca', n:'ARCA', d:'知识图谱', g:'实验', i:'△', c:['#67e8f9','#06b6d4']},
+    {k:'orbit', n:'ORBIT', d:'太阳系', g:'实验', i:'○', c:['#a5b4fc','#818cf8']}
   ];
 
   function itemHTML(a){
     return '<a class="item" href="'+a.k+'/">'+
-      '<span class="ico" style="background:'+a.c+'22;color:'+a.c+';border-color:'+a.c+'44">'+a.i+'</span>'+
-      '<span class="txt"><span class="nm">'+a.n+'</span><span class="ds">'+a.d+'</span></span>'+
-      '<span class="go">›</span></a>';
+      '<span class="ic" style="background:linear-gradient(135deg,'+a.c[0]+','+a.c[1]+')">'+a.i+'</span>'+
+      '<span class="nm">'+a.n+'</span></a>';
   }
 
-  var homeList=document.getElementById('homeList');
-  var workList=document.getElementById('workList');
+  var homeGrid=document.getElementById('homeGrid');
+  var workGrid=document.getElementById('workGrid');
   var chips=document.getElementById('chips');
-  var GROUPS=['全部','AI','系统','游戏','安全','商务','实验'];
+  var GROUPS=['全部','系统','游戏','安全','商务','实验'];
+  var ORDER=['系统','游戏','安全','商务','实验'];
   var cur='全部';
 
   function renderHome(){
-    var html='', last='';
-    for(var i=0;i<APPS.length;i++){
-      var a=APPS[i];
-      if(a.g==='AI') continue;
-      if(a.g!==last){ last=a.g; html+='<div class="gTitle">'+a.g+'</div>'; }
-      html+=itemHTML(a);
+    var html='';
+    for(var gi=0;gi<ORDER.length;gi++){
+      var g=ORDER[gi];
+      var items='', cnt=0;
+      for(var i=0;i<APPS.length;i++){
+        if(APPS[i].g!==g) continue;
+        items+=itemHTML(APPS[i]); cnt++;
+      }
+      if(!cnt) continue;
+      html+='<div class="gTitle"><span class="gdot"></span>'+g+'</div><div class="grid">'+items+'</div>';
     }
-    homeList.innerHTML=html;
+    homeGrid.innerHTML=html;
   }
   function renderWork(g){
     var html='';
     for(var i=0;i<APPS.length;i++){
-      var a=APPS[i];
-      if(g!=='全部'&&a.g!==g) continue;
-      html+=itemHTML(a);
+      if(g!=='全部'&&APPS[i].g!==g) continue;
+      html+=itemHTML(APPS[i]);
     }
     if(!html) html='<div class="foot">暂无</div>';
-    workList.innerHTML=html;
+    workGrid.innerHTML=html;
   }
   function buildChips(){
     var html='';
