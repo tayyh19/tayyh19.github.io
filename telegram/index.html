@@ -1,0 +1,3623 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>Telegram</title>
+<style>
+:root{
+  /* ---- 品牌与语义色 ---- */
+  --blue:#3390ec;--blue-d:#2b7cd3;--blue-l:rgba(51,144,236,.16);
+  --txt:#0f172a;--dim:#5f7086;
+  --line:rgba(255,255,255,.5);--sep:rgba(0,0,0,.18);
+  --hover:rgba(255,255,255,.5);--check:#41a883;--ring:rgba(255,255,255,.8);
+  /* ---- 液态玻璃令牌（Liquid Glass 核心） ---- */
+  --glass:rgba(255,255,255,.40);        /* 玻璃底 */
+  --glass-hi:rgba(255,255,255,.56);     /* 提亮玻璃（顶栏/底栏） */
+  --glass-lo:rgba(255,255,255,.26);     /* 压低玻璃（侧栏） */
+  --glass-brd:rgba(255,255,255,.68);    /* 玻璃描边 */
+  --glass-blur:blur(20px) saturate(1.9) brightness(1.05);
+  --glass-in:inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(255,255,255,.12);
+  --glow:0 10px 34px rgba(56,120,220,.16);
+  --glow-blue:0 0 20px rgba(51,144,236,.45);
+  /* ---- 液态玻璃：折射 / 高光 / 色散 ---- */
+  --lg-blend:soft-light;
+  --lg-gloss:.9;
+  --lg-sheen:linear-gradient(115deg,rgba(255,255,255,.75) 0%,rgba(255,255,255,.18) 20%,rgba(255,255,255,0) 44%,rgba(255,255,255,.10) 70%,rgba(255,255,255,.46) 100%);
+  --lg-refract:linear-gradient(180deg,rgba(255,255,255,.9),rgba(255,255,255,0) 46%);
+  --bg:#eef3fb;--chat-bg:#ffffff;--header:transparent;
+  --chat-dot:rgba(51,144,236,.10);
+  --bub-you:#f1f4fa;--bub-you-brd:rgba(31,84,150,.10);
+  --bub-me:rgba(51,144,236,.92);
+  /* ---- 尺寸令牌（统一间距/圆角） ---- */
+  --r-bub:18px;--r-bub-tail:6px;--r-pill:22px;--r-btn:50%;
+  --gap-msg:9px;--pad-bub:8px 12px 9px;--pad-screen:14px;
+  /* ---- 阴影 ---- */
+  --sh-bub:0 4px 16px rgba(31,84,150,.10);
+  --sh-composer:0 -6px 24px rgba(31,84,150,.08);
+  --sh-fab:0 6px 20px rgba(31,84,150,.26),0 0 18px rgba(51,144,236,.25);
+  /* ---- 动效 ---- */
+  --ease:cubic-bezier(.32,1.22,.5,1);
+  --ease-spring:cubic-bezier(.34,1.56,.64,1);
+  /* ---- 消息区最大宽度 ---- */
+  --col:760px;
+}
+body.dark{
+  --blue:#5aa9f0;--blue-d:#3f8bd4;--blue-l:rgba(90,169,240,.18);
+  --txt:#eaf2fb;--dim:#93a4b6;--line:rgba(255,255,255,.13);--sep:rgba(255,255,255,.17);
+  --hover:rgba(255,255,255,.10);--check:#6fc96f;--ring:rgba(12,20,32,.85);
+  --glass:rgba(22,32,46,.42);--glass-hi:rgba(34,48,68,.56);--glass-lo:rgba(16,24,36,.30);
+  --glass-brd:rgba(255,255,255,.16);
+  --glass-blur:blur(20px) saturate(1.7) brightness(1.12);
+  --glass-in:inset 0 1px 0 rgba(255,255,255,.16),inset 0 -1px 0 rgba(0,0,0,.26),inset 0 0 0 1px rgba(255,255,255,.05);
+  --glow:0 12px 38px rgba(0,0,0,.42);
+  --glow-blue:0 0 22px rgba(90,169,240,.5);
+  --lg-blend:screen;
+  --lg-gloss:.42;
+  --lg-sheen:linear-gradient(115deg,rgba(255,255,255,.34) 0%,rgba(255,255,255,.07) 20%,rgba(255,255,255,0) 44%,rgba(255,255,255,.04) 70%,rgba(255,255,255,.20) 100%);
+  --lg-refract:linear-gradient(180deg,rgba(255,255,255,.38),rgba(255,255,255,0) 46%);
+  --bg:#0b1526;--chat-bg:#0b1526;--header:transparent;
+  --chat-dot:rgba(255,255,255,.07);
+  --bub-you:#1b2637;--bub-you-brd:rgba(255,255,255,.09);
+  --bub-me:rgba(46,116,196,.92);
+  --sh-bub:0 6px 20px rgba(0,0,0,.32);
+  --sh-composer:0 -6px 24px rgba(0,0,0,.34);
+  --sh-fab:0 6px 20px rgba(0,0,0,.5),0 0 18px rgba(90,169,240,.3);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  color:var(--txt);overflow:hidden;font-size:15px;line-height:1.35;
+  background:#eef3fb;
+  transition:background .3s,color .3s}
+body.dark{background:#0b1526}
+/* ---- 原「巨型模糊光斑」已移除：两个 60vmax+ 的 layer 每帧高斯模糊并无限位移动画，
+        是滚动卡顿的主因；纯白/纯深底不再需要它来“透” ---- */
+body::before,body::after{content:none!important;animation:none!important;filter:none!important}
+/* ---- 半发光背景光斑（玻璃要有东西可“透”） ---- */
+/* （原半发光光斑样式与 drift1/drift2 关键帧已删除） */
+.app{display:flex;height:calc(100dvh - var(--tabh));max-width:1400px;margin:0 auto;position:relative;z-index:1}
+
+/* ---------- 侧栏 ---------- */
+.side{width:340px;flex:none;display:flex;flex-direction:column;position:relative;z-index:2;
+  background:var(--glass-lo);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border-right:1px solid var(--glass-brd);box-shadow:var(--glass-in),var(--glow);
+  transition:background .3s}
+.side-head{display:flex;align-items:center;gap:12px;padding:10px 14px;
+  background:transparent;border-bottom:1px solid var(--line)}
+.menu-btn{width:40px;height:40px;border-radius:50%;border:none;background:none;
+  display:grid;place-items:center;cursor:pointer;color:var(--dim);flex:none;transition:background .15s,box-shadow .15s}
+.menu-btn:hover{background:var(--hover);box-shadow:var(--glass-in)}
+.menu-btn svg{width:22px;height:22px}
+.search{flex:1;display:flex;align-items:center;gap:8px;background:var(--glass);
+  border:1px solid var(--glass-brd);border-radius:20px;padding:8px 14px;
+  backdrop-filter:blur(10px) saturate(1.5);-webkit-backdrop-filter:blur(10px) saturate(1.5);
+  transition:box-shadow .2s var(--ease)}
+.search:focus-within{box-shadow:inset 0 0 0 1.5px var(--blue),var(--glow-blue)}
+.search svg{width:18px;height:18px;color:var(--dim);flex:none}
+.search input{border:none;background:none;outline:none;font-family:inherit;
+  font-size:14.5px;width:100%;color:var(--txt)}
+.search input::placeholder{color:var(--dim)}
+
+.chat-list{flex:1;overflow-y:auto;overflow-x:hidden;padding:4px 0}
+.chat-list::-webkit-scrollbar{width:6px}
+.chat-list::-webkit-scrollbar-thumb{background:rgba(128,128,128,.3);border-radius:3px}
+.chat-list::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,.5)}
+.chat-item{display:flex;gap:12px;padding:9px 12px;cursor:pointer;
+  transition:background .14s var(--ease),box-shadow .14s var(--ease),transform .12s var(--ease);
+  position:relative;border-radius:10px;margin:1px 6px;-webkit-tap-highlight-color:transparent}
+.chat-item:active{transform:scale(.985)}
+.chat-item:hover{background:var(--hover);box-shadow:var(--glass-in)}
+.chat-item.active{background:linear-gradient(135deg,rgba(51,144,236,.94),rgba(96,176,255,.84));
+  box-shadow:0 6px 20px rgba(51,144,236,.36),var(--glow-blue),var(--glass-in)}
+.chat-item.active .ci-name,.chat-item.active .ci-last,.chat-item.active .ci-time{color:#fff}
+.chat-item.active .ci-last .check{color:rgba(255,255,255,.95)}
+.chat-item.active .badge{background:#fff;color:var(--blue)}
+.chat-item.active .avatar .online{border-color:var(--blue)}
+.chat-item:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+
+/* ---------- 联系人分隔线（每条之间 1px 细横杠） ---------- */
+.chat-item::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:1px;background:var(--sep);pointer-events:none}
+.chat-item:last-child::after{display:none}
+.chat-item.active::after{background:rgba(255,255,255,.24)}
+/* 置顶/静音状态 */
+.ci-pin{display:inline-block;margin-right:5px;font-size:11px;vertical-align:1px;opacity:.85}
+.chat-item.active .ci-pin{filter:brightness(0) invert(1)}
+.mute-ico{margin-left:5px;font-size:11.5px;opacity:.7;vertical-align:1px}
+.chat-item.active .mute-ico{opacity:.9}
+.chat-item.muted .ci-name{opacity:.82}
+.chat-item.muted .badge{background:linear-gradient(135deg,#9aa6b2,#6d7a86);box-shadow:none}
+.chat-item.muted .badge.dot{background:#9aa6b2}
+
+/* ---------- 聊天列表长按 / 右键菜单 ---------- */
+.ctx-menu{position:fixed;z-index:70;min-width:192px;padding:6px;border-radius:14px;
+  background:var(--glass-hi);border:1px solid var(--glass-brd);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-in),0 18px 46px rgba(0,0,0,.34);
+  opacity:0;transform:scale(.94);transform-origin:top left;pointer-events:none;
+  transition:opacity .24s var(--ease),transform .24s var(--ease-spring)}
+.ctx-menu.show{opacity:1;transform:scale(1);pointer-events:auto}
+.ctx-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;
+  font-size:14px;cursor:pointer;color:var(--txt);transition:background .12s var(--ease);
+  -webkit-tap-highlight-color:transparent}
+.ctx-item:hover{background:var(--hover)}
+.ctx-item:active{transform:scale(.985)}
+.ctx-item .ic{width:20px;text-align:center;font-size:15px;flex:none}
+.ctx-item.danger{color:#e17076}
+.ctx-sep{height:1px;margin:4px 8px;background:var(--line)}
+
+/* ---------- 搜索清空按钮 ---------- */
+.search-clear{display:none;flex:none;width:22px;height:22px;border:none;background:none;
+  border-radius:50%;color:var(--dim);cursor:pointer;font-size:15px;line-height:1;
+  align-items:center;justify-content:center;padding:0;
+  transition:background .14s var(--ease),color .14s var(--ease)}
+.search-clear:hover{background:var(--hover);color:var(--txt)}
+.search.has-q .search-clear{display:flex}
+
+.avatar{width:54px;height:54px;border-radius:50%;flex:none;display:grid;place-items:center;
+  color:#fff;font-weight:600;font-size:20px;position:relative;user-select:none;
+  box-shadow:0 0 0 1px rgba(255,255,255,.45) inset,0 6px 16px rgba(31,84,150,.24),0 0 14px rgba(51,144,236,.18);
+  transition:border-radius .18s var(--ease),box-shadow .18s var(--ease)}
+.chat-item:hover .avatar{border-radius:34%}
+.avatar .online{position:absolute;right:1px;bottom:1px;width:13px;height:13px;border-radius:50%;
+  background:#4fae4e;border:2.5px solid var(--ring);box-shadow:0 0 8px rgba(79,174,78,.9)}
+.ci-body{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px}
+.ci-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ci-name{font-weight:600;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ci-time{font-size:12px;color:var(--dim);flex:none;font-variant-numeric:tabular-nums}
+.ci-bot{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ci-last{font-size:14px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.ci-last .check{color:var(--check);margin-right:3px}
+.badge{background:linear-gradient(135deg,#4aa3ff,#2b7cd3);color:#fff;font-size:12px;font-weight:600;min-width:22px;height:22px;
+  padding:0 6px;border-radius:11px;display:grid;place-items:center;flex:none;
+  font-variant-numeric:tabular-nums;animation:badgeIn .25s var(--ease);
+  box-shadow:0 0 10px rgba(51,144,236,.7)}
+@keyframes badgeIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.badge.dot{width:10px;height:10px;min-width:10px;padding:0}
+
+/* ---------- 主区 ---------- */
+.main{flex:1;display:flex;flex-direction:column;position:relative;background:var(--chat-bg);min-width:0;
+  background-image:radial-gradient(circle at 50% 50%,var(--chat-dot) 1.6px,transparent 1.7px);
+  background-size:18px 18px;background-repeat:repeat;
+  transition:background-color .3s}
+/* 旧的四层彩色光晕已废弃：聊天背景改为实色底 + 点阵图案 */
+.main::before{content:none}
+.empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:14px;color:var(--dim);position:relative;z-index:1}
+.empty .big{width:110px;height:110px;border-radius:50%;background:var(--glass);
+  border:1px solid var(--glass-brd);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  display:grid;place-items:center;box-shadow:var(--glass-in),var(--glow),var(--glow-blue)}
+.empty .big svg{width:56px;height:56px;color:var(--dim)}
+.empty p{font-size:14px}
+
+.chat-head{display:flex;align-items:center;gap:12px;padding:8px 14px;
+  background:var(--glass-hi);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border-bottom:1px solid var(--line);box-shadow:var(--glass-in);position:relative;z-index:3;flex:none}
+.back-btn{width:40px;height:40px;border-radius:50%;border:none;background:none;
+  display:none;place-items:center;cursor:pointer;color:var(--dim);flex:none;transition:background .15s}
+.back-btn:hover{background:var(--hover)}
+.back-btn svg{width:24px;height:24px}
+.chat-head .avatar{width:42px;height:42px;font-size:17px}
+.ch-info{flex:1;min-width:0}
+.ch-name-row{display:flex;align-items:center;gap:2px;min-width:0}
+.ch-name{font-weight:600;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-status{font-size:13px;color:var(--blue);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ch-actions{display:flex;gap:2px}
+.icon-btn{width:40px;height:40px;border-radius:50%;border:none;background:none;display:grid;
+  place-items:center;cursor:pointer;color:var(--dim);transition:background .15s}
+.icon-btn:hover{background:var(--hover)}
+.icon-btn svg{width:21px;height:21px}
+
+.messages{flex:1;overflow-y:auto;padding:18px 4% 22px;position:relative;z-index:1;
+  display:flex;flex-direction:column;gap:var(--gap-msg);scroll-behavior:smooth;
+  overscroll-behavior:contain;-webkit-overflow-scrolling:touch;contain:layout paint}
+.messages::-webkit-scrollbar{width:7px}
+.messages::-webkit-scrollbar-thumb{background:rgba(128,128,128,.35);border-radius:4px}
+.messages::-webkit-scrollbar-thumb:hover{background:rgba(128,128,128,.55)}
+/* 消息按列居中限宽，避免超宽屏气泡被拉长 */
+.messages > *{width:100%;max-width:var(--col);margin:0 auto}
+.messages > .msg{align-self:auto}
+
+.msg{max-width:70%;padding:var(--pad-bub);border-radius:var(--r-bub);position:relative;
+  word-wrap:break-word;overflow-wrap:anywhere;line-height:1.42;box-shadow:var(--sh-bub);
+  animation:pop .24s var(--ease);font-size:15px}
+@keyframes pop{from{opacity:0;transform:translateY(7px) scale(.97)}to{opacity:1;transform:none}}
+.msg.you{align-self:flex-start;margin-right:auto;background:var(--bub-you);
+  border:1px solid var(--bub-you-brd);
+  box-shadow:var(--sh-bub);border-bottom-left-radius:var(--r-bub-tail)}
+.msg.me{align-self:flex-end;margin-left:auto;color:#fff;
+  background:linear-gradient(135deg,rgba(51,144,236,.94),rgba(96,176,255,.86));
+  border:1px solid rgba(255,255,255,.34);
+  box-shadow:0 6px 20px rgba(51,144,236,.34),0 0 18px rgba(51,144,236,.26),var(--glass-in);
+  border-bottom-right-radius:var(--r-bub-tail)}
+.msg.me .who{color:rgba(255,255,255,.92)}
+/* 连续同方向消息：收紧间距并合并圆角（由 JS 加 .stack） */
+.msg.stack{margin-top:-3px}
+.msg.me + .msg.me.stack{border-top-right-radius:var(--r-bub-tail)}
+.msg.you + .msg.you.stack{border-top-left-radius:var(--r-bub-tail)}
+.msg .txt{white-space:pre-wrap}
+.msg .who{font-size:13px;font-weight:600;color:var(--blue);margin-bottom:2px}
+.msg .meta{display:inline-flex;align-items:center;gap:3px;float:right;
+  margin:5px -2px -3px 9px;font-size:11.5px;color:var(--check);position:relative;top:3px;
+  user-select:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+.msg.you .meta{color:var(--dim)}
+.msg .meta svg{width:16px;height:16px}
+.msg.me .meta{color:rgba(255,255,255,.82)}
+.msg.me .meta svg{color:rgba(255,255,255,.92)}
+/* 待发送/失败态（AI 接入后复用） */
+.msg.pending{opacity:.6}
+.msg.failed .meta{color:#e0524a}
+.msg .retry{margin-left:6px;color:#e0524a;cursor:pointer;text-decoration:underline;font-weight:600}
+
+/* ---- AI 接入新增样式 ---- */
+/* 流式光标 */
+.msg .txt.streaming::after{content:"▍";color:var(--blue);margin-left:1px;
+  animation:caret 1s steps(1) infinite;font-weight:400}
+@keyframes caret{0%,50%{opacity:1}51%,100%{opacity:0}}
+/* 系统/错误提示行 */
+.sys-note{align-self:center;margin:6px auto;max-width:82%;text-align:center;font-size:12.5px;
+  color:var(--dim);background:var(--hover);padding:5px 12px;border-radius:12px}
+.sys-note.err{color:#e0524a}
+/* 头部 AI 状态徽标 */
+.ai-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;
+  padding:2px 7px;border-radius:9px;background:var(--blue-l);color:var(--blue);
+  margin-left:6px;vertical-align:1px;flex:none}
+.ai-pill.off{background:var(--hover);color:var(--dim)}
+.ai-pill.err{background:rgba(224,82,74,.16);color:#e0524a}
+.ai-pill i{width:6px;height:6px;border-radius:50%;background:currentColor;display:block}
+.ai-pill.busy i{animation:pulseDot .9s infinite}
+@keyframes pulseDot{0%,100%{opacity:.3}50%{opacity:1}}
+/* 代码块 / 行内代码 */
+.msg .txt code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:13px;background:rgba(128,128,128,.16);padding:1.5px 5px;border-radius:5px}
+.msg .txt pre{margin:6px 0;padding:9px 11px;border-radius:10px;overflow-x:auto;
+  background:rgba(0,0,0,.07);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  font-size:13px;line-height:1.5}
+body.dark .msg.me .txt pre{background:rgba(0,0,0,.28)}
+body.dark .msg.you .txt pre{background:rgba(0,0,0,.32)}
+.msg .txt pre code{background:none;padding:0}
+/* 设置面板 */
+.set-panel{position:fixed;inset:0;z-index:50;background:rgba(10,20,35,.42);display:none;
+  align-items:center;justify-content:center;padding:18px;
+  backdrop-filter:blur(10px) saturate(1.3);-webkit-backdrop-filter:blur(10px) saturate(1.3)}
+.set-panel.show{display:flex}
+.set-card{background:var(--glass-hi);color:var(--txt);width:100%;max-width:460px;max-height:86dvh;
+  overflow-y:auto;border-radius:18px;padding:20px;
+  border:1px solid var(--glass-brd);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-in),0 20px 60px rgba(10,30,60,.34),var(--glow);
+  animation:pop .22s var(--ease)}
+.set-card h3{font-size:17px;margin-bottom:4px}
+.set-card .hint{font-size:12.5px;color:var(--dim);margin-bottom:14px;line-height:1.5}
+.set-card label{display:block;font-size:12.5px;font-weight:600;color:var(--dim);margin:12px 0 5px}
+.set-card input,.set-card select{width:100%;padding:9px 12px;border-radius:10px;font-family:inherit;
+  font-size:14px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--txt);outline:none}
+.set-card input:focus,.set-card select:focus{border-color:var(--blue);box-shadow:var(--glow-blue)}
+.set-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}
+.set-actions button{padding:9px 18px;border-radius:10px;border:none;font-family:inherit;
+  font-size:14px;font-weight:600;cursor:pointer}
+.set-actions .ghost{background:var(--glass);color:var(--txt);border:1px solid var(--glass-brd)}
+.set-actions .primary{background:linear-gradient(135deg,#4aa3ff,#2b7cd3);color:#fff;
+  box-shadow:0 4px 16px rgba(51,144,236,.45),0 0 20px rgba(51,144,236,.35)}
+.set-row{display:flex;align-items:center;gap:8px;font-size:13.5px;margin-top:12px}
+.set-row input[type=checkbox]{width:auto}
+
+.date-sep{align-self:center;width:auto;background:rgba(84,110,122,.36);color:#fff;font-size:12.5px;
+  padding:4px 13px;border-radius:12px;margin:10px auto;
+  backdrop-filter:blur(10px) saturate(1.4);-webkit-backdrop-filter:blur(10px) saturate(1.4);
+  border:1px solid rgba(255,255,255,.28);
+  font-weight:500;box-shadow:0 4px 12px rgba(0,0,0,.10),0 0 14px rgba(120,170,220,.22)}
+body.dark .date-sep{background:rgba(90,110,130,.36);border-color:rgba(255,255,255,.16)}
+
+.typing{align-self:flex-start;margin-right:auto;background:var(--bub-you);padding:14px 16px;
+  border-radius:var(--r-bub);border-bottom-left-radius:var(--r-bub-tail);display:flex;gap:5px;
+  border:1px solid var(--glass-brd);backdrop-filter:blur(12px) saturate(1.6);
+  -webkit-backdrop-filter:blur(12px) saturate(1.6);
+  box-shadow:var(--sh-bub),var(--glass-in);animation:pop .24s var(--ease)}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--blue);animation:bounce 1.3s infinite;
+  box-shadow:0 0 8px rgba(51,144,236,.8)}
+.typing i:nth-child(2){animation-delay:.2s}
+.typing i:nth-child(3){animation-delay:.4s}
+@keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-5px);opacity:1}}
+
+/* 滚动到底部悬浮按钮 */
+.scroll-fab{position:absolute;right:18px;bottom:86px;z-index:6;width:44px;height:44px;
+  border-radius:50%;border:1px solid var(--glass-brd);background:var(--glass-hi);color:var(--dim);cursor:pointer;
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  display:grid;place-items:center;box-shadow:var(--glass-in),var(--sh-fab);
+  opacity:0;transform:translateY(10px) scale(.9);pointer-events:none;
+  transition:opacity .22s var(--ease),transform .22s var(--ease)}
+.scroll-fab.show{opacity:1;transform:none;pointer-events:auto}
+.scroll-fab:hover{color:var(--blue);box-shadow:var(--glass-in),var(--sh-fab),var(--glow-blue)}
+.scroll-fab:active{transform:scale(.9)}
+.scroll-fab svg{width:22px;height:22px}
+.scroll-fab .nbadge{position:absolute;top:-4px;right:-4px;min-width:19px;height:19px;padding:0 5px;
+  border-radius:10px;background:linear-gradient(135deg,#4aa3ff,#2b7cd3);color:#fff;font-size:11px;font-weight:700;
+  display:none;place-items:center;border:2px solid rgba(255,255,255,.72);
+  box-shadow:0 0 10px rgba(51,144,236,.8)}
+body.dark .scroll-fab .nbadge{border-color:rgba(12,20,32,.9)}
+
+.composer{flex:none;display:flex;align-items:flex-end;gap:8px;padding:10px 14px 14px;
+  background:var(--chat-bg);
+  border-top:1px solid var(--line);box-shadow:var(--glass-in),var(--sh-composer);
+  position:relative;z-index:3}
+.composer .icon-btn{flex:none;width:44px;height:44px}
+.input-wrap{flex:1;background:var(--glass);border-radius:var(--r-pill);padding:10px 15px;min-height:44px;
+  display:flex;align-items:center;border:1px solid var(--glass-brd);
+  backdrop-filter:blur(10px) saturate(1.5);-webkit-backdrop-filter:blur(10px) saturate(1.5);
+  transition:box-shadow .2s var(--ease),background .2s}
+.input-wrap:focus-within{box-shadow:inset 0 0 0 1.5px var(--blue),var(--glow-blue)}
+.input-wrap textarea{border:none;outline:none;background:none;font-family:inherit;font-size:15px;
+  width:100%;resize:none;max-height:120px;line-height:1.45;color:var(--txt);overflow-y:auto}
+.input-wrap textarea::placeholder{color:var(--dim)}
+.send-btn{width:48px;height:48px;border-radius:var(--r-btn);border:none;flex:none;
+  background:linear-gradient(135deg,#4aa3ff,#2b7cd3);
+  color:#fff;display:grid;place-items:center;cursor:pointer;
+  transition:transform .16s var(--ease),background .16s,opacity .16s,box-shadow .16s;
+  box-shadow:0 4px 16px rgba(51,144,236,.5),0 0 22px rgba(51,144,236,.42)}
+.send-btn:hover{background:linear-gradient(135deg,#5cb0ff,#2f86dd);
+  box-shadow:0 6px 20px rgba(51,144,236,.6),0 0 28px rgba(51,144,236,.55)}
+.send-btn:active{transform:scale(.9)}
+.send-btn:disabled{opacity:.45;cursor:default;box-shadow:none;transform:none}
+.send-btn svg{width:24px;height:24px;margin-right:3px}
+/* 发送中：图标换成旋转圈 */
+.send-btn.loading svg{display:none}
+.send-btn.loading::after{content:"";width:20px;height:20px;border-radius:50%;
+  border:2.5px solid rgba(255,255,255,.45);border-top-color:#fff;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:768px){
+  .side{width:100%;border-right:none}
+  .main{position:absolute;inset:0;z-index:10;width:100%;transform:translateX(100%);
+    transition:transform .36s var(--ease);will-change:transform}
+  .app.chat-open .main{transform:translateX(0)}
+  .back-btn{display:grid}
+  .msg{max-width:84%}
+  .messages{padding:14px 12px 18px}
+  .messages > *{max-width:100%}
+  .composer{padding:8px 10px calc(10px + env(safe-area-inset-bottom,0px))}
+  .scroll-fab{right:12px;bottom:80px}
+  .input-wrap textarea,.msg{font-size:15.5px}
+}
+@media(max-width:380px){
+  .composer .icon-btn:last-of-type{display:none}
+  .send-btn{width:44px;height:44px}
+}
+@media(min-width:1100px){
+  .side{width:380px}
+}
+/* ============================================================
+   底部主导航（聊天 / 动态 / 我的）+ 动态流 + 个人页 + 消息互动
+   ============================================================ */
+:root{--tabh:62px}
+.view{display:none;flex-direction:column;height:calc(100dvh - var(--tabh));
+  max-width:1400px;margin:0 auto;position:relative;z-index:1;overflow:hidden}
+body.tab-feed .app,body.tab-me .app{display:none}
+body.tab-feed .view-feed{display:flex}
+body.tab-me .view-me{display:flex}
+
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:60;
+  height:calc(var(--tabh) + env(safe-area-inset-bottom,0px));
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  background:var(--glass-hi);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border-top:1px solid var(--glass-brd);
+  box-shadow:var(--glass-in),0 -6px 24px rgba(31,84,150,.10)}
+body.dark .tabbar{box-shadow:var(--glass-in),0 -6px 24px rgba(0,0,0,.42)}
+.tabbar-inner{max-width:1400px;margin:0 auto;height:var(--tabh);display:flex}
+.tab{flex:1;border:none;background:none;font:inherit;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:var(--dim);font-size:11.5px;letter-spacing:.2px;
+  transition:color .18s var(--ease),transform .14s var(--ease)}
+.tab svg{width:24px;height:24px;transition:transform .2s var(--ease)}
+.tab:active{transform:scale(.93)}
+.tab:hover{background:var(--hover)}
+.tab.on{color:var(--blue);font-weight:600}
+.tab.on svg{transform:translateY(-1px);filter:drop-shadow(0 0 8px rgba(51,144,236,.6))}
+.tab.on::before{content:"";position:absolute;top:0;width:36px;height:3px;border-radius:0 0 3px 3px;
+  background:var(--blue);box-shadow:0 0 12px var(--blue);animation:tabIn .34s var(--ease-spring)}
+@keyframes tabIn{from{width:0;opacity:0}to{width:36px;opacity:1}}
+.tab .tb-dot{position:absolute;top:7px;left:calc(50% + 7px);min-width:17px;height:17px;padding:0 4px;
+  border-radius:9px;background:linear-gradient(135deg,#4aa3ff,#2b7cd3);color:#fff;
+  font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;display:none;place-items:center;
+  box-shadow:0 0 9px rgba(51,144,236,.75)}
+.tab .tb-dot.show{display:grid}
+.tab .tb-dot.dot{min-width:9px;width:9px;height:9px;padding:0;left:calc(50% + 9px)}
+
+/* ---------- 动态 ---------- */
+.vf-head{flex:none;display:flex;align-items:center;gap:10px;padding:14px 16px 12px;
+  border-bottom:1px solid var(--line)}
+.vf-title{flex:1;font-size:20px;font-weight:700}
+.vf-body{flex:1;overflow-y:auto;padding:14px 14px 26px;display:flex;flex-direction:column;gap:14px}
+.vf-body::-webkit-scrollbar{width:7px}
+.vf-body::-webkit-scrollbar-thumb{background:rgba(128,128,128,.3);border-radius:4px}
+.card{background:var(--bub-you);border:1px solid var(--bub-you-brd);border-radius:16px;
+  box-shadow:var(--sh-bub);padding:12px}
+.compose-card{display:flex;gap:10px;align-items:flex-start}
+.avatar.sm{width:40px;height:40px;font-size:16px}
+.avatar.me{background:linear-gradient(135deg,#4aa3ff,#7c5cff)}
+.avatar.big{width:88px;height:88px;font-size:32px}
+.cc-main{flex:1;min-width:0}
+#feedInput{width:100%;border:none;outline:none;background:none;font:inherit;color:var(--txt);
+  resize:none;min-height:42px;line-height:1.45;padding:9px 2px;overflow:hidden}
+#feedInput::placeholder{color:var(--dim)}
+.cc-bar{display:flex;align-items:center;gap:8px;margin-top:6px}
+.cc-tools{display:flex;gap:5px;flex:1;flex-wrap:wrap}
+.chip{width:34px;height:34px;border-radius:50%;border:1px solid var(--glass-brd);background:var(--glass);
+  font-size:17px;line-height:1;cursor:pointer;display:grid;place-items:center;
+  transition:transform .14s var(--ease),background .14s}
+.chip:active{transform:scale(.86)}
+.chip:hover{background:var(--hover)}
+.btn-primary{border:none;border-radius:12px;padding:9px 18px;font:inherit;font-weight:600;font-size:14px;
+  color:#fff;cursor:pointer;background:linear-gradient(135deg,#4aa3ff,#2b7cd3);
+  box-shadow:0 4px 16px rgba(51,144,236,.45);
+  transition:transform .16s var(--ease),opacity .16s,box-shadow .16s}
+.btn-primary:active{transform:scale(.94)}
+.btn-primary:hover{box-shadow:0 6px 20px rgba(51,144,236,.6)}
+.post{display:flex;flex-direction:column;gap:10px}
+.post.fresh{animation:postIn .46s var(--ease-spring)}
+@keyframes postIn{from{opacity:0;transform:translateY(-10px) scale(.98)}to{opacity:1;transform:none}}
+.post-head{display:flex;align-items:center;gap:10px}
+.ph-info{flex:1;min-width:0}
+.ph-name{font-weight:600;font-size:15px}
+.ph-time{font-size:12px;color:var(--dim);margin-top:1px}
+.follow-btn{border:1px solid var(--blue);color:var(--blue);background:none;border-radius:20px;
+  padding:5px 13px;font:inherit;font-size:13px;cursor:pointer;flex:none;
+  transition:background .16s,color .16s,transform .14s var(--ease)}
+.follow-btn:active{transform:scale(.93)}
+.follow-btn.on{background:var(--blue-l);border-color:transparent}
+.post-text{font-size:15px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;cursor:pointer}
+.post-media{height:150px;border-radius:14px;display:grid;place-items:center;font-size:42px;
+  user-select:none;box-shadow:var(--glass-in);position:relative;overflow:hidden;cursor:pointer;
+  transition:transform .2s var(--ease)}
+.post-media:active{transform:scale(.985)}
+.post-acts{display:flex;align-items:center;gap:6px;padding-top:6px;border-top:1px solid var(--line)}
+.act{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;border:none;background:none;
+  font:inherit;font-size:13.5px;color:var(--dim);cursor:pointer;padding:9px 4px;border-radius:10px;
+  transition:background .15s,color .15s,transform .14s var(--ease)}
+.act:active{transform:scale(.93)}
+.act:hover{background:var(--hover)}
+.act svg{width:19px;height:19px}
+.act.liked{color:#e0524a}
+.act.liked svg{fill:#e0524a;stroke:#e0524a;animation:heartPop .52s var(--ease-spring)}
+@keyframes heartPop{0%{transform:scale(.6)}45%{transform:scale(1.35)}70%{transform:scale(.92)}100%{transform:scale(1)}}
+.post-cmts{margin-top:2px;padding-top:9px;border-top:1px dashed var(--line);
+  display:flex;flex-direction:column;gap:8px;animation:cmtIn .25s var(--ease)}
+@keyframes cmtIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+.cmt{font-size:13.5px;line-height:1.45;animation:cmtIn .22s var(--ease)}
+.cmt b{color:var(--blue);font-weight:600;margin-right:5px}
+.cmt-input{display:flex;gap:8px;align-items:center;margin-top:2px}
+.cmt-input input{flex:1;min-width:0;border:1px solid var(--glass-brd);background:var(--glass);
+  border-radius:20px;padding:8px 14px;font:inherit;font-size:14px;color:var(--txt);outline:none;
+  transition:box-shadow .18s}
+.cmt-input input::placeholder{color:var(--dim)}
+.cmt-input input:focus{box-shadow:inset 0 0 0 1.5px var(--blue)}
+.cmt-send{border:none;background:var(--blue);color:#fff;border-radius:50%;width:34px;height:34px;
+  display:grid;place-items:center;cursor:pointer;flex:none;transition:transform .14s var(--ease)}
+.cmt-send:active{transform:scale(.88)}
+.cmt-send svg{width:17px;height:17px}
+.burst{position:absolute;left:50%;top:50%;font-size:58px;pointer-events:none;z-index:5;
+  animation:burst .82s var(--ease-spring) forwards}
+@keyframes burst{0%{opacity:0;transform:translate(-50%,-50%) scale(.4)}
+  25%{opacity:1;transform:translate(-50%,-50%) scale(1.15)}
+  70%{opacity:1;transform:translate(-50%,-58%) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-95%) scale(1.05)}}
+
+/* ---------- 我的 ---------- */
+.vm-scroll{flex:1;overflow-y:auto;padding:18px 14px 26px;display:flex;flex-direction:column;gap:14px}
+.vm-scroll::-webkit-scrollbar{width:7px}
+.vm-scroll::-webkit-scrollbar-thumb{background:rgba(128,128,128,.3);border-radius:4px}
+.vm-hero{display:flex;flex-direction:column;align-items:center;gap:8px;padding:22px 16px;
+  background:var(--bub-you);border:1px solid var(--bub-you-brd);border-radius:18px;box-shadow:var(--sh-bub)}
+.vm-name{font-size:19px;font-weight:700;display:flex;align-items:center;gap:7px}
+.vm-tag{font-size:11px;font-weight:600;color:#4fae4e;background:rgba(79,174,78,.14);
+  border-radius:9px;padding:2px 8px}
+.vm-user{font-size:13px;color:var(--dim)}
+.vm-sign{font-size:14px;text-align:center;padding:7px 12px;border-radius:10px;outline:none;cursor:text;
+  max-width:100%;transition:background .15s,box-shadow .15s}
+.vm-sign:hover{background:var(--hover)}
+.vm-sign[contenteditable="true"]{background:var(--glass);box-shadow:inset 0 0 0 1.5px var(--blue);cursor:text}
+.vm-stats{display:flex;gap:10px}
+.stat{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px 6px;
+  background:var(--bub-you);border:1px solid var(--bub-you-brd);border-radius:16px;box-shadow:var(--sh-bub);
+  cursor:pointer;transition:transform .16s var(--ease),box-shadow .16s}
+.stat:active{transform:scale(.95)}
+.stat b{font-size:19px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--dim)}
+.vm-list{padding:2px 0;overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer;
+  border-bottom:1px solid var(--line);transition:background .15s}
+.row:last-child{border-bottom:none}
+.row:hover{background:var(--hover)}
+.row:active{background:var(--hover)}
+.r-ico{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;flex:none;
+  background:var(--blue-l);color:var(--blue);font-size:17px}
+.r-ico svg{width:19px;height:19px}
+.r-txt{flex:1;min-width:0}
+.r-txt b{display:block;font-size:14.5px;font-weight:600}
+.r-txt span{font-size:12.5px;color:var(--dim)}
+.r-arrow{color:var(--dim);flex:none;font-size:19px;line-height:1}
+.sw{width:46px;height:27px;border-radius:14px;background:rgba(128,128,128,.35);position:relative;flex:none;
+  cursor:pointer;transition:background .2s var(--ease)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;
+  background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.3);transition:transform .2s var(--ease)}
+.sw.on{background:linear-gradient(135deg,#4aa3ff,#2b7cd3);box-shadow:0 0 12px rgba(51,144,236,.5)}
+.sw.on::after{transform:translateX(19px)}
+
+/* ---------- 动态：真实照片媒体 ---------- */
+.post-media.img{height:auto;display:block;padding:0;overflow:hidden;background:none}
+.post-media.img img{width:100%;display:block;object-fit:cover;max-height:460px;border-radius:14px}
+.post-media.img:active{transform:scale(.99)}
+
+/* ---------- 我的 · Telegram 设置风 ---------- */
+.tg-group{display:flex;flex-direction:column;gap:6px}
+.tg-sec{font-size:12px;font-weight:700;letter-spacing:.6px;color:var(--dim);
+  text-transform:uppercase;padding:2px 8px 0}
+.tg-card{background:var(--bub-you);border:1px solid var(--bub-you-brd);border-radius:16px;
+  overflow:hidden;box-shadow:var(--sh-bub)}
+.tg-row{display:flex;align-items:center;gap:13px;padding:12px 14px;cursor:pointer;
+  border-bottom:1px solid var(--line);transition:background .15s}
+.tg-row:last-child{border-bottom:none}
+.tg-row:hover,.tg-row:active{background:var(--hover)}
+.tg-ico{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;
+  font-size:16px;color:#fff;box-shadow:var(--glass-in)}
+.tg-body{flex:1;min-width:0}
+.tg-body b{display:block;font-size:14.5px;font-weight:600}
+.tg-body span{font-size:12.5px;color:var(--dim)}
+.tg-val{font-size:13px;color:var(--dim);flex:none}
+.tg-arrow{color:var(--dim);flex:none;font-size:18px;line-height:1;opacity:.7}
+/* ---------- 我的 · 底部弹层（选择/输入/确认/信息） ---------- */
+.me-mask{position:fixed;inset:0;background:rgba(0,0,0,.34);z-index:80;opacity:0;pointer-events:none;transition:opacity .2s}
+.me-mask.show{opacity:1;pointer-events:auto}
+.me-sheet{position:fixed;left:50%;bottom:0;transform:translateX(-50%) translateY(110%);width:100%;max-width:520px;z-index:81;box-sizing:border-box;background:var(--glass-hi);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:1px solid var(--glass-brd);border-bottom:none;border-radius:20px 20px 0 0;padding:10px 12px calc(16px + env(safe-area-inset-bottom,0px));box-shadow:0 -12px 40px rgba(0,0,0,.28);transition:transform .4s var(--ease-spring);max-height:78vh;overflow-y:auto}
+.me-sheet.show{transform:translateX(-50%) translateY(0)}
+.me-handle{width:38px;height:4px;border-radius:3px;background:var(--dim);opacity:.4;margin:4px auto 10px}
+.me-title{font-size:15px;font-weight:700;padding:2px 8px 10px;color:var(--txt)}
+.me-sub{font-size:12.5px;color:var(--dim);padding:0 8px 10px;line-height:1.55}
+.me-item{display:flex;align-items:center;gap:12px;padding:13px 12px;border-radius:12px;cursor:pointer;font-size:14.5px;transition:background .14s}
+.me-item:hover,.me-item:active{background:var(--hover)}
+.me-item .mi-txt{flex:1;min-width:0;text-align:left}
+.me-item .mi-ck{color:var(--blue);font-weight:800;opacity:0;flex:none}
+.me-item.on .mi-ck{opacity:1}
+.me-item.on .mi-txt{color:var(--blue);font-weight:600}
+.me-item.danger .mi-txt{color:#e5484d}
+.me-input{width:calc(100% - 16px);box-sizing:border-box;padding:12px 14px;border-radius:12px;border:1px solid var(--glass-brd);background:var(--glass);color:var(--txt);font-size:15px;outline:none;margin:2px 8px}
+.me-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(51,144,236,.18)}
+.me-btns{display:flex;gap:10px;margin-top:10px}
+.me-btn{flex:1;padding:12px;border-radius:12px;border:none;font-size:14.5px;font-weight:600;cursor:pointer;background:var(--glass);color:var(--txt);transition:transform .12s}
+.me-btn:active{transform:scale(.97)}
+.me-btn.primary{background:var(--blue);color:#fff;box-shadow:var(--glow-blue)}
+.me-btn.danger{background:#e5484d;color:#fff}
+/* ---------- 动态：Twitter / X 风 ---------- */
+.x-head{padding:10px 14px 8px;gap:12px}
+.x-head .vf-title{font-size:19px;text-align:left}
+.x-tabs{flex:none;display:flex;border-bottom:1px solid var(--line)}
+.x-tab{flex:1;text-align:center;padding:12px 6px;font-size:14px;font-weight:600;color:var(--dim);cursor:pointer;position:relative;transition:background .14s,color .14s}
+.x-tab:hover{background:var(--hover)}
+.x-tab.on{color:var(--txt)}
+.x-tab.on::after{content:"";position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);width:54px;height:3px;border-radius:3px;background:var(--blue)}
+.x-trends{padding:12px 14px}
+.x-trends .xt-h{font-size:13px;font-weight:700;color:var(--dim);margin-bottom:8px}
+.x-trend{display:flex;flex-direction:column;gap:1px;padding:7px 8px;border-radius:10px;cursor:pointer;transition:background .14s}
+.x-trend:hover{background:var(--hover)}
+.x-trend b{font-size:14.5px}
+.x-trend span{font-size:12px;color:var(--dim)}
+.x-post{flex-direction:row;align-items:flex-start;gap:11px;padding:14px 14px}
+.x-post .avatar.sm{flex:none}
+.x-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.x-head2{display:flex;align-items:center;gap:6px}
+.x-name{display:flex;align-items:center;gap:5px;flex-wrap:wrap;min-width:0;flex:1}
+.x-name b{font-weight:700;font-size:14.5px}
+.x-ver{width:15px;height:15px;border-radius:50%;background:var(--blue);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center;flex:none;line-height:1}
+.x-handle,.x-time,.x-dot{color:var(--dim);font-size:13px}
+.x-more{margin-left:2px;border:none;background:none;color:var(--dim);font-size:16px;line-height:1;cursor:pointer;padding:2px 7px;border-radius:8px;flex:none}
+.x-more:hover{background:var(--hover)}
+.x-post .follow-btn{padding:4px 11px;font-size:12.5px}
+.x-post .post-text{font-size:15px}
+.x-post .post-media{height:190px;border-radius:16px;border:1px solid var(--glass-brd)}
+.x-acts{display:flex;align-items:center;justify-content:space-between;gap:2px;margin-top:2px}
+.x-act{display:flex;align-items:center;gap:5px;border:none;background:none;color:var(--dim);font:inherit;font-size:12.5px;cursor:pointer;padding:5px 8px;border-radius:20px;transition:background .15s,color .15s,transform .14s}
+.x-act:hover{background:var(--hover)}
+.x-act:active{transform:scale(.92)}
+.x-act svg{width:17px;height:17px;flex:none}
+.x-act.liked{color:#e0524a}
+.x-act.liked svg{fill:#e0524a;stroke:#e0524a;animation:heartPop .52s var(--ease-spring)}
+.x-act.reposted{color:#00ba7c}
+.x-act.reposted svg{stroke:#00ba7c}
+.x-empty{text-align:center;color:var(--dim);font-size:14px;padding:40px 10px}
+
+/* ---------- 钱包（USDT） ---------- */
+.wallet{position:relative;isolation:isolate;border-radius:18px;padding:16px 16px 14px;color:#fff;
+  overflow:hidden;max-width:100%;
+  background:linear-gradient(150deg,#2bb389 0%,#199e77 42%,#0b7a55 100%);
+  box-shadow:0 12px 34px rgba(15,122,85,.34),inset 0 1px 0 rgba(255,255,255,.28)}
+/* 高光 / 光斑层：与页面液态玻璃质感统一 */
+.wallet::before{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:
+    radial-gradient(180px 120px at 92% -18%,rgba(255,255,255,.34),transparent 68%),
+    radial-gradient(200px 150px at -14% 116%,rgba(255,255,255,.16),transparent 70%),
+    linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 42%)}
+/* 右上角链网络指示：小圆点 + 文本 */
+.w-top{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;row-gap:6px;
+  font-size:12.5px;font-weight:600;letter-spacing:.3px;opacity:.95;
+  font-variant-numeric:tabular-nums}
+.w-brand{display:flex;align-items:center;gap:7px;min-width:0;flex:1 1 auto}
+.w-brand span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-brand i{width:20px;height:20px;flex:none;border-radius:50%;display:grid;place-items:center;
+  font-style:normal;font-size:11px;font-weight:800;color:#0b7a55;
+  background:linear-gradient(180deg,#fff,#d8f3e8);box-shadow:0 1px 4px rgba(0,0,0,.18)}
+.w-net{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;
+  letter-spacing:.4px;background:rgba(255,255,255,.20);
+  border:1px solid rgba(255,255,255,.26);padding:3px 9px;border-radius:20px;white-space:nowrap}
+.w-net::before{content:"";width:6px;height:6px;border-radius:50%;background:#b9f5df;
+  box-shadow:0 0 7px rgba(185,245,223,.9)}
+/* 余额区：金额 + 单位基线对齐，等宽数字防跳动 */
+.w-bal-wrap{margin-top:14px;min-width:0}
+.w-cap{font-size:11px;font-weight:600;letter-spacing:1px;text-transform:uppercase;opacity:.78}
+.w-bal{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;row-gap:3px;margin-top:5px;
+  min-width:0;font-variant-numeric:tabular-nums;line-height:1.05}
+.w-bal b{font-size:clamp(23px,7.4vw,32px);font-weight:800;letter-spacing:.5px;min-width:0;overflow-wrap:anywhere}
+.w-bal small{font-size:13px;font-weight:700;opacity:.9;letter-spacing:.6px}
+.w-cny{font-size:12.5px;opacity:.9;margin-top:7px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+/* 地址行：可点击复制，等宽字体与右侧图标对齐 */
+.w-addr{display:flex;align-items:center;gap:6px;margin-top:10px;padding:7px 10px;
+  background:rgba(0,0,0,.16);border:1px solid rgba(255,255,255,.16);border-radius:11px;
+  font-size:11.5px;font-variant-numeric:tabular-nums;cursor:pointer;
+  transition:background .15s}
+.w-addr:hover{background:rgba(0,0,0,.24)}
+.w-addr svg{width:13px;height:13px;flex:none;opacity:.85}
+.w-addr span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.2px}
+/* 操作区：2×2 网格，窄屏自动不挤压 */
+.w-acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
+.w-btn{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;
+  border:1px solid rgba(255,255,255,.34);background:rgba(255,255,255,.15);color:#fff;
+  font:inherit;font-weight:600;font-size:13.5px;padding:10px 8px;border-radius:12px;
+  cursor:pointer;white-space:nowrap;backdrop-filter:blur(6px);
+  transition:transform .13s var(--ease),background .15s,border-color .15s}
+.w-btn svg{width:15px;height:15px;flex:none}
+.w-btn:hover{background:rgba(255,255,255,.26);border-color:rgba(255,255,255,.5)}
+.w-btn:active{transform:scale(.96)}
+/* 主操作（充值）加强对比 */
+.w-btn.primary{background:#fff;color:#0b7a55;border-color:#fff}
+.w-btn.primary:hover{background:#f0fbf6}
+/* 交易记录列表：贴在钱包卡内部，与主卡视觉咬合 */
+.w-tx{margin-top:14px;padding-top:12px;border-top:1px solid rgba(255,255,255,.2)}
+.w-tx-head{display:flex;align-items:center;justify-content:space-between;
+  font-size:11.5px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;opacity:.82}
+.w-tx-head button{border:none;background:none;color:#fff;font:inherit;font-size:11.5px;
+  font-weight:700;letter-spacing:.2px;opacity:.95;cursor:pointer;padding:2px 0;text-transform:none}
+.w-tx-head button:hover{text-decoration:underline}
+.w-tx-list{margin-top:8px;display:flex;flex-direction:column}
+.w-tx-item{display:flex;align-items:center;gap:10px;padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,.12)}
+.w-tx-item:last-child{border-bottom:none;padding-bottom:2px}
+.w-tx-ico{width:30px;height:30px;flex:none;border-radius:50%;display:grid;place-items:center;
+  font-size:14px;background:rgba(255,255,255,.18)}
+.w-tx-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.w-tx-body b{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-tx-body span{font-size:11px;opacity:.72;font-variant-numeric:tabular-nums}
+.w-tx-amt{flex:none;font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.w-tx-amt.in{color:#d7ffe9}
+@media(max-width:360px){
+  .w-bal b{font-size:24px}
+  .w-top{font-size:12px}
+  .w-acts{gap:7px}
+  .w-btn{font-size:12.5px;padding:9px 5px}
+}
+
+/* ---------- 弹层输入增强 ---------- */
+.me-hint{font-size:12px;color:var(--dim);margin:8px 12px 0;line-height:1.45}
+.me-cnt{text-align:right;font-size:12px;color:var(--dim);margin:6px 12px 0;font-variant-numeric:tabular-nums}
+
+/* ============ 小程序中心（Mini Program Center） ============ */
+.mp-entry{display:flex;flex-direction:column;gap:11px;padding:14px;
+  background:var(--bub-you);border:1px solid var(--bub-you-brd);border-radius:16px;
+  box-shadow:var(--sh-bub);cursor:pointer;
+  transition:transform .16s var(--ease),box-shadow .16s}
+.mp-entry:hover{transform:translateY(-1px)}
+.mp-entry:active{transform:scale(.985)}
+.mp-entry-head{display:flex;align-items:center;gap:9px}
+.mp-entry-head .me-arrow{margin-left:auto;color:var(--dim);font-size:19px;line-height:1;opacity:.7}
+.mp-entry-title{font-size:15.5px;font-weight:700;display:flex;align-items:center;gap:7px}
+.mp-entry-badge{font-size:10px;font-weight:700;letter-spacing:.3px;padding:2px 7px;border-radius:8px;
+  background:var(--blue-l);color:var(--blue);flex:none}
+.mp-entry-sub{font-size:12.5px;color:var(--dim);margin-left:1px}
+.mp-entry-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.mp-entry-mini{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.mp-entry-mini i{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;
+  font-style:normal;font-size:21px;color:#fff;
+  box-shadow:0 6px 16px rgba(31,84,150,.24),var(--glass-in);
+  transition:transform .16s var(--ease)}
+.mp-entry:active .mp-entry-mini i{transform:scale(.94)}
+.mp-entry-mini span{font-size:11px;color:var(--dim);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:100%}
+
+.mp-mask{position:fixed;inset:0;background:rgba(0,0,0,.34);z-index:72;
+  opacity:0;pointer-events:none;transition:opacity .24s}
+.mp-mask.show{opacity:1;pointer-events:auto}
+.mp-sheet{position:fixed;inset:0;z-index:73;display:flex;flex-direction:column;
+  background:var(--glass-hi);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  transform:translateY(100%);transition:transform .32s cubic-bezier(.22,1,.36,1);
+  padding-top:env(safe-area-inset-top,0px)}
+.mp-sheet.show{transform:translateY(0)}
+.mp-head{flex:none;display:flex;align-items:center;gap:10px;padding:10px 12px;
+  border-bottom:1px solid var(--line);box-shadow:var(--glass-in);position:relative;isolation:isolate}
+.mp-back{width:40px;height:40px;border-radius:50%;border:none;background:none;display:grid;
+  place-items:center;cursor:pointer;color:var(--txt);flex:none;transition:background .15s}
+.mp-back:hover{background:var(--hover)}
+.mp-back svg{width:23px;height:23px}
+.mp-head-title{flex:1;font-size:18px;font-weight:700}
+.mp-search-btn{width:40px;height:40px;border-radius:50%;border:none;background:none;display:grid;
+  place-items:center;cursor:pointer;color:var(--dim);flex:none;transition:background .15s}
+.mp-search-btn:hover{background:var(--hover)}
+.mp-search-btn svg{width:21px;height:21px}
+.mp-body{flex:1;overflow-y:auto;padding:14px 14px calc(26px + env(safe-area-inset-bottom,0px));
+  display:flex;flex-direction:column;gap:16px}
+.mp-body::-webkit-scrollbar{width:7px}
+.mp-body::-webkit-scrollbar-thumb{background:rgba(128,128,128,.3);border-radius:4px}
+
+.mp-banner{position:relative;isolation:isolate;overflow:hidden;border-radius:18px;
+  padding:16px 16px 14px;color:#fff;
+  background:linear-gradient(135deg,#4aa3ff 0%,#7c5cff 58%,#e17076 118%);
+  box-shadow:0 12px 30px rgba(60,110,220,.32),var(--glass-in)}
+.mp-banner h3{font-size:17px;font-weight:800;letter-spacing:.2px}
+.mp-banner p{font-size:12.5px;opacity:.92;margin-top:5px;line-height:1.5}
+.mp-banner .mp-bn-row{display:flex;gap:8px;margin-top:12px}
+.mp-banner .mp-bn-row i{width:34px;height:34px;border-radius:11px;display:grid;place-items:center;
+  font-style:normal;font-size:17px;background:rgba(255,255,255,.22);
+  border:1px solid rgba(255,255,255,.3);backdrop-filter:blur(4px)}
+
+.mp-sec{font-size:12px;font-weight:700;letter-spacing:.6px;color:var(--dim);
+  text-transform:uppercase;padding:0 4px}
+.mp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.mp-card{display:flex;flex-direction:column;gap:9px;padding:13px;cursor:pointer;
+  background:var(--bub-you);border:1px solid var(--bub-you-brd);border-radius:18px;
+  box-shadow:var(--sh-bub);transition:transform .16s var(--ease),box-shadow .16s}
+.mp-card:hover{transform:translateY(-2px)}
+.mp-card.pop{animation:mpPop .44s var(--ease-spring)}
+@keyframes mpPop{0%{transform:scale(1)}45%{transform:scale(.94)}100%{transform:scale(1)}}
+.mp-card-top{display:flex;align-items:center;gap:10px;min-width:0}
+.mp-ico{width:52px;height:52px;border-radius:16px;flex:none;display:grid;place-items:center;
+  font-size:24px;color:#fff;position:relative;isolation:isolate;
+  box-shadow:0 8px 20px rgba(31,84,150,.28),var(--glass-in)}
+.mp-ico::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:radial-gradient(60px 40px at 80% -20%,rgba(255,255,255,.45),transparent 70%)}
+.mp-card-name{font-size:14.5px;font-weight:700;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-card-desc{font-size:12px;color:var(--dim);line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.6em}
+.mp-tag{position:absolute;top:-4px;right:-4px;font-size:9.5px;font-weight:800;letter-spacing:.2px;
+  padding:2px 6px;border-radius:8px;background:var(--blue);color:#fff;
+  box-shadow:0 3px 9px rgba(51,144,236,.5);z-index:2}
+
+.mp-hint{text-align:center;font-size:12px;color:var(--dim);padding:6px 0 2px}
+
+.mp-host{position:fixed;inset:0;z-index:74;display:flex;flex-direction:column;
+  background:var(--glass-hi);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  transform:translateX(100%);transition:transform .3s cubic-bezier(.22,1,.36,1);
+  padding-top:env(safe-area-inset-top,0px)}
+.mp-host.show{transform:translateX(0)}
+.mp-host-head{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px;
+  border-bottom:1px solid var(--line);box-shadow:var(--glass-in);position:relative;
+  isolation:isolate;color:#fff}
+.mp-host-head .mp-back{color:#fff}
+.mp-host-head .mp-back:hover{background:rgba(255,255,255,.18)}
+.mp-host-title{flex:1;min-width:0;font-size:16.5px;font-weight:700;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-host-more{width:38px;height:38px;border-radius:50%;border:none;background:none;color:#fff;
+  display:grid;place-items:center;cursor:pointer;flex:none;font-size:19px;line-height:1}
+.mp-host-more:hover{background:rgba(255,255,255,.18)}
+.mp-host-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;position:relative}
+.mp-host-body::-webkit-scrollbar{width:7px}
+.mp-host-body::-webkit-scrollbar-thumb{background:rgba(128,128,128,.3);border-radius:4px}
+
+
+
+/* ---------- Toast ---------- */
+.toast{position:fixed;left:50%;bottom:calc(var(--tabh) + 26px);transform:translate(-50%,16px);
+  background:rgba(17,24,39,.94);color:#fff;font-size:13.5px;padding:10px 18px;border-radius:22px;
+  z-index:200;opacity:0;pointer-events:none;max-width:82vw;text-align:center;
+  box-shadow:0 8px 26px rgba(0,0,0,.35);
+  transition:opacity .22s var(--ease),transform .22s var(--ease)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ---------- 消息互动：长按菜单 / 表情回应 / 引用 ---------- */
+.msg .react{display:inline-flex;align-items:center;margin-left:6px;font-size:12.5px;
+  background:var(--blue-l);border:1px solid var(--blue);border-radius:10px;padding:0 6px;
+  position:relative;top:2px;animation:pop .24s var(--ease)}
+.msg .quote{border-left:3px solid var(--blue);padding:2px 0 2px 8px;margin:0 0 5px;
+  font-size:13px;opacity:.86;max-width:100%;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.msg .quote b{color:var(--blue);font-weight:600;margin-right:4px}
+.msg.me .quote{border-left-color:rgba(255,255,255,.85)}
+.msg.me .quote b{color:#fff}
+.msg-menu{position:fixed;z-index:150;display:none;flex-direction:column;gap:6px;
+  background:var(--glass-hi);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  border:1px solid var(--glass-brd);border-radius:16px;padding:7px;
+  box-shadow:var(--glass-in),0 12px 34px rgba(0,0,0,.28);animation:menuIn .3s var(--ease-spring)}
+.msg-menu.show{display:flex}
+@keyframes menuIn{from{opacity:0;transform:translateY(6px) scale(.96)}to{opacity:1;transform:none}}
+.mm-emojis{display:flex;gap:2px}
+.mm-emoji{width:36px;height:36px;border-radius:50%;border:none;background:none;font-size:19px;
+  cursor:pointer;display:grid;place-items:center;
+  transition:transform .14s var(--ease),background .14s}
+.mm-emoji:hover{background:var(--hover);transform:scale(1.14)}
+.mm-emoji.on{background:var(--blue-l);box-shadow:inset 0 0 0 1.5px var(--blue)}
+.mm-acts{display:flex;gap:2px;border-top:1px solid var(--line);padding-top:6px}
+.mm-act{display:flex;align-items:center;gap:5px;border:none;background:none;font:inherit;font-size:12.5px;
+  color:var(--txt);padding:7px 9px;border-radius:9px;cursor:pointer;white-space:nowrap;
+  transition:background .14s}
+.mm-act:hover{background:var(--hover)}
+.mm-act svg{width:15px;height:15px}
+.mm-act.danger{color:#e0524a}
+.quote-bar{display:none;align-items:center;gap:9px;padding:7px 14px;background:var(--glass);
+  border-top:1px solid var(--line)}
+.quote-bar.show{display:flex}
+.qb-line{width:3px;height:28px;border-radius:2px;background:var(--blue);flex:none}
+.qb-txt{flex:1;min-width:0;font-size:13px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.qb-txt b{color:var(--blue);font-weight:600;margin-right:5px}
+.qb-x{border:none;background:none;color:var(--dim);cursor:pointer;font-size:19px;line-height:1;
+  width:30px;height:30px;border-radius:50%;display:grid;place-items:center;flex:none}
+.qb-x:hover{background:var(--hover)}
+
+/* ---------- 收尾补充：动态列表 / 消息可交互 / 移动端适配 ---------- */
+#feedList{display:flex;flex-direction:column;gap:14px}
+#feedList:empty{display:none}
+.msg{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.msg.me .react{background:rgba(255,255,255,.22);border-color:rgba(255,255,255,.5)}
+.msg .meta{margin-left:6px}
+.composer{position:relative}
+@media(max-width:768px){
+  .tabbar{box-shadow:var(--glass-in),0 -4px 18px rgba(31,84,150,.12)}
+  .vf-body,.vm-scroll{padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+}
+
+/* ============================================================
+   液态玻璃（Liquid Glass）主题层
+   折射高光 · 边缘色散 · 流动光泽 —— 叠加在原毛玻璃之上
+   ============================================================ */
+/* 环境光：给玻璃「有东西可透」，静态绘制 + 极慢位移（合成层，不重绘） */
+.lg-ambient{position:fixed;inset:-12%;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(38% 30% at 14% 6%,rgba(92,170,255,.34),transparent 70%),
+    radial-gradient(34% 28% at 86% 20%,rgba(178,120,255,.24),transparent 72%),
+    radial-gradient(42% 34% at 72% 94%,rgba(78,222,198,.20),transparent 74%),
+    radial-gradient(30% 26% at 22% 80%,rgba(255,158,208,.16),transparent 74%);
+  filter:blur(26px);opacity:.92;
+  animation:lgDrift 26s ease-in-out infinite alternate}
+@keyframes lgDrift{from{transform:translate3d(0,0,0) scale(1)}to{transform:translate3d(0,-2.2%,0) scale(1.04)}}
+body.dark .lg-ambient{opacity:.72;
+  background:
+    radial-gradient(38% 30% at 14% 6%,rgba(58,130,225,.34),transparent 70%),
+    radial-gradient(34% 28% at 86% 20%,rgba(58,130,225,.22),transparent 72%),
+    radial-gradient(42% 34% at 72% 94%,rgba(74,150,235,.20),transparent 74%),
+    radial-gradient(30% 26% at 22% 80%,rgba(90,169,240,.16),transparent 74%)}
+
+/* ---- 液态面板：统一的折射高光层 ---- */
+.side,.chat-head,.tabbar,.composer,.search,.input-wrap,.set-card,.msg-menu,.scroll-fab,
+.empty .big,.card,.tg-card,.chip,.vm-hero,.stat,.quote-bar,.new-chat-fab{position:relative;isolation:isolate}
+.side::before,.chat-head::before,.tabbar::before,.composer::before,.search::before,
+.input-wrap::before,.set-card::before,.msg-menu::before,.scroll-fab::before,.empty .big::before,
+.card::before,.tg-card::before,.chip::before,.vm-hero::before,.stat::before,
+.quote-bar::before,.new-chat-fab::before{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background-image:var(--lg-refract),var(--lg-sheen);
+  background-size:100% 100%,260% 100%;background-position:0 0,118% 0;background-repeat:no-repeat;
+  mix-blend-mode:var(--lg-blend);opacity:var(--lg-gloss)}
+
+/* 顶边折射亮线（玻璃的「棱」） */
+.chat-head::after,.msg-menu::after,.set-card::after,.composer::after{
+  content:"";position:absolute;left:12%;right:12%;top:0;height:1px;pointer-events:none;z-index:-1;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.95),transparent);opacity:.8}
+body.dark .chat-head::after,body.dark .msg-menu::after,body.dark .set-card::after,body.dark .composer::after{
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);opacity:.6}
+
+/* 底栏流动光泽（仅 transform，走合成层，不触发重绘/重排） */
+.tabbar::after{content:"";position:absolute;top:0;bottom:0;left:0;width:55%;pointer-events:none;z-index:-1;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.5) 50%,transparent);
+  transform:translateX(-170%);animation:lgSweep 8.5s cubic-bezier(.4,0,.2,1) infinite}
+body.dark .tabbar::after{background:linear-gradient(100deg,transparent,rgba(255,255,255,.26) 50%,transparent)}
+@keyframes lgSweep{0%,56%{transform:translateX(-170%)}88%,100%{transform:translateX(340%)}}
+
+/* ---- 面板表面：更「湿」的液态玻璃 ---- */
+.search,.input-wrap{background:var(--glass);border-color:var(--glass-brd);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur)}
+.composer{background:var(--glass-lo);border-top-color:var(--glass-brd);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-in),var(--sh-composer)}
+.card,.tg-card,.vm-hero,.stat{background:var(--glass-hi);border:1px solid var(--glass-brd);
+  backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);
+  box-shadow:var(--glass-in),var(--sh-bub)}
+.msg{isolation:isolate}
+.msg::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 58%);
+  mix-blend-mode:var(--lg-blend);opacity:var(--lg-gloss)}
+.msg.me::after{background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0) 62%)}
+.msg.you{background:var(--glass-hi);border-color:var(--glass-brd);
+  backdrop-filter:blur(14px) saturate(1.5);-webkit-backdrop-filter:blur(14px) saturate(1.5)}
+
+/* ---- Telegram 风：导航选中胶囊（取代原顶部小横条） ---- */
+.tab.on::before{content:"";position:absolute;top:6px;width:58px;height:30px;border-radius:16px;
+  background:var(--blue-l);box-shadow:0 0 18px rgba(51,144,236,.4);animation:tabPill .36s var(--ease-spring)}
+@keyframes tabPill{from{width:20px;opacity:0}to{width:58px;opacity:1}}
+
+/* ---- Telegram 风：聊天列表右下「新建对话」浮动按钮 ---- */
+.new-chat-fab{position:absolute;right:16px;bottom:16px;z-index:5;width:54px;height:54px;border-radius:50%;
+  border:1px solid var(--glass-brd);cursor:pointer;display:grid;place-items:center;color:#fff;
+  background:linear-gradient(135deg,rgba(74,163,255,.96),rgba(43,124,211,.96));
+  box-shadow:0 8px 24px rgba(51,144,236,.5),0 0 22px rgba(51,144,236,.4),var(--glass-in);
+  transition:transform .18s var(--ease),box-shadow .18s var(--ease)}
+.new-chat-fab svg{width:24px;height:24px}
+.new-chat-fab:hover{transform:scale(1.06);
+  box-shadow:0 10px 28px rgba(51,144,236,.62),0 0 30px rgba(51,144,236,.5),var(--glass-in)}
+.new-chat-fab:active{transform:scale(.92)}
+@media(max-width:768px){.new-chat-fab{bottom:18px;right:14px}}
+
+/* 无障碍：尊重系统“减少动态效果” */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;
+    transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+
+/* ====== 小程序样式（注入） ====== */
+/* ---------- 小程序内容：通用 ---------- */
+.mp-seg{display:flex;gap:6px;background:var(--hover);border-radius:12px;padding:4px;margin:0 0 2px}
+.mp-seg button{flex:1;border:none;background:none;padding:8px 0;border-radius:9px;font-size:13px;font-weight:600;color:var(--dim);cursor:pointer;font-family:inherit;transition:background .15s,color .15s}
+.mp-seg button.on{background:var(--glass-hi);color:var(--txt);box-shadow:var(--glass-in)}
+.mp-list{display:flex;flex-direction:column;gap:9px}
+.mp-row{display:flex;align-items:center;gap:11px;padding:12px 13px;border-radius:16px;
+  background:var(--bub-you);border:1px solid var(--bub-you-brd);box-shadow:var(--sh-bub);cursor:pointer;
+  transition:transform .15s var(--ease)}
+.mp-row:hover{transform:translateY(-1px)}
+.mp-row:active{transform:scale(.988)}
+.mp-row .mp-ico{width:44px;height:44px;border-radius:13px;font-size:20px}
+.mp-row-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.mp-row-t{font-size:14.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-row-s{font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-row-r{flex:none;font-size:12.5px;color:var(--dim);text-align:right;display:flex;flex-direction:column;gap:3px;align-items:flex-end}
+.mp-row-r b{font-variant-numeric:tabular-nums;color:var(--txt)}
+.mp-badge{display:inline-block;min-width:18px;height:18px;line-height:18px;text-align:center;
+  font-size:11px;font-weight:700;color:#fff;background:#ff3b30;border-radius:9px;padding:0 5px}
+.mp-input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:14px;font-size:15px;
+  border:1px solid var(--bub-you-brd);background:var(--bub-you);color:var(--txt);font-family:inherit;outline:none}
+.mp-input:focus{border-color:var(--blue)}
+
+/* ---------- 炒股 ---------- */
+.up{color:#e5484d}.dn{color:#16a34a}
+.st-idx{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.st-idx-item{padding:11px 10px;border-radius:14px;background:var(--bub-you);border:1px solid var(--bub-you-brd);
+  box-shadow:var(--sh-bub);display:flex;flex-direction:column;gap:4px;min-width:0}
+.st-idx-item b{font-size:15px;font-variant-numeric:tabular-nums}
+.st-idx-item small{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.st-idx-item span{font-size:12.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.st-hero{padding:16px;border-radius:18px;color:#fff;background:linear-gradient(135deg,#ff5e62,#c81e3c);
+  box-shadow:0 12px 30px rgba(200,30,60,.3),var(--glass-in);position:relative;isolation:isolate;overflow:hidden}
+.st-hero .st-name{font-size:15px;font-weight:700;opacity:.95}
+.st-hero .st-code{font-size:11.5px;opacity:.8;margin-top:2px}
+.st-hero .st-price{font-size:34px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.15;margin-top:8px}
+.st-hero .st-chg{font-size:14px;font-weight:700;margin-top:3px;display:flex;gap:12px;opacity:.97}
+.st-kline{margin-top:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+  border-radius:14px;padding:8px 6px}
+.st-kline svg{display:block;width:100%;height:116px}
+.st-grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.st-cell{padding:11px 12px;border-radius:14px;background:var(--bub-you);border:1px solid var(--bub-you-brd);
+  box-shadow:var(--sh-bub);display:flex;justify-content:space-between;font-size:13px;gap:8px}
+.st-cell span{color:var(--dim)}
+.st-cell b{font-variant-numeric:tabular-nums}
+.st-order{display:flex;flex-direction:column;gap:5px}
+.st-ob{display:flex;justify-content:space-between;font-size:12.5px;font-variant-numeric:tabular-nums;padding:3px 4px;border-radius:8px}
+.st-ob:nth-child(5){border-top:1px solid var(--line)}
+.st-ob b{font-weight:600}
+.st-ob i{font-style:normal;color:var(--dim);width:40px;display:inline-block}
+.st-btns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:2px}
+.st-btns button{border:none;border-radius:14px;padding:13px 0;font-size:15px;font-weight:700;color:#fff;
+  cursor:pointer;font-family:inherit;box-shadow:0 8px 20px rgba(0,0,0,.14),var(--glass-in)}
+.st-buy{background:linear-gradient(135deg,#ff5e62,#e5484d)}
+.st-sell{background:linear-gradient(135deg,#22c55e,#15803d)}
+.st-inline-btn{background:var(--hover);color:var(--dim);border:none;border-radius:20px;padding:8px 15px;
+  font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit}
+.st-unit{font-style:normal;font-size:11px;opacity:.72;margin-left:4px;font-weight:600}
+.st-spark{width:62px;height:26px;flex:none;opacity:.92;margin:0 4px}
+.st-spark svg{display:block;width:100%;height:100%}
+.st-bars{display:flex;flex-direction:column}
+.st-chart-cap{font-size:11.5px;color:var(--dim);font-weight:600;margin-bottom:6px}
+.st-bar-svg{background:var(--bub-you);border:1px solid var(--bub-you-brd);border-radius:14px;padding:10px 8px;
+  box-shadow:var(--sh-bub)}
+.st-bar-svg svg{display:block;width:100%;height:94px}
+
+/* ---------- 公众号 ---------- */
+.oa-hero{display:flex;align-items:center;gap:12px;padding:14px;border-radius:18px;
+  background:var(--bub-you);border:1px solid var(--bub-you-brd);box-shadow:var(--sh-bub)}
+.oa-hero .mp-ico{width:56px;height:56px;border-radius:16px;font-size:26px}
+.oa-hero-main{flex:1;min-width:0}
+.oa-hero-main b{font-size:16px}
+.oa-hero-main p{font-size:12.5px;color:var(--dim);margin-top:4px;line-height:1.5}
+.oa-follow{flex:none;border:none;border-radius:20px;padding:8px 15px;font-size:12.5px;font-weight:700;
+  cursor:pointer;font-family:inherit;background:var(--blue);color:#fff;transition:opacity .15s}
+.oa-follow.on{background:var(--hover);color:var(--dim)}
+.oa-art{display:flex;gap:11px;padding:13px;border-radius:16px;background:var(--bub-you);
+  border:1px solid var(--bub-you-brd);box-shadow:var(--sh-bub);cursor:pointer;transition:transform .15s var(--ease)}
+.oa-art:hover{transform:translateY(-1px)}
+.oa-art:active{transform:scale(.988)}
+.oa-art-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.oa-art-t{font-size:14.5px;font-weight:700;line-height:1.4;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.oa-art-meta{font-size:11.5px;color:var(--dim);margin-top:auto;display:flex;gap:10px;flex-wrap:wrap}
+.oa-thumb{width:76px;height:76px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:30px;
+  background:linear-gradient(135deg,#4aa3ff,#7c5cff)}
+.oa-cover{height:150px;border-radius:18px;display:grid;place-items:center;font-size:54px;color:#fff;
+  background:linear-gradient(135deg,#4aa3ff,#7c5cff);box-shadow:var(--sh-bub)}
+.oa-title{font-size:20px;font-weight:800;line-height:1.4}
+.oa-byline{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--dim)}
+.oa-body{font-size:14.5px;line-height:1.85;color:var(--txt)}
+.oa-body p{margin:0 0 12px}
+.oa-end{text-align:center;font-size:12px;color:var(--dim);padding:8px 0 2px}
+.oa-acts{display:flex;gap:9px;justify-content:center;padding:6px 0 2px}
+.oa-act{border:1px solid var(--line);background:var(--glass-hi);border-radius:22px;padding:10px 0;flex:1;
+  font-size:13px;color:var(--dim);display:flex;align-items:center;justify-content:center;gap:6px;
+  cursor:pointer;font-family:inherit;transition:transform .12s var(--ease),color .15s}
+.oa-act:active{transform:scale(.95)}
+.oa-act.on{color:var(--blue);border-color:var(--blue)}
+.oa-act svg{width:17px;height:17px}
+.oa-cmt{display:flex;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.oa-cmt:last-child{border-bottom:none}
+.oa-cmt-av{width:34px;height:34px;border-radius:50%;flex:none;display:grid;place-items:center;color:#fff;font-size:15px}
+.oa-cmt-main{flex:1;min-width:0}
+.oa-cmt-main b{font-size:12.5px}
+.oa-cmt-main p{font-size:13.5px;line-height:1.55;margin-top:3px}
+.oa-cmt-main span{font-size:11px;color:var(--dim);display:block;margin-top:4px}
+.oa-edit{display:flex;gap:9px;margin-top:10px}
+.oa-edit input{flex:1;min-width:0;box-sizing:border-box;padding:11px 14px;border-radius:22px;font-size:13.5px;
+  border:1px solid var(--bub-you-brd);background:var(--bub-you);color:var(--txt);font-family:inherit;outline:none}
+.oa-edit input:focus{border-color:var(--blue)}
+.oa-edit button{flex:none;border:none;border-radius:22px;padding:0 18px;font-size:13.5px;font-weight:700;
+  background:var(--blue);color:#fff;cursor:pointer;font-family:inherit}
+.oa-day{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:16px;
+  background:var(--bub-you);border:1px solid var(--bub-you-brd);box-shadow:var(--sh-bub)}
+.oa-day b{width:56px;flex:none;font-size:13.5px}
+.oa-day i{font-style:normal;font-size:22px;flex:none}
+.oa-day span{flex:1;font-size:12.5px;color:var(--dim);text-align:right}
+.oa-tl{display:flex;flex-direction:column;gap:0;padding-left:6px}
+.oa-tl-item{position:relative;padding:0 0 16px 20px;border-left:2px solid var(--line)}
+.oa-tl-item:last-child{border-left-color:transparent}
+.oa-tl-item::before{content:"";position:absolute;left:-6px;top:2px;width:10px;height:10px;border-radius:50%;
+  background:var(--blue);box-shadow:0 0 0 3px var(--bub-you)}
+.oa-tl-item.done::before{background:#16a34a}
+.oa-tl-item b{font-size:13.5px}
+.oa-tl-item p{font-size:12px;color:var(--dim);margin-top:3px}
+
+</style>
+</head>
+<body>
+<div class="lg-ambient" aria-hidden="true"></div>
+<div class="app" id="app">
+
+  <aside class="side">
+    <div class="side-head">
+      <button class="menu-btn" id="themeBtn" title="切换主题">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input id="search" placeholder="搜索" autocomplete="off">
+        <button class="search-clear" id="searchClear" type="button" title="清空搜索" aria-label="清空搜索">✕</button>
+      </div>
+    </div>
+    <div class="chat-list" id="chatList"></div>
+    <button class="new-chat-fab" id="newChatFab" title="新建对话" aria-label="新建对话">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+    </button>
+  </aside>
+
+  <section class="main">
+    <div class="empty" id="empty">
+      <div class="big">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+        </svg>
+      </div>
+      <p>选择一个聊天开始对话</p>
+    </div>
+
+    <div class="chat-head" id="chatHead" style="display:none">
+      <button class="back-btn" id="backBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <div class="avatar" id="chAvatar"></div>
+      <div class="ch-info">
+        <div class="ch-name-row">
+          <span class="ch-name" id="chName"></span>
+          <span class="ai-pill off" id="aiPill"><i></i>AI未配置</span>
+        </div>
+        <div class="ch-status" id="chStatus"></div>
+      </div>
+      <div class="ch-actions">
+        <button class="icon-btn" id="aiBtn" title="AI 接入设置">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 9 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        </button>
+        <button class="icon-btn" title="通话">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.2-1.2a2 2 0 0 1 2.1-.5c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg>
+        </button>
+        <button class="icon-btn" title="更多">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <button class="scroll-fab" id="scrollFab" title="回到底部" aria-label="回到底部">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 5v14M19 12l-7 7-7-7"/></svg>
+      <span class="nbadge" id="fabBadge">0</span>
+    </button>
+
+    <div class="quote-bar" id="quoteBar">
+      <span class="qb-line"></span>
+      <div class="qb-txt" id="qbTxt"></div>
+      <button class="qb-x" id="qbX" title="取消引用">&times;</button>
+    </div>
+
+    <div class="composer" id="composer" style="display:none">
+      <button class="icon-btn" title="表情">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>
+      </button>
+      <div class="input-wrap">
+        <textarea id="input" rows="1" placeholder="消息"></textarea>
+      </div>
+      <button class="icon-btn" title="附件">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21.4 11.05 12.25 20.2a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+      </button>
+      <button class="send-btn" id="sendBtn" title="发送">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>
+      </button>
+    </div>
+  </section>
+</div>
+
+<!-- ============ 动态（Feed）视图 ============ -->
+<section class="view view-feed" id="viewFeed">
+  <div class="vf-head x-head">
+    <div class="avatar sm me" id="xHeadAvatar">我</div>
+    <div class="vf-title">首页</div>
+    <button class="icon-btn" id="feedRefresh" title="刷新">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+    </button>
+  </div>
+  <div class="x-tabs" id="xTabs">
+    <div class="x-tab on" data-x="for-you">为你推荐</div>
+    <div class="x-tab" data-x="following">正在关注</div>
+  </div>
+  <div class="vf-body" id="vfBody">
+    <div class="card compose-card x-compose">
+      <div class="avatar sm me" id="ccAvatar">我</div>
+      <div class="cc-main">
+        <textarea id="feedInput" rows="1" placeholder="有什么新鲜事？"></textarea>
+        <div class="cc-bar">
+          <div class="cc-tools" id="ccTools">
+            <button class="chip" data-media="0" title="风景">&#127749;</button>
+            <button class="chip" data-media="1" title="美食">&#127836;</button>
+            <button class="chip" data-media="2" title="音乐">&#127925;</button>
+            <button class="chip" data-media="3" title="灵感">&#128161;</button>
+            <button class="chip" id="ccPhoto" title="真实照片">&#128247;</button>
+          </div>
+          <button class="btn-primary" id="feedPost">发帖</button>
+        </div>
+      </div>
+    </div>
+    <div class="card x-trends" id="xTrends">
+      <div class="xt-h">🔥 正在发生</div>
+      <div class="x-trend" data-q="AI"><b>#AI助手</b><span>1.2 万条动态</span></div>
+      <div class="x-trend" data-q="摄影"><b>#随手拍晚霞</b><span>8,640 条动态</span></div>
+      <div class="x-trend" data-q="数码"><b>#液态玻璃 UI</b><span>3,210 条动态</span></div>
+    </div>
+    <div id="feedList"></div>
+  </div>
+</section>
+
+<!-- ============ 我的（Me）视图 ============ -->
+<section class="view view-me" id="viewMe">
+  <div class="vf-head"><div class="vf-title">我的</div></div>
+  <div class="vm-scroll" id="vmScroll"></div>
+</section>
+
+<!-- ============ 底部主导航（聊天 / 动态 / 我的）============ -->
+<nav class="tabbar" id="tabbar">
+  <div class="tabbar-inner">
+    <button class="tab on" id="tabChat">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+      <span>聊天</span>
+      <span class="tb-dot" id="tbDot">0</span>
+    </button>
+    <button class="tab" id="tabMp">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="3" width="7.5" height="7.5" rx="2"/>
+        <rect x="3" y="13.5" width="7.5" height="7.5" rx="2"/><rect x="13.5" y="13.5" width="7.5" height="7.5" rx="2"/></svg>
+      <span>小程序</span>
+    </button>
+    <button class="tab" id="tabFeed">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="9"/><path d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z"/></svg>
+      <span>动态</span>
+    </button>
+    <button class="tab" id="tabMe">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+      <span>我的</span>
+    </button>
+  </div>
+</nav>
+
+
+<!-- ============ 小程序中心（微信「发现」风格）============ -->
+<div class="mp-mask" id="mpMask"></div>
+<div class="mp-sheet" id="mpSheet" aria-hidden="true">
+  <div class="mp-head">
+    <button class="mp-back" id="mpBack" title="返回">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="mp-head-title" id="mpTitle">发现</div>
+    <button class="mp-search-btn" id="mpSearch" title="搜索">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+    </button>
+  </div>
+  <div class="mp-body" id="mpBody"></div>
+</div>
+
+<!-- ============ 小程序宿主页 ============ -->
+<div class="mp-host" id="mpHost" aria-hidden="true">
+  <div class="mp-host-head" id="mpHostHead">
+    <button class="mp-back" id="mpHostBack" title="返回">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="mp-host-title" id="mpHostTitle">小程序</div>
+    <button class="mp-host-more" id="mpHostMore" title="更多">⋯</button>
+  </div>
+  <div class="mp-host-body" id="mpHostBody"></div>
+</div>
+
+
+<!-- ============ AI 接入设置面板 ============ -->
+<div class="set-panel" id="setPanel">
+  <div class="set-card">
+    <h3>AI 接入设置</h3>
+    <div class="hint">配置 OpenAI 兼容的 Chat Completions 接口。留空则使用内置演示回复（离线 mock）。<br>
+      例：<code>https://api.deepseek.com/v1/chat/completions</code> · 模型 <code>deepseek-chat</code></div>
+
+    <label>接口地址 (Base URL 或完整 endpoint)</label>
+    <input id="cfgUrl" placeholder="https://api.deepseek.com/v1/chat/completions" autocomplete="off">
+
+    <label>API Key</label>
+    <input id="cfgKey" type="password" placeholder="sk-..." autocomplete="off">
+
+    <label>模型名</label>
+    <input id="cfgModel" placeholder="deepseek-chat" autocomplete="off">
+
+    <label>注意：浏览器跨域 (CORS)</label>
+    <select id="cfgCors">
+      <option value="direct">直连（服务端需允许 CORS）</option>
+      <option value="proxy">走本地代理（Operit / 反代前缀）</option>
+    </select>
+
+    <div class="set-row">
+      <input type="checkbox" id="cfgStream" checked>
+      <label for="cfgStream" style="margin:0;font-weight:500;color:var(--txt)">启用流式输出（打字机效果）</label>
+    </div>
+    <div class="set-row">
+      <input type="checkbox" id="cfgPersona" checked>
+      <label for="cfgPersona" style="margin:0;font-weight:500;color:var(--txt)">每个聊天使用独立人设 system prompt</label>
+    </div>
+
+    <label>超时 (ms) / 最大重试次数</label>
+    <div style="display:flex;gap:9px">
+      <input id="cfgTimeout" type="number" value="60000" style="flex:2" min="5000" step="1000">
+      <input id="cfgRetry" type="number" value="2" style="flex:1" min="0" max="5">
+    </div>
+
+    <div class="set-actions">
+      <button class="ghost" id="cfgClear">清空</button>
+      <button class="ghost" id="cfgClose">取消</button>
+      <button class="primary" id="cfgSave">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="msg-menu" id="msgMenu"></div>
+<div class="ctx-menu" id="ctxMenu"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  var COLORS=["#e17076","#7bc862","#e5ca77","#65aadd","#a695e7","#ee7aae","#6ec9cb"];
+  function colorOf(n){var s=0;for(var i=0;i<n.length;i++)s+=n.charCodeAt(i);return COLORS[s%COLORS.length];}
+  function initial(n){return n.slice(0,1).toUpperCase();}
+  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  var FIXED_BG={saved:"#3390ec",dev:"#7c5cff",bot:"#4fae4e",news:"#e8912d"};
+  function avatarStyle(c){return FIXED_BG[c.id]||colorOf(c.name);}
+  function avatarInner(c){var ch=c.avatar||initial(c.name);return ch==="</>"?ch:esc(ch);}
+
+  var chats=[
+    {id:"saved",name:"Saved Messages",avatar:"\uD83D\uDD16",saved:true,status:"只对自己可见",unread:0,
+     msgs:[
+       {from:"me",text:"\uD83D\uDCCC 这是收藏夹：发进来的东西只有我自己能看到。",t:0,read:true,base:1700000000000},
+       {from:"me",text:"相当于 Telegram 的云笔记。",t:0,read:true,base:1700000060000}
+     ]},
+    {id:"anna",name:"Anna",avatar:"",online:true,status:"在线",unread:2,
+     msgs:[
+       {from:"you",text:"嘿，晚上有空吗？",base:1700100000000},
+       {from:"me",text:"在的，怎么啦 \uD83D\uDE04",base:1700100180000,read:true},
+       {from:"you",text:"新开了家咖啡馆，要不要一起去看看",base:1700100300000},
+       {from:"me",text:"好啊，几点？",base:1700100420000,read:true},
+       {from:"you",text:"七点半吧，我发你定位",base:1700100480000},
+       {from:"you",text:"\uD83D\uDCCD 暖阳咖啡馆 · 距你 1.2km",base:1700100490000}
+     ]},
+    {id:"dev",name:"前端开发组",avatar:"</>",group:true,status:"6 名成员，3 人在线",unread:5,
+     msgs:[
+       {from:"you",who:"Kevin",text:"新版首页推到 staging 了",base:1700200000000},
+       {from:"you",who:"Lucy",text:"收到，我测一下移动端适配",base:1700200300000},
+       {from:"me",text:"辛苦啦，有问题随时说 \uD83D\uDC4D",base:1700200600000,read:true},
+       {from:"you",who:"Kevin",text:"暗色模式也加了，效果不错",base:1700200900000}
+     ]},
+    {id:"bot",name:"DeepSeek Bot",avatar:"\uD83E\uDD16",status:"bot",unread:0,
+     msgs:[
+       {from:"me",text:"帮我写个快排",base:1700300000000,read:true},
+       {from:"you",text:"好的，Python 版：\n\ndef quicksort(a):\n    if len(a)<=1: return a\n    p=a[len(a)//2]\n    l=[x for x in a if x<p]\n    m=[x for x in a if x==p]\n    r=[x for x in a if x>p]\n    return quicksort(l)+m+quicksort(r)",base:1700300060000}
+     ]},
+    {id:"max",name:"Max",avatar:"",status:"最后上线 2 小时前",unread:0,
+     msgs:[
+       {from:"you",text:"文件收到了，谢谢！",base:1700400000000},
+       {from:"me",text:"不客气~",base:1700400120000,read:true}
+     ]},
+    {id:"news",name:"RSS 速递",avatar:"\uD83D\uDCF0",status:"频道 · 12.4K 订阅",unread:9,
+     msgs:[
+       {from:"you",text:"【技术】前端框架 2024 年度调研报告发布，React 仍居首位。",base:1700500000000},
+       {from:"you",text:"【AI】多模态大模型迎来新一轮开源潮。",base:1700503600000}
+     ]}
+  ];
+
+  /* 时间显示 */
+  function pad(n){return String(n).padStart(2,"0");}
+  function fmtListTime(ts){
+    var d=new Date(ts),n=new Date();
+    if(d.toDateString()===n.toDateString())return pad(d.getHours())+":"+pad(d.getMinutes());
+    return (d.getMonth()+1)+"/"+d.getDate();
+  }
+  function fmtMsgTime(ts){var d=new Date(ts);return pad(d.getHours())+":"+pad(d.getMinutes());}
+  function fmtDay(ts){
+    var d=new Date(ts),n=new Date();
+    if(d.toDateString()===n.toDateString())return "今天";
+    var y=new Date(n.getTime()-86400000);
+    if(d.toDateString()===y.toDateString())return "昨天";
+    return (d.getMonth()+1)+"月"+d.getDate()+"日";
+  }
+  function lastMsg(c){return c.msgs[c.msgs.length-1]||null;}
+
+  var app=document.getElementById("app");
+  var chatListEl=document.getElementById("chatList");
+  var messagesEl=document.getElementById("messages");
+  var emptyEl=document.getElementById("empty");
+  var chatHeadEl=document.getElementById("chatHead");
+  var composerEl=document.getElementById("composer");
+  var inputEl=document.getElementById("input");
+  var activeId=null;
+  var replyTimers={};
+
+  /* ---------- 聊天列表 ---------- */
+  function renderList(filter){
+    chatListEl.innerHTML="";
+    var q=(filter||"").trim().toLowerCase();
+    /* 置顶聊天优先，其余保持原顺序（稳定排序） */
+    var list=chats.slice().sort(function(a,b){return (b.pin?1:0)-(a.pin?1:0);});
+    list.forEach(function(c){
+      if(q && c.name.toLowerCase().indexOf(q)<0) return;
+      var lm=lastMsg(c);
+      var item=document.createElement("div");
+      item.className="chat-item"+(c.id===activeId?" active":"")+(c.pin?" pinned":"")+(c.mute?" muted":"");
+      var preview="";
+      if(lm){
+        var prefix="";
+        if(lm.from==="me"&&!c.saved) prefix='<span class="check">\u2713\u2713</span>';
+        else if(c.saved) prefix='<span class="check">\uD83D\uDD16</span>';
+        var text=lm.text.replace(/\n/g," ");
+        if(c.group&&lm.who&&lm.from!=="me") text=lm.who+": "+text;
+        preview=prefix+esc(text);
+      }
+      var badge="";
+      if(c.unread>0&&!c.mute) badge=c.id==="saved"?'<div class="badge dot"></div>':'<div class="badge">'+c.unread+'</div>';
+      var nameHtml=esc(c.name)+(c.mute?'<span class="mute-ico">\uD83D\uDD07</span>':'');
+      var timeHtml=(c.pin?'<span class="ci-pin">\uD83D\uDCCC</span>':'')+(lm?fmtListTime(lm.t||lm.base):"");
+      item.innerHTML=
+        '<div class="avatar" style="background:'+avatarStyle(c)+'">'+avatarInner(c)+
+          (c.online?'<span class="online"></span>':'')+'</div>'+
+        '<div class="ci-body"><div class="ci-top"><span class="ci-name">'+nameHtml+
+          '</span><span class="ci-time">'+timeHtml+'</span></div>'+
+        '<div class="ci-bot"><span class="ci-last">'+preview+'</span>'+(badge||"")+'</div></div>';
+      bindChatItem(item,c);
+      chatListEl.appendChild(item);
+    });
+  }
+
+  /* 列表项互动：单击打开 / 长按(右键)弹出操作菜单 */
+  function bindChatItem(item,c){
+    var fired=false;
+    item.onclick=function(){if(fired) return;openChat(c.id);};
+    item.oncontextmenu=function(ev){
+      if(ev&&ev.preventDefault) ev.preventDefault();
+      cancelListPress();
+      openChatMenu(c,item);
+    };
+    function fireMenu(){
+      fired=true;
+      openChatMenu(c,item);
+      setTimeout(function(){fired=false;},700);
+    }
+    item.onmousedown=function(){cancelListPress();listPressTimer=setTimeout(function(){listPressTimer=null;fireMenu();},520);};
+    item.onmouseup=cancelListPress;
+    item.onmouseleave=cancelListPress;
+    item.ontouchstart=function(){cancelListPress();listPressTimer=setTimeout(function(){listPressTimer=null;fireMenu();},520);};
+    item.ontouchend=function(){setTimeout(cancelListPress,0);};
+    item.ontouchmove=cancelListPress;
+  }
+
+  /* ---------- 打开对话 ---------- */
+  function openChat(id){
+    closeCtxMenu();
+    activeId=id;
+    var c=chats.find(function(x){return x.id===id;});
+    if(!c) return;
+    c.unread=0;
+    emptyEl.style.display="none";
+    chatHeadEl.style.display="flex";
+    composerEl.style.display="flex";
+    document.getElementById("chAvatar").outerHTML=
+      '<div class="avatar" id="chAvatar" style="background:'+avatarStyle(c)+'">'+avatarInner(c)+
+      (c.online?'<span class="online"></span>':'')+'</div>';
+    document.getElementById("chName").textContent=c.name;
+    document.getElementById("chStatus").textContent=c.status||"";
+    renderMessages(c);
+    renderList(document.getElementById("search").value);
+    app.classList.add("chat-open");
+    refreshPill();
+    setTimeout(function(){inputEl.focus();},100);
+  }
+
+  /* 轻量 Markdown：```代码块``` / `行内代码` / **粗体** */
+  function fmtText(s){
+    var h=esc(s);
+    h=h.replace(/```[a-zA-Z0-9+#-]*\n?([\s\S]*?)```/g,function(_,code){
+      return "<pre><code>"+code.replace(/\n$/,"")+"</code></pre>";
+    });
+    h=h.replace(/`([^`\n]+)`/g,"<code>$1</code>");
+    h=h.replace(/\*\*([^*\n]+)\*\*/g,"<b>$1</b>");
+    return h;
+  }
+  function msgHtml(m,c,stack){
+    var cls=(m.from==="me"?"me":"you")+(stack?" stack":"");
+    var who=(c.group&&m.who&&m.from!=="me"&&!c.saved)?'<div class="who">'+esc(m.who)+'</div>':"";
+    var quote=m.quote?'<div class="quote"><b>'+esc(m.quote.who||"消息")+'</b>'+esc(m.quote.text)+'</div>':"";
+    var meta;
+    if(c.saved) meta="";
+    else if(m.from==="me"){
+      var tick=m.read?"\u2713\u2713":"\u2713";
+      meta='<span class="meta">'+fmtMsgTime(m.t||m.base)+'<span style="font-size:13px">'+tick+'</span></span>';
+    } else {
+      meta='<span class="meta">'+fmtMsgTime(m.t||m.base)+'</span>';
+    }
+    return '<div class="msg '+cls+'">'+who+quote+'<span class="txt">'+fmtText(m.text)+'</span>'+meta+
+      (m.react?'<span class="react">'+m.react+'</span>':"")+'</div>';
+  }
+
+  function renderMessages(c){
+    var atBottom=isAtBottom();
+    var prevLen=messagesEl.children.length;
+    messagesEl.innerHTML="";
+    var lastDay=null,prev=null;
+    c.msgs.forEach(function(m){
+      if(m.sys){                       /* 系统 / 错误提示行 */
+        var note=document.createElement("div");
+        note.className="sys-note"+(m.err?" err":"");
+        note.textContent=m.text;
+        messagesEl.appendChild(note);prev=null;return;
+      }
+      var t=m.t||m.base;
+      var day=fmtDay(t);
+      if(day!==lastDay){
+        var sep=document.createElement("div");
+        sep.className="date-sep";sep.textContent=day;
+        messagesEl.appendChild(sep);lastDay=day;prev=null;
+      }
+      /* 同一发送者、同一时间簇内的连续消息 → 合并气泡圆角 */
+      var same=(prev&&prev.from===m.from&&(m.from==="me"||(prev.who||"")===(m.who||"")||c.saved));
+      var tmp=document.createElement("div");tmp.innerHTML=msgHtml(m,c,same);
+      var node=tmp.firstChild;
+      if(node){node.__m=m;messagesEl.appendChild(node);}
+      prev=m;
+    });
+    bindMsgs();
+    /* 新消息到达时：若用户已在底部或无历史 → 滚到底；否则计数提示 */
+    var grew=(c.msgs.length>prevLen||prevLen===0);
+    if(atBottom||grew===false) scrollBottom(true);
+    else bumpFab(c.msgs.length-prevLen);
+  }
+
+  /* ---------- 滚动状态管理 ---------- */
+  var fabEl=document.getElementById("scrollFab"),fabBadge=document.getElementById("fabBadge");
+  var fabCount=0;
+  function isAtBottom(){
+    return messagesEl.scrollHeight-messagesEl.scrollTop-messagesEl.clientHeight<48;
+  }
+  function scrollBottom(force){
+    if(force!==true&&!isAtBottom()) return;
+    fabCount=0;fabBadge.style.display="none";
+    requestAnimationFrame(function(){
+      messagesEl.scrollTo({top:messagesEl.scrollHeight,behavior:"smooth"});
+    });
+  }
+  function bumpFab(n){
+    if(n<=0) return;
+    fabCount+=n;fabBadge.textContent=fabCount>99?"99+":fabCount;
+    fabBadge.style.display="grid";
+  }
+  messagesEl.addEventListener("scroll",function(){
+    if(isAtBottom()){fabEl.classList.remove("show");fabCount=0;fabBadge.style.display="none";}
+    else fabEl.classList.add("show");
+  },{passive:true});
+  fabEl.onclick=function(){
+    fabCount=0;fabBadge.style.display="none";
+    messagesEl.scrollTo({top:messagesEl.scrollHeight,behavior:"smooth"});
+  };
+
+  /* ---------- 发送消息 ---------- */
+  function now(){return Date.now();}
+  function send(){
+    var text=inputEl.value.replace(/\s+$/,"");
+    if(!text||!activeId) return;
+    var c=chats.find(function(x){return x.id===activeId;});
+    c.msgs.push({from:"me",text:text,t:now(),read:false});
+    inputEl.value="";inputEl.style.height="auto";
+    renderMessages(c);renderList(document.getElementById("search").value);
+    scrollBottom();
+    setTimeout(function(){
+      c.msgs[c.msgs.length-1].read=true;
+      if(activeId===c.id) renderMessages(c);
+      renderList(document.getElementById("search").value);
+    },900);
+    scheduleReply(c);   /* 每个聊天都接入 AI（收藏夹＝AI 笔记助手） */
+  }
+
+  /* ============================================================
+     AI 接入层
+       · 配置层：⚙ 面板 + localStorage
+       · 调度层：scheduleReply → runAIReply（打字指示 → 流式输出）
+       · 传输层：callAI（OpenAI 兼容 /chat/completions，流式/超时/重试）
+     ============================================================ */
+  var CFG_KEY="tgclone.ai.cfg";
+  var DEFAULT_CFG={url:"",key:"",model:"",cors:"direct",stream:true,persona:true,timeout:60000,retry:2};
+  var CFG={};
+  var CTX_ROUNDS=12;                    /* 送入模型的历史消息上限（条） */
+
+  function loadCfg(){
+    var c={},k;
+    for(k in DEFAULT_CFG) c[k]=DEFAULT_CFG[k];
+    try{
+      var raw=localStorage.getItem(CFG_KEY);
+      if(raw){
+        var s=JSON.parse(raw);
+        for(k in s) if(s[k]!==undefined&&s[k]!==null) c[k]=s[k];
+      }
+    }catch(e){}
+    CFG=c;return c;
+  }
+  function saveCfg(){try{localStorage.setItem(CFG_KEY,JSON.stringify(CFG));}catch(e){}}
+
+  /* 支持 Base URL 或完整 endpoint */
+  function endpointOf(){
+    var u=(CFG.url||"").trim().replace(/\/+$/,"");
+    if(!u) return "";
+    if(/\/chat\/completions$/i.test(u)) return u;
+    if(/\/v\d+$/i.test(u)) return u+"/chat/completions";
+    return u+"/v1/chat/completions";
+  }
+  function hasAI(){return !!(endpointOf()&&CFG.model);}
+  function errMsg(e){return (e&&e.message)?e.message:String(e);}
+
+  function setPill(state,text){
+    var p=document.getElementById("aiPill");
+    if(!p) return;
+    p.className="ai-pill"+(state?" "+state:"");
+    p.innerHTML="<i></i>"+esc(text);
+  }
+  function refreshPill(){
+    if(!activeId) return;
+    if(!hasAI()) setPill("off","AI未配置");
+    else setPill("","AI已接入");
+  }
+
+  /* ---------- 人设 ---------- */
+  var PERSONAS={
+    saved:"你是用户自己的云笔记助手。用户会把零散想法、片段、待办丢进来，你要帮他整理、补全、给出简短可执行的建议。",
+    anna:"你是 Anna，用户的好朋友（女生）。语气轻松活泼、生活化，偶尔用一个 emoji，回复 1~3 句，像微信里聊天。",
+    dev:"你是前端开发群里的成员。群里有 Kevin、Lucy、Ryan 和用户，大家在一起做前端项目。回复口语化、简短务实，像同事聊天。",
+    bot:"你是 DeepSeek Bot，乐于助人的 AI 助手。回答技术问题要准确、给可直接运行的代码，代码用 Markdown 代码块，可以适当详细。",
+    max:"你是 Max，用户的同事。回复简短干练，一到两句，礼貌友好。",
+    news:"你是「RSS 速递」频道的编辑。以资讯播报口吻输出，标题简短，末尾可加一句点评。"
+  };
+  var GROUP_SPEAKERS={dev:["Kevin","Lucy","Ryan"]};
+
+  function systemOf(c){
+    var base;
+    if(CFG.persona&&PERSONAS[c.id]) base=PERSONAS[c.id];
+    else base="你是一个聊天助手，用自然、口语化的中文回复，默认简短（1~3 句），除非对方要求详细内容。";
+    if(!CFG.persona) base="你正在扮演聊天对象「"+c.name+"」。"+base;
+    if(c._who&&GROUP_SPEAKERS[c.id]) base+="\n你这次的发言人是「"+c._who+"」，直接输出要说的话，不要加名字前缀。";
+    base+="\n只输出回复正文本身，不要解释你在扮演角色，不要输出括号动作描写。";
+    return base;
+  }
+
+  /* ---------- 上下文拼装 ---------- */
+  function buildMessages(c){
+    var out=[{role:"system",content:systemOf(c)}];
+    c.msgs.slice(-CTX_ROUNDS*2).forEach(function(m){
+      if(m.sys) return;                        /* 系统提示不送入模型 */
+      var body=String(m.text||"");
+      if(c.group&&m.from!=="me") body=(m.who||"成员")+"："+body;
+      var role=(m.from==="me")?"user":"assistant";
+      var last=out[out.length-1];
+      if(last&&last.role===role) last.content+="\n"+body;   /* 合并同角色，保证交替 */
+      else out.push({role:role,content:body});
+    });
+    if(out.length<2||out[out.length-1].role!=="user") out.push({role:"user",content:"（继续）"});
+    return out;
+  }
+
+  /* ---------- 传输层 ---------- */
+  async function callAI(c,onDelta){
+    var url=endpointOf();
+    if(!url||!CFG.model) throw new Error("请先点右上角 ⚙ 配置 AI 接口");
+    var ctrl=new AbortController();
+    var to=setTimeout(function(){ctrl.abort();},Math.max(5000,CFG.timeout||60000));
+    var payload={model:CFG.model,messages:buildMessages(c),temperature:0.8,stream:!!CFG.stream};
+    try{
+      var res=await fetch(url,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Authorization":"Bearer "+(CFG.key||"")},
+        body:JSON.stringify(payload),
+        signal:ctrl.signal
+      });
+      if(!res.ok){
+        var t="";
+        try{t=await res.text();}catch(e2){}
+        throw new Error("HTTP "+res.status+(t?" · "+t.slice(0,140):""));
+      }
+      /* 非流式 */
+      if(!CFG.stream||!res.body){
+        var j=await res.json();
+        var txt=j&&j.choices&&j.choices[0]&&j.choices[0].message&&j.choices[0].message.content;
+        if(typeof txt!=="string"||!txt.trim()) throw new Error("返回格式异常");
+        return txt.trim();
+      }
+      /* 流式 SSE */
+      var reader=res.body.getReader(),dec=new TextDecoder(),buf="",full="";
+      while(true){
+        var r=await reader.read();
+        if(r.done) break;
+        buf+=dec.decode(r.value,{stream:true});
+        var lines=buf.split("\n");buf=lines.pop();
+        for(var i=0;i<lines.length;i++){
+          var line=lines[i].trim();
+          if(line.indexOf("data:")!==0) continue;
+          var d=line.slice(5).trim();
+          if(!d||d==="[DONE]") continue;
+          try{
+            var jj=JSON.parse(d),ch=jj.choices&&jj.choices[0];
+            var dd=ch&&((ch.delta&&ch.delta.content)||(ch.message&&ch.message.content));
+            if(dd){full+=dd;if(onDelta) onDelta(full);}
+          }catch(e3){}
+        }
+      }
+      if(!full.trim()) throw new Error("返回为空（该模型可能不支持流式，可在设置里关闭）");
+      return full.trim();
+    }catch(err){
+      if(err&&err.name==="AbortError") throw new Error("请求超时（"+(CFG.timeout||60000)+"ms），请检查网络或接口地址");
+      throw err;
+    }finally{
+      clearTimeout(to);
+    }
+  }
+
+  async function callAIWithRetry(c,onDelta){
+    var tries=Math.max(0,CFG.retry|0)+1,last=null;
+    for(var i=0;i<tries;i++){
+      try{return await callAI(c,onDelta);}
+      catch(e){
+        last=e;
+        if(/配置 AI 接口/.test(errMsg(e))) break;          /* 未配置：无需重试 */
+        if(i<tries-1) await new Promise(function(r){setTimeout(r,700*(i+1));});
+      }
+    }
+    throw last;
+  }
+
+  /* ---------- 调度层 ---------- */
+  var replySeq={};
+  function scheduleReply(c){
+    if(replyTimers[c.id]) return;
+    var delay=400+Math.random()*700;
+    replyTimers[c.id]=setTimeout(function(){
+      delete replyTimers[c.id];
+      runAIReply(c);
+    },delay);
+  }
+
+  function runAIReply(c){
+    var token=(replySeq[c.id]=(replySeq[c.id]||0)+1);
+    if(!hasAI()){localReply(c);return;}          /* 未配置接口 → 离线演示回复 */
+
+    var sp=GROUP_SPEAKERS[c.id];
+    c._who=sp&&sp.length?sp[Math.floor(Math.random()*sp.length)]:null;
+
+    var typing=null,bubble=null,bubbleTxt=null;
+    if(activeId===c.id){
+      setPill("busy","AI 生成中");
+      typing=document.createElement("div");
+      typing.className="typing";typing.id="typing";typing.innerHTML="<i></i><i></i><i></i>";
+      messagesEl.appendChild(typing);scrollBottom();
+    }
+    function killTyping(){if(typing&&typing.parentNode)typing.remove();typing=null;}
+    function ensureBubble(){
+      if(bubble||activeId!==c.id) return;
+      killTyping();
+      bubble=document.createElement("div");
+      bubble.className="msg you stack";
+      bubble.innerHTML=(c.group&&c._who?'<div class="who">'+esc(c._who)+'</div>':"")+
+                       '<span class="txt streaming"></span>';
+      messagesEl.appendChild(bubble);
+      bubbleTxt=bubble.querySelector(".txt");
+      scrollBottom();
+    }
+
+    callAIWithRetry(c,function(full){
+      if(token!==replySeq[c.id]||activeId!==c.id) return;   /* 在途请求串台保护 */
+      ensureBubble();
+      if(bubbleTxt) bubbleTxt.textContent=full;
+      if(isAtBottom()) scrollBottom(true);
+    }).then(function(text){
+      if(token!==replySeq[c.id]) return;
+      killTyping();
+      if(bubble&&bubble.parentNode) bubble.remove();
+      pushReply(c,text,c._who);
+      if(activeId===c.id) refreshPill();
+    }).catch(function(e){
+      if(token!==replySeq[c.id]) return;
+      killTyping();
+      if(bubble&&bubble.parentNode) bubble.remove();
+      pushSys(c,"⚠ AI 请求失败："+errMsg(e),true);
+      if(activeId===c.id) setPill("err","AI 出错");
+    });
+  }
+
+  /* ---------- 离线演示回复（未配置接口时） ---------- */
+  var REPLIES={
+    anna:["哈哈哈好啊","那我等你","嗯嗯，就这么定啦 \uD83D\uDE0A","你在干嘛呀","\uD83D\uDC4D\uD83D\uDC4D"],
+    max:["收到！","OK 没问题","稍等我看看","好的好的","\uD83D\uDC4C"],
+    dev:["\uD83D\uDC4D\uD83D\uDC4D","这个我看看","已经合并了","下午开会同步下进度"],
+    _:["嗯嗯","好的","稍等 \uD83D\uDE42","收到~","有意思"]
+  };
+  function localReply(c){
+    var pool=REPLIES[c.id]||REPLIES._;
+    var txt=pool[Math.floor(Math.random()*pool.length)];
+    var sp=GROUP_SPEAKERS[c.id];
+    var who=sp&&sp.length?sp[Math.floor(Math.random()*sp.length)]:null;
+    if(activeId!==c.id){pushReply(c,txt,who);return;}
+    var t=document.createElement("div");
+    t.className="typing";t.id="typing";t.innerHTML="<i></i><i></i><i></i>";
+    messagesEl.appendChild(t);scrollBottom();
+    setTimeout(function(){
+      if(t.parentNode) t.remove();
+      pushReply(c,txt,who);
+    },800+Math.random()*800);
+  }
+
+  function pushReply(c,text,who){
+    c.msgs.push({from:"you",text:text,t:now(),who:who||undefined});
+    if(activeId===c.id){renderMessages(c);}
+    else {c.unread=(c.unread||0)+1;}
+    renderList(document.getElementById("search").value);
+  }
+  function pushSys(c,text,isErr){
+    c.msgs.push({sys:true,text:text,t:now(),err:!!isErr});
+    if(activeId===c.id) renderMessages(c);
+  }
+
+  /* ---------- 自动来消息：联系人随机时间(1~180s)主动发消息 ---------- */
+  var autoMsgOn=true, autoMsgTimer=null;
+  var AUTO_MSGS={
+    anna:["在干嘛呀 ","刚发现一家超好吃的店 ","周末有空吗？一起去逛逛 ","我给你拍的照片修好啦 ","今天天气好好 "],
+    max:["文件我收到了，谢谢 ","刚忙完，回你消息晚啦 ","晚上一起打球？ ","这个方案你看下 ","OK 收到 "],
+    dev:["staging 又更新了一版","移动端适配我过了一遍，没大问题","刚修了个线上 bug，顺手提了 PR","下午的评审别忘啦","暗色模式对比度调了下"],
+    bot:["需要我帮你写点什么吗？","刚学到一个新的排序技巧","有问题随时问我 "],
+    news:["【科技】新一代折叠屏发布，主打轻薄","【AI】开源多模态模型再添新成员","【财经】加密市场今日震荡走高","【生活】入秋第一波冷空气要来了"],
+    _:["在吗？","刚想到你 ","有空聊两句？","今天过得怎么样 ","嘿 "]
+  };
+  function randomContactForMsg(){
+    var pool=chats.filter(function(c){return !c.saved;});
+    if(!pool.length) return null;
+    return pool[Math.floor(Math.random()*pool.length)];
+  }
+  function scheduleAutoMsg(){
+    if(autoMsgTimer){clearTimeout(autoMsgTimer);autoMsgTimer=null;}
+    if(!autoMsgOn) return;
+    var delay=1000+Math.random()*59000;      /* 1s ~ 60s 随机 */
+    autoMsgTimer=setTimeout(function(){ autoMsgTimer=null; autoMsgFire(); },delay);
+  }
+  function autoMsgFire(){
+    var c=randomContactForMsg();
+    if(c){
+      var pool=AUTO_MSGS[c.id]||AUTO_MSGS._;
+      var text=pool[Math.floor(Math.random()*pool.length)];
+      var sp=GROUP_SPEAKERS[c.id];
+      var who=sp&&sp.length?sp[Math.floor(Math.random()*sp.length)]:null;
+      var wasActive=(activeId===c.id);
+      pushReply(c,text,who);
+      syncTabDot();
+      if(!wasActive && document.visibilityState!=="hidden"){ toast(c.name+"："+text); }
+    }
+    scheduleAutoMsg();
+  }
+  function setAutoMsg(on){
+    autoMsgOn=!!on;
+    if(autoMsgOn){ scheduleAutoMsg(); toast("已开启自动消息"); }
+    else { if(autoMsgTimer){clearTimeout(autoMsgTimer);autoMsgTimer=null;} toast("已暂停自动消息"); }
+  }
+  function startAutoMsg(){ autoMsgOn=true; scheduleAutoMsg(); }
+
+  /* ---------- 输入框自适应高度 ---------- */
+  inputEl.addEventListener("input",function(){
+    this.style.height="auto";
+    this.style.height=Math.min(this.scrollHeight,120)+"px";
+  });
+  inputEl.addEventListener("keydown",function(e){
+    if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}
+  });
+  document.getElementById("sendBtn").onclick=send;
+
+  /* ---------- 搜索 ---------- */
+  (function(){
+    var s=document.getElementById("search");
+    if(!s) return;
+    var clr=$("searchClear");
+    function syncClear(){
+      var box=s.parentNode;
+      if(box&&box.classList) box.classList.toggle("has-q",!!s.value);
+    }
+    s.addEventListener("input",function(){renderList(this.value);syncClear();});
+    s.addEventListener("keydown",function(e){
+      if(e.key==="Escape"&&s.value){e.preventDefault();s.value="";renderList("");syncClear();}
+      else if(e.key==="Enter"){e.preventDefault();if(s.blur)s.blur();}
+    });
+    if(clr) clr.onclick=function(){s.value="";renderList("");syncClear();if(s.focus)s.focus();};
+    syncClear();
+  })();
+
+  /* ---------- 返回（移动端） ---------- */
+  document.getElementById("backBtn").onclick=function(){
+    app.classList.remove("chat-open");
+    activeId=null;
+    chatHeadEl.style.display="none";composerEl.style.display="none";
+    messagesEl.innerHTML="";emptyEl.style.display="flex";
+    renderList(document.getElementById("search").value);
+  };
+
+  /* ---------- 主题切换 ---------- */
+  document.getElementById("themeBtn").onclick=function(){
+    document.body.classList.toggle("dark");
+  };
+
+  /* ---------- AI 设置面板 ---------- */
+  var setPanel=document.getElementById("setPanel");
+  function fillCfgForm(){
+    document.getElementById("cfgUrl").value=CFG.url||"";
+    document.getElementById("cfgKey").value=CFG.key||"";
+    document.getElementById("cfgModel").value=CFG.model||"";
+    document.getElementById("cfgCors").value=CFG.cors||"direct";
+    document.getElementById("cfgStream").checked=!!CFG.stream;
+    document.getElementById("cfgPersona").checked=!!CFG.persona;
+    document.getElementById("cfgTimeout").value=CFG.timeout||60000;
+    document.getElementById("cfgRetry").value=(CFG.retry===undefined?2:CFG.retry);
+  }
+  function openCfg(){fillCfgForm();setPanel.classList.add("show");}
+  function closeCfg(){setPanel.classList.remove("show");}
+  function readCfgForm(){
+    CFG.url=document.getElementById("cfgUrl").value.trim();
+    CFG.key=document.getElementById("cfgKey").value.trim();
+    CFG.model=document.getElementById("cfgModel").value.trim();
+    CFG.cors=document.getElementById("cfgCors").value;
+    CFG.stream=document.getElementById("cfgStream").checked;
+    CFG.persona=document.getElementById("cfgPersona").checked;
+    CFG.timeout=Math.max(5000,parseInt(document.getElementById("cfgTimeout").value,10)||60000);
+    var r=parseInt(document.getElementById("cfgRetry").value,10);
+    CFG.retry=isNaN(r)?2:Math.max(0,Math.min(5,r));
+  }
+  document.getElementById("aiBtn").onclick=openCfg;
+  document.getElementById("cfgClose").onclick=closeCfg;
+  document.getElementById("cfgSave").onclick=function(){
+    readCfgForm();saveCfg();closeCfg();
+    refreshPill();
+    var c=activeId?chats.find(function(x){return x.id===activeId;}):null;
+    if(c) pushSys(c,hasAI()?"✅ 已保存，之后的回复由「"+CFG.model+"」生成":"⚠ 未填写接口地址或模型名，仍使用本地演示回复",!hasAI());
+  };
+  document.getElementById("cfgClear").onclick=function(){
+    if(!confirm("确定清空全部 AI 配置？")) return;
+    try{localStorage.removeItem(CFG_KEY);}catch(e){}
+    loadCfg();fillCfgForm();refreshPill();
+  };
+  setPanel.addEventListener("click",function(e){if(e.target===setPanel) closeCfg();});
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"&&setPanel.classList.contains("show")) closeCfg();
+  });
+
+  /* ============================================================
+     底部主导航（聊天 / 动态 / 我的）+ 动态流 + 个人页 + 消息互动
+     ============================================================ */
+  function $(id){return document.getElementById(id);}
+  function mk(tag,cls,html){
+    var e=document.createElement(tag);
+    if(cls) e.className=cls;
+    if(html!=null) e.innerHTML=html;
+    return e;
+  }
+  function mkText(tag,cls,txt){
+    var e=document.createElement(tag);
+    if(cls) e.className=cls;
+    if(txt!=null) e.textContent=txt;
+    return e;
+  }
+
+  var ICO={
+    heart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20.5 3.9 12.4a4.9 4.9 0 0 1 7-6.9l1.1 1 1.1-1a4.9 4.9 0 0 1 7 6.9z"/></svg>',
+    cmt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8z"/></svg>',
+    share:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M12 15V3M8 7l4-4 4 4"/></svg>',
+    send:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4 21 12 3.4 3.6 3.4 10l12.6 2-12.6 2z"/></svg>',
+    reply:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 5 5v6"/></svg>',
+    copy:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/></svg>',
+    trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13"/></svg>',
+    repost:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+    chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+    link:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>'
+,
+    down:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v13M7 11l5 5 5-5"/><path d="M4 21h16"/></svg>',
+    up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V8M7 13l5-5 5 5"/><path d="M4 3h16"/></svg>'
+  };
+
+  /* ---------- Toast ---------- */
+  var toastEl=null,toastTimer=null;
+  function toast(msg){
+    toastEl=toastEl||$("toast");
+    if(!toastEl) return;
+    toastEl.textContent=msg;
+    toastEl.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(function(){toastEl.classList.remove("show");},1600);
+  }
+
+  /* ---------- 底部导航 ---------- */
+  var curTab="chat";
+  function switchTab(t){
+    curTab=t;
+    ["tab-feed","tab-me","tab-chat"].forEach(function(cl){document.body.classList.remove(cl);});
+    if(t==="feed") document.body.classList.add("tab-feed");
+    if(t==="me") document.body.classList.add("tab-me");
+    var tc=$("tabChat"),tf=$("tabFeed"),tm=$("tabMe");
+    if(tc) tc.classList.toggle("on",t==="chat");
+    if(tf) tf.classList.toggle("on",t==="feed");
+    if(tm) tm.classList.toggle("on",t==="me");
+    closeMenu();
+    closeCtxMenu();
+    if(t==="feed") renderFeed();
+    if(t==="me") renderMe();
+    syncTabDot();
+  }
+  function syncTabDot(){
+    var d=$("tbDot");
+    if(!d||!d.classList) return;
+    var n=0;
+    chats.forEach(function(c){n+=(c.unread||0);});
+    if(n>0){d.textContent=n>99?"99+":n;d.classList.add("show");d.classList.remove("dot");}
+    else d.classList.remove("show");
+  }
+
+  function bindTabs(){
+    var map={tabChat:"chat",tabFeed:"feed",tabMe:"me"};
+    Object.keys(map).forEach(function(id){
+      var el=$(id);
+      if(el) el.onclick=function(){switchTab(map[id]);};
+    });
+    var fab=$("newChatFab");
+    if(fab) fab.onclick=function(){
+      switchTab("chat");
+      var app=$("app");
+      if(app&&app.classList) app.classList.remove("chat-open");
+      var s=$("search");
+      if(s){
+        if(s.focus) s.focus();
+        try{ if(s.select) s.select(); }catch(e){}
+      }
+      toast("搜索或选择联系人开始新对话");
+    };
+  }
+
+  function bindFeedBar(){
+    var fp=$("feedPost"); if(fp) fp.onclick=doPost;
+    var fr=$("feedRefresh");
+    if(fr) fr.onclick=function(){refreshFeed();};
+    var tools=$("ccTools");
+    if(tools){
+      for(var i=0;i<tools.children.length;i++){
+        (function(btn){
+          btn.onclick=function(){
+            var dm=btn.getAttribute("data-media");
+            var next;
+            if(dm!=null){
+              var m=MEDIA_LIST[(+dm)%MEDIA_LIST.length];
+              next=(pendingMedia&&pendingMedia.e===m.e&&!pendingMedia.img)?null:{e:m.e,bg:m.bg};
+            }else{
+              var ph=PHOTOS[photoCursor%PHOTOS.length];photoCursor++;
+              next=(pendingMedia&&pendingMedia.img===ph.url)?null:{img:ph.url,e:ph.e,mbg:"linear-gradient(135deg,#4aa3ff,#2b7cd3)"};
+            }
+            pendingMedia=next;
+            for(var k=0;k<tools.children.length;k++){tools.children[k].style.boxShadow="";}
+            if(pendingMedia) btn.style.boxShadow="0 0 0 2px var(--blue) inset";
+            toast(pendingMedia?(pendingMedia.img?"已选择真实照片，点发布即可":"已选择配图，点发布即可"):"已取消配图");
+          };
+        })(tools.children[i]);
+      }
+    }
+    var xt=$("xTabs");
+    if(xt&&xt.children){
+      for(var j=0;j<xt.children.length;j++){
+        (function(tb){
+          tb.onclick=function(){
+            xTab=tb.getAttribute("data-x")||"for-you";
+            for(var k=0;k<xt.children.length;k++){ xt.children[k].className="x-tab"+(xt.children[k]===tb?" on":""); }
+            renderFeed();
+          };
+        })(xt.children[j]);
+      }
+    }
+    var tr=$("xTrends");
+    if(tr&&tr.children){
+      for(var q=0;q<tr.children.length;q++){
+        (function(node){
+          if(node.className&&String(node.className).indexOf("x-trend")>=0){
+            node.onclick=function(){ toast("查看话题 "+(node.getAttribute("data-q")||"")+" 的动态（演示）"); };
+          }
+        })(tr.children[q]);
+      }
+    }
+    var fi=$("feedInput");
+    if(fi){
+      fi.oninput=function(){fi.style.height="auto";fi.style.height=Math.min(fi.scrollHeight,120)+"px";};
+      fi.onkeydown=function(e){if(e&&e.key==="Enter"&&!e.shiftKey){e.preventDefault();doPost();}};
+    }
+  }
+
+  /* ---------- 动态（Feed） ---------- */
+  var ME={name:"Operit 用户",user:"@operit_user",avatar:"\uD83D\uDC64",sign:"专注体验，持续打磨 ✦"};
+  var MEDIA_LIST=[
+    {e:"\uD83C\uDF05",bg:"linear-gradient(135deg,#f7b267,#f4845f)"},
+    {e:"\uD83C\uDF5C",bg:"linear-gradient(135deg,#f9c74f,#f3722c)"},
+    {e:"\uD83C\uDFB5",bg:"linear-gradient(135deg,#7c5cff,#4aa3ff)"},
+    {e:"\uD83D\uDCA1",bg:"linear-gradient(135deg,#43aa8b,#90be6d)"}
+  ];
+  /* 真实摄影照片池（公共图床，安全题材：风景 / 咖啡 / 猫 / 城市 / 花 / 美食 / 山 / 多肉 / 夜空 / 甜品） */
+  function U(id){return "https://images.unsplash.com/photo-"+id+"?w=900&q=70&auto=format&fit=crop";}
+  var PHOTOS=[
+    {url:U("1507525428034-b723cf961d3e"),cap:"海滩",e:"\uD83C\uDFD6\uFE0F"},
+    {url:U("1519046904884-53103b34b206"),cap:"海浪",e:"\uD83C\uDF0A"},
+    {url:U("1502680390469-be75c86b636f"),cap:"海岸",e:"\uD83C\uDF05"},
+    {url:U("1505228395891-9a51e7e86bf6"),cap:"旅行",e:"\uD83E\uDDF3"},
+    {url:U("1520454974749-611b7248ffdb"),cap:"落日",e:"\uD83C\uDF07"},
+    {url:U("1510414842594-a61c69b5ae57"),cap:"咖啡",e:"\u2615"},
+    {url:U("1544551763-46a013bb70d5"),cap:"早午餐",e:"\uD83C\uDF73"},
+    {url:U("1508672019048-805c876b67e2"),cap:"城市",e:"\uD83C\uDF03"},
+    {url:U("1533105079780-92b9be482077"),cap:"度假",e:"\uD83C\uDF34"},
+    {url:U("1509233725247-49e657c54213"),cap:"海风",e:"\uD83C\uDF00"}
+  ];
+  var photoCursor=0;
+
+  var posts=[
+    {id:1,name:"Anna",handle:"anna_love",verified:true,avatar:"A",color:"#e17076",time:"12 分钟前",followed:false,liked:false,likes:24,reposts:6,views:1280,
+     text:"今天的晚霞太好看了，随手一拍就是壁纸 \uD83C\uDF07",
+     img:PHOTOS[0].url,e:PHOTOS[0].e,mbg:"linear-gradient(135deg,#f7b267,#f4845f)",
+     comments:[{who:"Dev",text:"确实，色调很顶"}]},
+    {id:2,name:"Dev Group",handle:"dev_group",verified:true,avatar:"D",color:"#7c5cff",time:"1 小时前",followed:true,liked:true,likes:57,reposts:12,views:3400,
+     text:"新版本 v1.1 已发布：液态玻璃 UI + 每个聊天接入真实 AI。\n欢迎体验并反馈 \uD83D\uDE80",
+     img:PHOTOS[3].url,e:"\uD83D\uDE80",mbg:"linear-gradient(135deg,#4aa3ff,#2b7cd3)",
+     comments:[{who:"Max",text:"速度很快！"},{who:"Anna",text:"好看"}]},
+    {id:3,name:"Max",handle:"max_outdoor",verified:false,avatar:"M",color:"#65aadd",time:"3 小时前",followed:false,liked:false,likes:8,reposts:1,views:420,
+     text:"周末去爬山了，信号为零，心情满分。\u26F0\uFE0F",
+     img:PHOTOS[6].url,e:PHOTOS[6].e,mbg:"linear-gradient(135deg,#43aa8b,#277da1)",comments:[]},
+    {id:4,name:"Saved Bot",handle:"saved_bot",verified:true,avatar:"\uD83D\uDD16",color:"#3390ec",time:"昨天",followed:false,liked:false,likes:3,reposts:0,views:210,
+     text:"小提示：长按聊天里任意一条消息，可以表情回应、引用或撤回。",
+     media:null,mbg:null,comments:[{who:"Operit 用户",text:"学到了"}]},
+    {id:5,name:"Lisa",handle:"lisa_kitchen",verified:false,avatar:"L",color:"#f4845f",time:"昨天",followed:true,liked:false,likes:41,reposts:5,views:960,
+     text:"第一次烤曲奇就成功了，香得邻居来敲门 \uD83C\uDF6A",
+     img:PHOTOS[9].url,e:PHOTOS[9].e,mbg:"linear-gradient(135deg,#f9c74f,#f3722c)",comments:[{who:"Anna",text:"看着就好吃"}]},
+    {id:6,name:"Tom",handle:"tom_night",verified:false,avatar:"T",color:"#277da1",time:"2 天前",followed:false,liked:false,likes:15,reposts:2,views:730,
+     text:"夜跑五公里，城市的灯比星星好看。\uD83C\uDF03",
+     img:PHOTOS[8].url,e:PHOTOS[8].e,mbg:"linear-gradient(135deg,#4aa3ff,#2b7cd3)",comments:[]},
+    {id:7,name:"Anna",handle:"anna_love",verified:true,avatar:"A",color:"#e17076",time:"2 天前",followed:false,liked:false,likes:33,reposts:4,views:1100,
+     text:"新买的多肉，希望这次能活过一个月 \uD83C\uDF35",
+     img:PHOTOS[7].url,e:PHOTOS[7].e,mbg:"linear-gradient(135deg,#43aa8b,#90be6d)",comments:[]},
+    {id:8,name:"Operit 用户",handle:"operit_user",verified:true,avatar:"\uD83D\uDC64",color:"#4aa3ff",time:"3 天前",followed:true,liked:false,likes:12,reposts:1,views:300,
+     text:"在数字世界里，也要认真生活 \u2728",
+     img:PHOTOS[4].url,e:PHOTOS[4].e,mbg:"linear-gradient(135deg,#7c5cff,#4aa3ff)",comments:[{who:"Dev",text:"说得好"}]}
+  ];
+  var pendingMedia=null;
+  var favCount=0, themeIdx=0, PRIVACY="所有人", AUTODEL="关闭";
+  var THEME_NAMES=["默认蓝","梦幻紫","玫瑰红","青松绿","暖阳橙"];
+  var ME_PHONE="138****8888";
+  var WALLET={usdt:1280.5,rate:7.2,net:"TRC-20",addr:"TQn9Y2khe8demo9x3fAq71"};
+  var TX_LOG=[
+    {t:"充值",a:500,time:"10-05 09:20"},
+    {t:"转账给 @anna_love",a:-120,time:"10-04 21:05"},
+    {t:"动态打赏 @dev_group",a:-8.8,time:"10-03 18:42"},
+    {t:"充值",a:900,time:"10-01 11:30"}
+  ];
+  function fmtU(n){var v=Math.round((Number(n)||0)*100)/100;return v.toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});}
+  function nowStamp(){var d=new Date();return (d.getMonth()+1)+"-"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes());}
+  function walletRecharge(){
+    meOpen({title:"充值 USDT",sub:"输入充值数量（1 USDT ≈ ¥"+WALLET.rate.toFixed(2)+"）",type:"input",value:"",placeholder:"0.00",numeric:true,hint:"充值网络："+WALLET.net,okText:"确认充值",onOk:function(v){
+      var a=parseFloat(String(v).replace(/[^0-9.]/g,""));
+      if(!(a>0)){toast("请输入有效数量");return;}
+      WALLET.usdt+=a;TX_LOG.unshift({t:"充值",a:a,time:nowStamp()});renderMe();toast("充值成功 +"+fmtU(a)+" USDT");
+    }});
+  }
+  function walletWithdraw(){
+    meOpen({title:"提现 USDT",sub:"可提现 "+fmtU(WALLET.usdt)+" USDT",type:"input",value:"",placeholder:"0.00",numeric:true,hint:"提现将扣除网络手续费（演示）",okText:"确认提现",onOk:function(v){
+      var a=parseFloat(String(v).replace(/[^0-9.]/g,""));
+      if(!(a>0)){toast("请输入有效数量");return;}
+      if(a>WALLET.usdt){toast("余额不足，当前 "+fmtU(WALLET.usdt)+" USDT");return;}
+      WALLET.usdt-=a;TX_LOG.unshift({t:"提现",a:-a,time:nowStamp()});renderMe();toast("提现已提交 -"+fmtU(a)+" USDT");
+    }});
+  }
+  function walletTransfer(){
+    meOpen({title:"转账",sub:"输入接收地址（"+WALLET.net+"）",type:"input",value:"",placeholder:"T 开头的钱包地址",okText:"下一步",onOk:function(addr){
+      var ad=String(addr||"").trim();
+      if(ad.length<6){toast("地址无效");return;}
+      meOpen({title:"转账数量",sub:"转给 "+ad.slice(0,8)+"…"+ad.slice(-4)+"，可转 "+fmtU(WALLET.usdt)+" USDT",type:"input",value:"",placeholder:"0.00",numeric:true,okText:"确认转账",onOk:function(v){
+        var a=parseFloat(String(v).replace(/[^0-9.]/g,""));
+        if(!(a>0)){toast("请输入有效数量");return;}
+        if(a>WALLET.usdt){toast("余额不足");return;}
+        WALLET.usdt-=a;TX_LOG.unshift({t:"转账 "+ad.slice(0,8)+"…",a:-a,time:nowStamp()});renderMe();toast("已转账 "+fmtU(a)+" USDT");
+      }});
+    }});
+  }
+  function walletLog(){
+    meOpen({title:"交易记录",sub:"最近 "+TX_LOG.length+" 笔（"+WALLET.net+"）",type:"list",items:TX_LOG.slice(0,8).map(function(x){
+      return {label:(x.a>0?"+":"-")+fmtU(Math.abs(x.a))+" U · "+x.t+" · "+x.time,onTap:function(){toast("已复制交易哈希（演示）");}};
+    })});
+  }
+
+  /* 刷新时从池子里推一条新动态（真实照片 + 正常生活向内容） */
+  var FEED_POOL=[
+    {name:"Anna",handle:"anna_love",verified:true,avatar:"A",color:"#e17076",text:"海边的日落永远拍不腻 \uD83C\uDF05 #旅行",p:0},
+    {name:"Max",handle:"max_outdoor",avatar:"M",color:"#65aadd",text:"周末逃离城市，海风把烦恼都吹走了。\uD83C\uDF0A",p:1},
+    {name:"Dev Group",handle:"dev_group",verified:true,avatar:"D",color:"#7c5cff",text:"在咖啡馆改了一下午代码，效率翻倍 \u2615",p:5},
+    {name:"Anna",handle:"anna_love",verified:true,avatar:"A",color:"#e17076",text:"说走就走的旅行，行李箱比计划先出发 \uD83E\uDDF3",p:3},
+    {name:"Max",handle:"max_outdoor",avatar:"M",color:"#65aadd",text:"清晨的海岸线，安静得只剩浪声。",p:2},
+    {name:"Lisa",handle:"lisa_kitchen",avatar:"L",color:"#f4845f",text:"度假模式开启，Brunch 配海景 \uD83C\uDF34",p:8}
+  ];
+  var feedCursor=0;
+
+  function refreshFeed(){
+    var t=FEED_POOL[feedCursor%FEED_POOL.length];feedCursor++;
+    var ph=PHOTOS[(t.p||0)%PHOTOS.length];
+    posts.unshift({id:Date.now(),name:t.name,avatar:t.avatar,color:t.color,time:"刚刚",
+      followed:false,liked:false,likes:Math.floor(Math.random()*40)+3,reposts:Math.floor(Math.random()*9)+1,views:Math.floor(Math.random()*900)+80,handle:t.handle||String(t.name).replace(/s+/g,"_").toLowerCase(),verified:!!t.verified,
+      text:t.text,img:ph.url,e:ph.e,mbg:"linear-gradient(135deg,#4aa3ff,#2b7cd3)",comments:[],fresh:true});
+    renderFeed();
+    toast("收到 "+t.name+" 的新动态");
+  }
+
+  function totalLikes(){
+    var n=0;posts.forEach(function(p){n+=(p.likes||0);});return n;
+  }
+
+  function xNum(n){ n=n||0;
+    if(n>=1000000) return (n/1000000).toFixed(1).replace(/\.0$/,"")+"M";
+    if(n>=1000) return (n/1000).toFixed(1).replace(/\.0$/,"")+"K";
+    return String(n);
+  }
+  var xTab="for-you";
+  function buildPost(p){
+    var card=mk("div","card post x-post"+(p.fresh?" fresh":""));
+    p.fresh=false;
+    card.appendChild(mk("div","avatar sm",p.avatar)).style.background=p.color;
+    var main=mk("div","x-main");
+
+    var head=mk("div","post-head x-head2");
+    var nm=mk("div","x-name");
+    nm.appendChild(mkText("b",null,p.name));
+    if(p.verified) nm.appendChild(mkText("span","x-ver","\u2713"));
+    nm.appendChild(mkText("span","x-handle","@"+(p.handle||String(p.name).replace(/\s+/g,"_").toLowerCase())));
+    nm.appendChild(mkText("span","x-dot","\u00B7"));
+    nm.appendChild(mkText("span","x-time",p.time));
+    head.appendChild(nm);
+
+    var fb=mkText("button","follow-btn"+(p.followed?" on":""),p.followed?"已关注":"关注");
+    fb.onclick=function(){
+      p.followed=!p.followed;
+      fb.className="follow-btn"+(p.followed?" on":"");
+      fb.textContent=p.followed?"已关注":"关注";
+      toast(p.followed?("已关注 "+p.name):("已取消关注 "+p.name));
+    };
+    head.appendChild(fb);
+    var more=mkText("button","x-more","\u22EF");
+    more.onclick=function(){ toast("更多操作：取消关注 / 静音 / 举报（演示）"); };
+    head.appendChild(more);
+    main.appendChild(head);
+
+    if(p.text){
+      var pt=mkText("div","post-text",p.text);
+      pt.title="双击点赞";
+      pt.ondblclick=function(){if(!p.liked&&bLike) bLike.onclick();};
+      main.appendChild(pt);
+    }
+    function burst(md){
+      var pool=["\u2764\uFE0F","\uD83D\uDC4D","\uD83D\uDD25","\uD83C\uDF89","\uD83D\uDE0D"];
+      var b=mkText("span","burst",pool[Math.floor(Math.random()*pool.length)]);
+      md.appendChild(b);
+      toast("已送出互动");
+      setTimeout(function(){if(b.parentNode) b.remove();},820);
+    }
+    if(p.img){
+      var wrap=mk("div","post-media img");
+      var im=document.createElement("img");
+      im.src=p.img; im.loading="lazy"; im.alt=(p.text||"photo").slice(0,20);
+      im.onerror=function(){
+        wrap.className="post-media";
+        wrap.innerHTML="";
+        wrap.textContent=p.e||"\uD83D\uDDBC\uFE0F";
+        wrap.style.background=p.mbg||"linear-gradient(135deg,#4aa3ff,#2b7cd3)";
+      };
+      wrap.appendChild(im);
+      wrap.title="点一下有惊喜";
+      wrap.onclick=function(){burst(wrap);};
+      main.appendChild(wrap);
+    } else if(p.media){
+      var md=mk("div","post-media",p.media);
+      md.style.background=p.mbg||"linear-gradient(135deg,#4aa3ff,#2b7cd3)";
+      md.title="点一下有惊喜";
+      md.onclick=function(){burst(md);};
+      main.appendChild(md);
+    }
+
+    var acts=mk("div","x-acts");
+    var bCmt=mk("button","x-act",ICO.cmt+'<span>'+xNum(p.comments.length)+'</span>');
+    var bRep=mk("button","x-act"+(p.reposted?" reposted":""),ICO.repost+'<span>'+xNum(p.reposts||0)+'</span>');
+    bRep.onclick=function(){
+      p.reposted=!p.reposted;
+      p.reposts=(p.reposts||0)+(p.reposted?1:-1); if(p.reposts<0)p.reposts=0;
+      bRep.className="x-act"+(p.reposted?" reposted":"");
+      bRep.innerHTML=ICO.repost+'<span>'+xNum(p.reposts)+'</span>';
+      toast(p.reposted?"已转发到你的主页":"已取消转发");
+    };
+    var bLike=mk("button","x-act"+(p.liked?" liked":""),ICO.heart+'<span>'+xNum(p.likes)+'</span>');
+    bLike.onclick=function(){
+      p.liked=!p.liked;
+      p.likes+=p.liked?1:-1;
+      if(p.likes<0) p.likes=0;
+      bLike.className="x-act"+(p.liked?" liked":"");
+      bLike.innerHTML=ICO.heart+'<span>'+xNum(p.likes)+'</span>';
+      if(p.liked) toast("已点赞 \u2764\uFE0F");
+    };
+    var bView=mk("button","x-act",ICO.chart+'<span>'+xNum(p.views||0)+'</span>');
+    bView.onclick=function(){ toast("浏览 "+xNum(p.views||0)+" 次（演示）"); };
+    var bShare=mk("button","x-act",ICO.link+'<span>分享</span>');
+    bShare.onclick=function(){
+      posts.unshift({id:Date.now(),name:ME.name,handle:String(ME.user||"").replace(/^@/,""),avatar:ME.name.slice(0,1),color:"#4aa3ff",time:"刚刚",
+        followed:true,liked:false,likes:0,reposts:0,views:0,verified:true,
+        text:"转发 @"+p.name+"："+(p.text||""),
+        media:p.media,img:p.img,mbg:p.mbg,comments:[],fresh:true});
+      renderFeed();
+      toast("已转发到你的动态");
+    };
+    acts.appendChild(bCmt);acts.appendChild(bRep);acts.appendChild(bLike);acts.appendChild(bView);acts.appendChild(bShare);
+    main.appendChild(acts);
+
+    var cmtBox=mk("div","post-cmts");
+    function submitCmt(){
+      var v=String(inp.value||"").trim();
+      if(!v) return;
+      p.comments.push({who:ME.name,text:v});
+      inp.value="";
+      bCmt.innerHTML=ICO.cmt+'<span>'+xNum(p.comments.length)+'</span>';
+      paint();
+      toast("评论已发布");
+    }
+    var inp=null,rowEl=null;
+    function paint(){
+      cmtBox.innerHTML="";
+      p.comments.forEach(function(cm){
+        var el=mk("div","cmt");
+        el.innerHTML='<b>'+esc(cm.who)+'</b>'+esc(cm.text);
+        cmtBox.appendChild(el);
+      });
+      rowEl=mk("div","cmt-input");
+      inp=document.createElement("input");
+      inp.placeholder="写条评论…";
+      var sb=mk("button","cmt-send",ICO.send);
+      sb.onclick=submitCmt;
+      inp.onkeydown=function(e){if(e&&e.key==="Enter"){e.preventDefault();submitCmt();}};
+      rowEl.appendChild(inp);rowEl.appendChild(sb);
+      cmtBox.appendChild(rowEl);
+    }
+    paint();
+    cmtBox.style.display=p.open?"flex":"none";
+    bCmt.onclick=function(){
+      p.open=!p.open;
+      cmtBox.style.display=p.open?"flex":"none";
+      if(p.open&&inp&&inp.focus) inp.focus();
+    };
+    main.appendChild(cmtBox);
+
+    card.appendChild(main);
+    return card;
+  }
+
+  function renderFeed(){
+    var list=$("feedList");
+    if(!list) return;
+    list.innerHTML="";
+    var arr=posts.filter(function(p){
+      if(xTab==="following") return !!p.followed || p.name===ME.name;
+      return true;
+    });
+    if(!arr.length){
+      list.appendChild(mkText("div","x-empty","还没有关注的人，去关注一些感兴趣的人吧"));
+    } else {
+      arr.forEach(function(p){list.appendChild(buildPost(p));});
+    }
+    var av=$("ccAvatar"); if(av) av.textContent=ME.name.slice(0,1);
+    var xh=$("xHeadAvatar"); if(xh) xh.textContent=ME.name.slice(0,1);
+  }
+
+  function doPost(){
+    var fi=$("feedInput");
+    if(!fi) return;
+    var v=String(fi.value||"").trim();
+    if(!v&&!pendingMedia){toast("说点什么再发布吧");return;}
+    posts.unshift({id:Date.now(),name:ME.name,handle:String(ME.user||"").replace(/^@/,""),avatar:ME.name.slice(0,1),color:"#4aa3ff",time:"刚刚",
+      followed:true,liked:false,likes:0,reposts:0,views:1,verified:true,text:v,
+      media:(pendingMedia&&!pendingMedia.img)?pendingMedia.e:null,
+      img:(pendingMedia&&pendingMedia.img)?pendingMedia.img:null,
+      e:pendingMedia?pendingMedia.e:null,
+      mbg:pendingMedia?((pendingMedia.img?pendingMedia.mbg:pendingMedia.bg)||null):null,
+      comments:[],fresh:true});
+    fi.value="";fi.style.height="auto";
+    pendingMedia=null;
+    var tools=$("ccTools");
+    if(tools) for(var k=0;k<tools.children.length;k++){tools.children[k].style.boxShadow="";}
+    renderFeed();
+    toast("动态已发布");
+  }
+
+  /* ---------- 我的（Me） ---------- */
+  function meRow(ico,title,sub,withSwitch,onTap,darkKey){
+    var r=mk("div","row");
+    r.appendChild(mkText("div","r-ico",ico));
+    var t=mk("div","r-txt");
+    t.appendChild(mkText("b",null,title));
+    t.appendChild(mkText("span",null,sub));
+    r.appendChild(t);
+    if(withSwitch){
+      var sw=mk("div","sw"+(darkKey&&document.body.classList.contains("dark")?" on":""));
+      sw.onclick=function(e){
+        if(e&&e.stopPropagation) e.stopPropagation();
+        sw.classList.toggle("on");
+        onTap(sw);
+      };
+      r.appendChild(sw);
+    } else {
+      r.appendChild(mkText("div","r-arrow","\u203A"));
+      r.onclick=onTap;
+    }
+    return r;
+  }
+
+/* Telegram 风格设置行 / 分组 */
+  function tgRow(opt){
+    var r=mk("div","tg-row");
+    var i=mkText("div","tg-ico",opt.ico||"\u2699\uFE0F");
+    i.style.background=opt.color||"#3390ec";
+    r.appendChild(i);
+    var b=mk("div","tg-body");
+    b.appendChild(mkText("b",null,opt.title||""));
+    if(opt.sub) b.appendChild(mkText("span",null,opt.sub));
+    r.appendChild(b);
+    if(opt.sw!=null){
+      var sw=mk("div","sw"+(opt.sw?" on":""));
+      sw.onclick=function(e){
+        if(e&&e.stopPropagation) e.stopPropagation();
+        sw.classList.toggle("on");
+        if(opt.onTap) opt.onTap(sw);
+      };
+      r.appendChild(sw);
+    } else {
+      if(opt.val) r.appendChild(mkText("div","tg-val",opt.val));
+      if(opt.arrow!==false) r.appendChild(mkText("div","tg-arrow","\u203A"));
+      if(opt.onTap) r.onclick=opt.onTap;
+    }
+    return r;
+  }
+  function tgGroup(title,rows){
+    var g=mk("div","tg-group");
+    if(title) g.appendChild(mkText("div","tg-sec",title));
+    var c=mk("div","tg-card");
+    rows.forEach(function(x){c.appendChild(x);});
+    g.appendChild(c);
+    return g;
+  }
+
+   /* ---------- 我的 · 底部弹层 ---------- */
+  var meMaskEl=null, meSheetEl=null;
+  function meClose(){ if(meMaskEl) meMaskEl.classList.remove("show"); if(meSheetEl) meSheetEl.classList.remove("show"); }
+  function meEnsure(){ if(meMaskEl) return;
+    meMaskEl=mk("div","me-mask"); meMaskEl.onclick=meClose; document.body.appendChild(meMaskEl);
+    meSheetEl=mk("div","me-sheet"); document.body.appendChild(meSheetEl); }
+  function meOpen(opt){ meEnsure(); meSheetEl.innerHTML="" ;
+    meSheetEl.appendChild(mk("div","me-handle"));
+    if(opt.title) meSheetEl.appendChild(mkText("div","me-title",opt.title));
+    if(opt.sub) meSheetEl.appendChild(mkText("div","me-sub",opt.sub));
+    if(opt.type==="list"){ (opt.items||[]).forEach(function(it){
+      var e=mk("div","me-item"+(it.on?" on":"")+(it.danger?" danger":""));
+      e.appendChild(mkText("span","mi-txt",it.label)); e.appendChild(mkText("span","mi-ck","\u2713"));
+      e.onclick=function(){ meClose(); if(it.onTap) setTimeout(it.onTap,120); }; meSheetEl.appendChild(e); });
+    } else if(opt.type==="input"){
+      var inp=mk("input","me-input"); inp.type="text"; inp.value=opt.value||""; if(opt.placeholder) inp.placeholder=opt.placeholder;
+      if(opt.maxlength) inp.maxLength=opt.maxlength;
+      if(opt.numeric) inp.inputMode="decimal";
+      meSheetEl.appendChild(inp);
+      if(opt.hint) meSheetEl.appendChild(mkText("div","me-hint",opt.hint));
+      var cntEl=null;
+      if(opt.maxlength){ cntEl=mkText("div","me-cnt",String(inp.value||"").length+"/"+opt.maxlength); meSheetEl.appendChild(cntEl); }
+      var bs=mk("div","me-btns");
+      var b1=mkText("button","me-btn","取消"); b1.onclick=meClose;
+      var b2=mkText("button","me-btn primary",opt.okText||"保存");
+      b2.onclick=function(){ var v=String(inp.value||"").trim(); meClose(); if(opt.onOk) setTimeout(function(){ opt.onOk(v); },120); };
+      bs.appendChild(b1); bs.appendChild(b2); meSheetEl.appendChild(bs);
+      if(cntEl) inp.oninput=function(){ cntEl.textContent=String(inp.value||"").length+"/"+opt.maxlength; };
+      setTimeout(function(){ if(inp.focus) inp.focus(); },260);
+    } else {
+      var bs2=mk("div","me-btns"); var c1=mkText("button","me-btn","取消"); c1.onclick=meClose;
+      var c2=mkText("button","me-btn "+(opt.danger?"danger":"primary"), opt.okText||"确定");
+      c2.onclick=function(){ meClose(); if(opt.onOk) setTimeout(opt.onOk,120); };
+      bs2.appendChild(c1); bs2.appendChild(c2); meSheetEl.appendChild(bs2); }
+    requestAnimationFrame(function(){ meMaskEl.classList.add("show"); meSheetEl.classList.add("show"); }); }
+  function renderMe(){
+    var box=$("vmScroll");
+    if(!box) return;
+    box.innerHTML="";
+    var hero=mk("div","vm-hero");
+    var avEl=mk("div","avatar big me",ME.avatar||ME.name.slice(0,1));
+    avEl.title="点一下换个头像";
+    avEl.onclick=function(){
+      var pool=["\uD83D\uDC64","\uD83D\uDE00","\uD83D\uDE0E","\uD83D\uDC31","\uD83D\uDC3C","\uD83C\uDF1F","\uD83C\uDFA7","\uD83C\uDF40","\uD83D\uDE80","\uD83E\uDD8A"];
+      var i=(pool.indexOf(ME.avatar)+1)%pool.length;
+      ME.avatar=pool[i]; avEl.textContent=ME.avatar;
+      toast("头像已更新");
+    };
+    hero.appendChild(avEl);
+    var nm=mk("div","vm-name");
+    var nmSpan=mkText("span",null,ME.name);
+    nmSpan.title="点一下改昵称";
+    nmSpan.onclick=function(){
+      nmSpan.contentEditable="true";
+      if(nmSpan.focus) nmSpan.focus();
+      toast("编辑昵称，点别处保存");
+    };
+    nmSpan.onblur=function(){
+      nmSpan.contentEditable="false";
+      var v=String(nmSpan.textContent||"").trim();
+      if(v){
+        ME.name=v;
+        var cc=$("ccAvatar"); if(cc) cc.textContent=v.slice(0,1);
+      }
+      toast("昵称已更新");
+    };
+    nm.appendChild(nmSpan);
+    nm.appendChild(mkText("span","vm-tag",hasAI()?"AI 已接入":"本地模式"));
+    hero.appendChild(nm);
+    hero.appendChild(mkText("div","vm-user",ME.user));
+    var sign=mkText("div","vm-sign",ME.sign);
+    sign.title="点一下可以改签名";
+    sign.onclick=function(){
+      sign.contentEditable="true";
+      if(sign.focus) sign.focus();
+      toast("编辑中，点别处自动保存");
+    };
+    sign.onblur=function(){
+      sign.contentEditable="false";
+      var v=String(sign.textContent||"").trim();
+      if(v) ME.sign=v;
+      toast("签名已更新");
+    };
+    hero.appendChild(sign);
+    box.appendChild(hero);
+
+    var stats=mk("div","vm-stats");
+    [
+      {n:chats.length,l:"会话",fn:function(){switchTab("chat");}},
+      {n:posts.length,l:"动态",fn:function(){switchTab("feed");}},
+      {n:totalLikes(),l:"获赞",fn:function(){toast("累计获赞 "+totalLikes());}}
+    ].forEach(function(it){
+      var s=mk("div","stat");
+      s.appendChild(mkText("b",null,String(it.n)));
+      s.appendChild(mkText("span",null,it.l));
+      s.onclick=it.fn;
+      stats.appendChild(s);
+    });
+    box.appendChild(stats);
+
+    /* ---- USDT 钱包卡：品牌头 / 余额 / 地址 / 2×2 操作 / 内嵌最近交易 ---- */
+    var wl=mk("div","wallet");
+
+    var wt=mk("div","w-top");
+    var wbrand=mk("div","w-brand");
+    wbrand.appendChild(mkText("i",null,"\u20AE"));
+    wbrand.appendChild(mkText("span",null,"USDT 钱包"));
+    wt.appendChild(wbrand);
+    var wnet=mkText("span","w-net",WALLET.net);
+    wnet.title="当前链网络："+WALLET.net;
+    wt.appendChild(wnet);
+    wl.appendChild(wt);
+
+    var wbw=mk("div","w-bal-wrap");
+    wbw.appendChild(mkText("div","w-cap","总余额"));
+    var wbal=mk("div","w-bal");
+    wbal.appendChild(mkText("b",null,fmtU(WALLET.usdt)));
+    wbal.appendChild(mkText("small",null,"USDT"));
+    wbw.appendChild(wbal);
+    wbw.appendChild(mkText("div","w-cny","≈ ¥"+fmtU(WALLET.usdt*WALLET.rate)+" CNY · 1 USDT ≈ ¥"+WALLET.rate.toFixed(2)));
+    wl.appendChild(wbw);
+
+    /* 钱包地址：点击复制（演示） */
+    var waddr=mk("div","w-addr");
+    waddr.innerHTML=ICO.copy;
+    waddr.appendChild(mkText("span",null,WALLET.addr.slice(0,10)+"…"+WALLET.addr.slice(-6)));
+    waddr.title="点击复制钱包地址";
+    waddr.onclick=function(){
+      var a=String(WALLET.addr);
+      try{ if(navigator&&navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(a); }catch(e){}
+      toast("钱包地址已复制（演示）");
+    };
+    wl.appendChild(waddr);
+
+    var wa=mk("div","w-acts");
+    [
+      {t:"充值",ico:ICO.down,fn:walletRecharge,primary:true},
+      {t:"提现",ico:ICO.up,fn:walletWithdraw},
+      {t:"转账",ico:ICO.send,fn:walletTransfer},
+      {t:"明细",ico:ICO.chart,fn:walletLog}
+    ].forEach(function(it){
+      var b=mk("button","w-btn"+(it.primary?" primary":""),it.ico+"<span>"+it.t+"</span>");
+      b.onclick=it.fn; wa.appendChild(b);
+    });
+    wl.appendChild(wa);
+
+    /* 内嵌最近交易：与主卡视觉咬合，最多 3 条 */
+    if(TX_LOG.length){
+      var wtx=mk("div","w-tx");
+      var wtxh=mk("div","w-tx-head");
+      wtxh.appendChild(mkText("span",null,"最近交易"));
+      var wmore=mkText("button",null,"全部 \u203A");
+      wmore.onclick=walletLog;
+      wtxh.appendChild(wmore);
+      wtx.appendChild(wtxh);
+      var list=mk("div","w-tx-list");
+      TX_LOG.slice(0,3).forEach(function(x){
+        var it=mk("div","w-tx-item");
+        var inFlow=x.a>0;
+        it.appendChild(mkText("div","w-tx-ico",inFlow?"\uD83D\uDCE5":"\uD83D\uDCE4"));
+        var body=mk("div","w-tx-body");
+        body.appendChild(mkText("b",null,x.t));
+        body.appendChild(mkText("span",null,x.time));
+        it.appendChild(body);
+        it.appendChild(mkText("div","w-tx-amt"+(inFlow?" in":""),(inFlow?"+":"-")+fmtU(Math.abs(x.a))+" U"));
+        it.title="点击复制交易哈希（演示）";
+        it.onclick=function(){ toast("已复制交易哈希（演示）"); };
+        list.appendChild(it);
+      });
+      wtx.appendChild(list);
+      wl.appendChild(wtx);
+    }
+    box.appendChild(wl);
+
+    var profPct=(function(){var c=0;if(ME.name)c++;if(ME.user)c++;if(ME_PHONE)c++;if(ME.sign)c++;return Math.round(c/4*100);})();
+    var g1=tgGroup("账号",[
+      tgRow({ico:"\uD83D\uDC64",color:"#3390ec",title:"编辑资料",sub:"昵称 / 头像 / 简介",val:ME.name,onTap:function(){
+        meOpen({title:"编辑资料",sub:"完善你的个人主页",type:"list",items:[
+          {label:"修改昵称",onTap:function(){ meOpen({title:"修改昵称",type:"input",value:ME.name,placeholder:"输入新昵称",maxlength:20,hint:"2-20 个字符",okText:"保存",onOk:function(v){ if(!v){toast("昵称不能为空");return;} if(v.length>20){toast("昵称过长");return;} ME.name=v; var cc=$("ccAvatar"); if(cc) cc.textContent=v.slice(0,1); var xx=$("xHeadAvatar"); if(xx) xx.textContent=v.slice(0,1); renderMe(); toast("昵称已更新"); }}); }},
+          {label:"更换头像",onTap:function(){ var pool=["\uD83D\uDC64","\uD83D\uDE00","\uD83D\uDE0E","\uD83D\uDC31","\uD83D\uDC3C","\uD83C\uDF1F","\uD83C\uDFA7","\uD83C\uDF40","\uD83D\uDE80","\uD83E\uDD8A"]; var i=(pool.indexOf(ME.avatar)+1)%pool.length; ME.avatar=pool[i]; renderMe(); toast("头像已更换 "+ME.avatar); }},
+          {label:"修改简介",onTap:function(){ meOpen({title:"修改简介",type:"input",value:ME.sign,placeholder:"一句话介绍自己",maxlength:60,hint:"最多 60 字",okText:"保存",onOk:function(v){ if(v) ME.sign=v; renderMe(); toast("简介已更新"); }}); }},
+          {label:"资料完成度 "+profPct+"%",onTap:function(){ toast("继续完善资料可以提升完成度"); }}
+        ]});
+      }}),
+      tgRow({ico:"\uD83D\uDD17",color:"#4aa3ff",title:"用户名",sub:ME.user,val:"@",onTap:function(){
+        meOpen({title:"设置用户名",type:"input",value:String(ME.user||"").replace(/^@/,""),placeholder:"3-15 位字母/数字/下划线",maxlength:15,hint:"仅支持字母、数字与下划线",okText:"保存",onOk:function(v){
+          v=String(v||"").replace(/^@+/,"");
+          if(!/^[A-Za-z0-9_]{3,15}$/.test(v)){ toast("用户名格式不正确（3-15 位字母/数字/下划线）"); return; }
+          ME.user="@"+v; renderMe(); toast("用户名已更新");
+        }});
+      }}),
+      tgRow({ico:"\uD83D\uDCF1",color:"#43aa8b",title:"手机号",sub:ME_PHONE?"已绑定":"未绑定",val:ME_PHONE||"去绑定",onTap:function(){
+        meOpen({title:"手机号",type:"input",value:String(ME_PHONE||"").replace(/[^0-9]/g,""),placeholder:"输入 11 位手机号",maxlength:11,hint:"用于登录与安全验证（演示）",numeric:true,okText:"保存",onOk:function(v){
+          var d=String(v||"").replace(/[^0-9]/g,"");
+          if(!/^1[3-9]\d{9}$/.test(d)){ toast("请输入有效的 11 位手机号"); return; }
+          ME_PHONE=d.slice(0,3)+"****"+d.slice(7); renderMe(); toast("手机号已更新");
+        }});
+      }}),
+      tgRow({ico:"\u270F\uFE0F",color:"#f4845f",title:"个性签名",sub:ME.sign,onTap:function(){
+        meOpen({title:"个性签名",type:"input",value:ME.sign,placeholder:"写点什么…",maxlength:60,hint:"最多 60 字",okText:"保存",onOk:function(v){ if(v) ME.sign=v; renderMe(); toast("签名已更新"); }});
+      }})
+    ]);
+    box.appendChild(g1);
+
+    var gW=tgGroup("钱包",[
+      tgRow({ico:"\uD83D\uDCB0",color:"#26a17b",title:"USDT 余额",sub:"TRC-20 网络",val:fmtU(WALLET.usdt)+" U",onTap:function(){ meOpen({title:"USDT 钱包",sub:"余额 "+fmtU(WALLET.usdt)+" USDT（≈ ¥"+fmtU(WALLET.usdt*WALLET.rate)+"）· 地址 "+WALLET.addr.slice(0,6)+"…"+WALLET.addr.slice(-4),type:"list",items:[{label:"充值",onTap:walletRecharge},{label:"提现",onTap:walletWithdraw},{label:"转账",onTap:walletTransfer},{label:"交易记录",onTap:walletLog}]}); }}),
+      tgRow({ico:"\uD83D\uDCE5",color:"#2ecc71",title:"充值",sub:"链上充值 USDT",onTap:walletRecharge}),
+      tgRow({ico:"\uD83D\uDCE4",color:"#e67e22",title:"提现",sub:"提现到外部地址",onTap:walletWithdraw}),
+      tgRow({ico:"\uD83D\uDD01",color:"#3498db",title:"转账",sub:"转给其他用户",onTap:walletTransfer}),
+      tgRow({ico:"\uD83D\uDCCA",color:"#9b59b6",title:"交易记录",sub:"最近 "+TX_LOG.length+" 笔",val:"查看",onTap:walletLog})
+    ]);
+    box.appendChild(gW);
+
+    var g2=tgGroup("通用",[
+      tgRow({ico:"\uD83C\uDF19",color:"#7c5cff",title:"深色模式",sub:"跟随你的偏好",sw:document.body.classList.contains("dark"),onTap:function(){
+        document.body.classList.toggle("dark");
+        toast(document.body.classList.contains("dark")?"已切换到深色":"已切换到浅色");
+      }}),
+      tgRow({ico:"\uD83D\uDD14",color:"#f4a261",title:"消息通知",sub:"新消息提醒",sw:true,onTap:function(sw){ toast(sw&&sw.classList&&sw.classList.contains("on")?"已开启消息通知":"已关闭消息通知"); }}),
+      tgRow({ico:"\uD83C\uDFA8",color:"#e17076",title:"主题色",sub:"切换强调色",val:THEME_NAMES[themeIdx],onTap:function(){ var cs=["#3390ec","#7c5cff","#e17076","#43aa8b","#f4845f"]; meOpen({title:"主题色",type:"list",items:cs.map(function(cc2,i2){ return {label:THEME_NAMES[i2],on:i2===themeIdx,onTap:function(){ themeIdx=i2; document.documentElement.style.setProperty("--blue",cc2); renderMe(); toast("主题色已切换"); }}; })}); }}),
+      tgRow({ico:"\uD83D\uDCF6",color:"#2b7cd3",title:"动态默认真实照片",sub:"发布动态优先配真实照片",sw:true,onTap:function(sw){ toast(sw&&sw.classList&&sw.classList.contains("on")?"已开启自动配图":"已关闭自动配图"); }}),
+      tgRow({ico:"\uD83D\uDCEC",color:"#3390ec",title:"自动消息",sub:autoMsgOn?"联系人随机发来消息（1~60 秒）":"已暂停自动消息",sw:autoMsgOn,onTap:function(sw){ setAutoMsg(sw&&sw.classList&&sw.classList.contains("on")); }}),
+    ]);
+    box.appendChild(g2);
+
+    var g3=tgGroup("隐私与数据",[
+      tgRow({ico:"\uD83D\uDD12",color:"#65aadd",title:"隐私设置",sub:"谁能看到我的动态",val:PRIVACY,onTap:function(){ var opts=["所有人","仅好友","仅自己"]; meOpen({title:"谁能看到我的动态",type:"list",items:opts.map(function(o){ return {label:o,on:o===PRIVACY,onTap:function(){ PRIVACY=o; renderMe(); toast("可见范围："+o); }}; })}); }}),
+      tgRow({ico:"\uD83D\uDD5B",color:"#90be6d",title:"消息自动删除",sub:"自动清理保留时长",val:AUTODEL,onTap:function(){ var opts=["关闭","24小时","7天","30天"]; meOpen({title:"消息自动删除",type:"list",items:opts.map(function(o){ return {label:o,on:o===AUTODEL,onTap:function(){ AUTODEL=o; renderMe(); toast("自动删除："+o); }}; })}); }}),
+      tgRow({ico:"\uD83E\uDDF9",color:"#8d6e1e",title:"清除缓存",sub:"释放本地存储",onTap:function(){ meOpen({title:"清除缓存",type:"confirm",sub:"将清理本地临时缓存与未保存草稿，释放手机存储占用。",okText:"清除",danger:true,onOk:function(){ toast("缓存已清除，已释放本地占用"); }}); }})
+    ]);
+    box.appendChild(g3);
+
+    var g4=tgGroup("智能与关于",[
+      tgRow({ico:"\uD83E\uDD16",color:"#4aa3ff",title:"AI 接入设置",sub:"接口 / 模型 / 人设",val:hasAI()?"已接入":"未配置",onTap:function(){openCfg();}}),
+      tgRow({ico:"\u2B50",color:"#f9c74f",title:"我的收藏",sub:"已收藏 "+favCount+" 条动态",onTap:function(){switchTab("feed");toast("去看看你收藏的动态");}}),
+      tgRow({ico:"\u2139\uFE0F",color:"#9aa6b2",title:"关于",sub:"Telegram Clone · 纯前端单文件",val:"v1.1",onTap:function(){ meOpen({title:"关于",type:"info",sub:"Telegram Clone v1.1 · 纯前端单文件 · 零依赖 · 双击即用 · 液态玻璃 UI · AI 接入 · 列表互动"}); }}),
+      tgRow({ico:"\uD83D\uDEAA",color:"#e17076",title:"退出登录",sub:"退出当前账号",onTap:function(){ meOpen({title:"退出登录",type:"confirm",sub:"确定要退出当前账号吗？（演示环境不会真正退出）",okText:"退出",danger:true,onOk:function(){ toast("已退出登录（演示）"); }}); }})
+    ]);
+    box.appendChild(g4);
+  }
+
+  /* ---------- 聊天列表互动：长按菜单 / 置顶 / 静音 / 已读 / 删除 ---------- */
+  var ctxEl=null,listPressTimer=null,menuGuardUntil=0;
+  function closeCtxMenu(){if(ctxEl) ctxEl.classList.remove("show");}
+  function cancelListPress(){if(listPressTimer){clearTimeout(listPressTimer);listPressTimer=null;}}
+
+  function openChatMenu(c,node,x,y){
+    ctxEl=ctxEl||$("ctxMenu");
+    if(!ctxEl) return;
+    cancelListPress();
+    closeMenu();
+    ctxEl.innerHTML="";
+    var rows=[
+      {ic:"\uD83D\uDCAC",t:"打开对话",fn:function(){openChat(c.id);}},
+      {ic:"\uD83D\uDCCC",t:c.pin?"取消置顶":"置顶聊天",fn:function(){togglePin(c);}},
+      {ic:c.mute?"\uD83D\uDD14":"\uD83D\uDD07",t:c.mute?"取消静音":"静音通知",fn:function(){toggleMute(c);}},
+      {ic:"\u2714\uFE0F",t:"标记为已读",sep:true,fn:function(){markChatRead(c);}},
+      {ic:"\uD83D\uDDD1\uFE0F",t:"删除聊天",danger:true,fn:function(){deleteChat(c);}}
+    ];
+    rows.forEach(function(r){
+      if(r.sep) ctxEl.appendChild(mk("div","ctx-sep"));
+      var b=mk("div","ctx-item"+(r.danger?" danger":""));
+      b.innerHTML='<span class="ic">'+r.ic+'</span><span>'+r.t+'</span>';
+      b.onclick=function(){closeCtxMenu();r.fn();};
+      ctxEl.appendChild(b);
+    });
+    ctxEl.classList.add("show");
+    /* 长按松手后浏览器仍会补发一次 click，此处开一个短守卫避免菜单被立刻关掉 */
+    menuGuardUntil=Date.now()+420;
+    if(typeof x!=="number"||typeof y!=="number"){
+      if(node&&node.getBoundingClientRect){var rc=node.getBoundingClientRect();x=rc.left+72;y=rc.top+rc.height/2;}
+      else{x=(window.innerWidth||360)/2;y=200;}
+    }
+    var w=ctxEl.offsetWidth||196,h=ctxEl.offsetHeight||234;
+    var W=window.innerWidth||360,H=window.innerHeight||640;
+    ctxEl.style.left=Math.max(8,Math.min(x,W-w-8))+"px";
+    ctxEl.style.top=Math.max(8,Math.min(y-h/2,H-h-8))+"px";
+  }
+
+  function togglePin(c){
+    c.pin=!c.pin;
+    renderList($("search").value);
+    toast(c.pin?("已置顶「"+c.name+"」"):("已取消置顶「"+c.name+"」"));
+  }
+  function toggleMute(c){
+    c.mute=!c.mute;
+    renderList($("search").value);
+    toast(c.mute?("已静音「"+c.name+"」"):("已取消静音「"+c.name+"」"));
+  }
+  function markChatRead(c){
+    c.unread=0;
+    renderList($("search").value);
+    syncTabDot();
+    toast("已将「"+c.name+"」标为已读");
+  }
+  function deleteChat(c){
+    var i=chats.indexOf(c);
+    if(i<0) return;
+    chats.splice(i,1);
+    if(activeId===c.id){
+      activeId=null;
+      chatHeadEl.style.display="none";
+      composerEl.style.display="none";
+      messagesEl.innerHTML="";
+      emptyEl.style.display="flex";
+      app.classList.remove("chat-open");
+    }
+    renderList($("search").value);
+    refreshPill();
+    toast("已删除聊天「"+c.name+"」");
+  }
+
+  /* ---------- 消息互动：长按菜单 / 表情回应 / 引用 ---------- */
+  var menuEl=null,quoteState=null,pressTimer=null;
+  var EMOJIS=["\uD83D\uDC4D","\u2764\uFE0F","\uD83D\uDE02","\uD83D\uDE2E","\uD83D\uDE22","\uD83D\uDD25"];
+
+  function closeMenu(){if(menuEl) menuEl.classList.remove("show");}
+  function cancelPress(){if(pressTimer){clearTimeout(pressTimer);pressTimer=null;}}
+
+  function bindMsgs(){
+    var nodes=messagesEl.children;
+    for(var i=0;i<nodes.length;i++){
+      var n=nodes[i];
+      if(!n||!n.__m) continue;
+      bindMsgNode(n,n.__m);
+    }
+  }
+  function bindMsgNode(node,m){
+    node.oncontextmenu=function(ev){
+      if(ev&&ev.preventDefault) ev.preventDefault();
+      openMenu(m,node);
+    };
+    node.onmousedown=function(){startPress(m,node);};
+    node.onmouseup=cancelPress;
+    node.onmouseleave=cancelPress;
+    node.ontouchstart=function(){startPress(m,node);};
+    node.ontouchend=function(){setTimeout(cancelPress,0);};
+    node.ontouchmove=cancelPress;
+    node.ondblclick=function(ev){
+      if(ev&&ev.preventDefault) ev.preventDefault();
+      cancelPress();
+      quickReact(m);
+    };
+  }
+  function startPress(m,node){
+    cancelPress();
+    pressTimer=setTimeout(function(){pressTimer=null;openMenu(m,node);},480);
+  }
+  function openMenu(m,node,x,y){
+    menuEl=menuEl||$("msgMenu");
+    if(!menuEl) return;
+    cancelPress();
+    closeCtxMenu();
+    menuEl.innerHTML="";
+    var rowE=mk("div","mm-emojis");
+    EMOJIS.forEach(function(e){
+      var b=mkText("button","mm-emoji"+(m.react===e?" on":""),e);
+      b.onclick=function(){setReact(m,m.react===e?"":e);closeMenu();};
+      rowE.appendChild(b);
+    });
+    menuEl.appendChild(rowE);
+    var acts=mk("div","mm-acts");
+    var bq=mk("button","mm-act",ICO.reply+"<span>引用</span>");
+    bq.onclick=function(){startQuote(m);closeMenu();};
+    var bc=mk("button","mm-act",ICO.copy+"<span>复制</span>");
+    bc.onclick=function(){copyMsg(m.text);closeMenu();};
+    var bd=mk("button","mm-act danger",ICO.trash+"<span>撤回</span>");
+    bd.onclick=function(){deleteMsg(m);closeMenu();};
+    acts.appendChild(bq);acts.appendChild(bc);acts.appendChild(bd);
+    menuEl.appendChild(acts);
+    menuEl.classList.add("show");
+    menuGuardUntil=Date.now()+420;
+    if(typeof x!=="number"||typeof y!=="number"){
+      if(node&&node.getBoundingClientRect){
+        var r=node.getBoundingClientRect();x=r.left+r.width/2;y=r.top;
+      }else{x=(window.innerWidth||360)/2;y=240;}
+    }
+    var w=menuEl.offsetWidth||320,h=menuEl.offsetHeight||118;
+    var W=window.innerWidth||360,H=window.innerHeight||640;
+    menuEl.style.left=Math.max(8,Math.min(x-w/2,W-w-8))+"px";
+    menuEl.style.top=Math.max(8,Math.min(y-h-8,H-h-8))+"px";
+  }
+  function activeChat(){
+    return activeId?chats.find(function(x){return x.id===activeId;}):null;
+  }
+  function quickReact(m){setReact(m,m.react==="\u2764\uFE0F"?"":"\u2764\uFE0F");}
+  function setReact(m,e){
+    m.react=e||undefined;
+    var c=activeChat();
+    if(c&&c.msgs.indexOf(m)>=0) renderMessages(c);
+    toast(e?("已回应 "+e):"已取消回应");
+  }
+  function copyMsg(t){
+    try{
+      if(typeof navigator!=="undefined"&&navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(t);
+      }
+    }catch(e){}
+    toast("已复制消息内容");
+  }
+  function deleteMsg(m){
+    var c=activeChat();
+    if(!c) return;
+    var i=c.msgs.indexOf(m);
+    if(i<0) return;
+    c.msgs.splice(i,1);
+    renderMessages(c);
+    renderList($("search").value);
+    toast("已撤回该消息");
+  }
+  function startQuote(m){
+    var c=activeChat();
+    var who=m.from==="me"?"我":((m.who||(c&&c.name))||"消息");
+    quoteState={who:who,text:String(m.text||"").slice(0,80)};
+    var txt=$("qbTxt"),bar=$("quoteBar");
+    if(txt) txt.innerHTML='<b>'+esc(who)+'</b>'+esc(quoteState.text);
+    if(bar) bar.classList.add("show");
+    setTimeout(function(){if(inputEl&&inputEl.focus) inputEl.focus();},50);
+    toast("已引用，输入你的回复");
+  }
+  function clearQuote(){
+    quoteState=null;
+    var bar=$("quoteBar");
+    if(bar) bar.classList.remove("show");
+  }
+
+  /* ============================================================
+     小程序中心（微信「发现」风格）：小程序 / 炒股 / 公众号
+     ============================================================ */
+  var MP={open:false,host:null,timer:null,detail:false};
+  var MINI_APPS=[
+    {id:"stock",name:"股市行情",short:"炒股",desc:"实时行情 · 自选股 · 模拟交易",ico:"\uD83D\uDCC8",bg:"linear-gradient(135deg,#ff5e62,#ff2d55)",tag:"热门"},
+    {id:"oa",name:"公众号",short:"公众号",desc:"订阅号 / 服务号 · 文章阅读与互动",ico:"\uD83D\uDCF0",bg:"linear-gradient(135deg,#43cea2,#189f61)",tag:"推荐"},
+    {id:"forex",name:"汇率换算",short:"汇率",desc:"常用货币即时换算",ico:"\uD83D\uDCB1",bg:"linear-gradient(135deg,#4aa3ff,#2b7cd3)"},
+    {id:"weather",name:"天气预报",short:"天气",desc:"未来 7 天天气一览",ico:"\u26C5",bg:"linear-gradient(135deg,#56ccf2,#2f80ed)"},
+    {id:"note",name:"记账本",short:"记账",desc:"随手记录收支与统计",ico:"\uD83D\uDCD2",bg:"linear-gradient(135deg,#f7971e,#ffd200)"},
+    {id:"express",name:"快递查询",short:"快递",desc:"单号一键查询物流",ico:"\uD83D\uDCE6",bg:"linear-gradient(135deg,#8e2de2,#4a00e0)"}
+  ];
+  function mpApp(id){ for(var i=0;i<MINI_APPS.length;i++){ if(MINI_APPS[i].id===id) return MINI_APPS[i]; } return null; }
+
+  function openMP(){
+    var s=$("mpSheet"),m=$("mpMask");
+    if(!s) return;
+    renderMPCenter();
+    if(m) m.classList.add("show");
+    s.classList.add("show"); s.setAttribute("aria-hidden","false");
+    MP.open=true;
+    var t=$("tabMp"); if(t) t.classList.add("on");
+  }
+  function closeMP(){
+    var s=$("mpSheet"),m=$("mpMask");
+    if(s){ s.classList.remove("show"); s.setAttribute("aria-hidden","true"); }
+    if(m) m.classList.remove("show");
+    MP.open=false;
+    var t=$("tabMp"); if(t) t.classList.remove("on");
+    closeMini();
+  }
+  function renderMPCenter(){
+    var body=$("mpBody"); if(!body) return;
+    var ti=$("mpTitle"); if(ti) ti.textContent="发现";
+    body.innerHTML="";
+    var bn=mk("div","mp-banner",
+      '<h3>小程序中心</h3><p>炒股、公众号、生活服务，一个入口全部搞定 · 点开即用，无需跳转</p>'+
+      '<div class="mp-bn-row"><i>\uD83D\uDCC8</i><i>\uD83D\uDCF0</i><i>\uD83D\uDCB1</i><i>\u26C5</i><i>\uD83D\uDCD2</i></div>');
+    body.appendChild(bn);
+
+    body.appendChild(mkText("div","mp-sec","推荐小程序"));
+    var grid=mk("div","mp-grid");
+    MINI_APPS.forEach(function(a){
+      var c=mk("div","mp-card");
+      var top=mk("div","mp-card-top");
+      var ic=mk("div","mp-ico",a.ico); ic.style.background=a.bg;
+      if(a.tag) ic.appendChild(mkText("span","mp-tag",a.tag));
+      top.appendChild(ic);
+      top.appendChild(mkText("div","mp-card-name",a.name));
+      c.appendChild(top);
+      c.appendChild(mkText("div","mp-card-desc",a.desc));
+      c.onclick=function(){ openMini(a.id); };
+      grid.appendChild(c);
+    });
+    body.appendChild(grid);
+    body.appendChild(mkText("div","mp-hint","以上均为前端演示，数据为本地模拟，不构成任何投资建议"));
+  }
+
+  function openMini(id){
+    var a=mpApp(id); if(!a) return;
+    MP.host=id; MP.detail=false;
+    var h=$("mpHost"),hd=$("mpHostHead"),ti=$("mpHostTitle"),bd=$("mpHostBody");
+    if(!h) return;
+    if(ti) ti.textContent=a.name;
+    if(hd) hd.style.background=a.bg;
+    var s=$("mpSheet"); if(s) s.classList.remove("show");
+    if(bd){
+      bd.innerHTML="";
+      if(id==="stock") renderStock(bd);
+      else if(id==="oa") renderOA(bd);
+      else if(id==="forex") renderForex(bd);
+      else if(id==="weather") renderWeather(bd);
+      else if(id==="note") renderNote(bd);
+      else if(id==="express") renderExpress(bd);
+    }
+    h.classList.add("show"); h.setAttribute("aria-hidden","false");
+  }
+  function closeMini(){
+    var h=$("mpHost"); if(!h) return;
+    h.classList.remove("show"); h.setAttribute("aria-hidden","true");
+    MP.host=null; MP.detail=false;
+    if(MP.timer){ clearInterval(MP.timer); MP.timer=null; }
+    var bd=$("mpHostBody"); if(bd) bd.innerHTML="";
+    if(MP.open){ var s=$("mpSheet"); if(s) s.classList.add("show"); }
+  }
+
+  /* ---------- 炒股小程序 ---------- */
+  var STOCK={
+    idx:[{n:"上证指数",v:3128.47,c:0.62},{n:"深证成指",v:9876.12,c:-0.35},{n:"创业板指",v:1934.85,c:1.08}],
+    list:[
+      {code:"600519",name:"贵州茅台",price:1685.00,chg:1.24},
+      {code:"000858",name:"五粮液",price:142.35,chg:-0.86},
+      {code:"601318",name:"中国平安",price:48.72,chg:0.54},
+      {code:"300750",name:"宁德时代",price:186.40,chg:2.13},
+      {code:"600036",name:"招商银行",price:35.18,chg:-0.42},
+      {code:"002594",name:"比亚迪",price:245.90,chg:0.77}
+    ],
+    tab:"watch",
+    cash:1000000,
+    pos:{}
+  };
+  function fmt2(n){ return (Math.round(n*100)/100).toFixed(2); }
+  function stColor(c){ return c>0?"up":(c<0?"dn":""); }
+  function stSign(c){ return (c>0?"+":"")+fmt2(c)+"%"; }
+  function stQuoteOf(code){
+    for(var i=0;i<STOCK.list.length;i++){ if(STOCK.list[i].code===code) return STOCK.list[i]; }
+    return {code:code,name:code,price:100,chg:0};
+  }
+  function stSeries(code,base){
+    var seed=0; for(var i=0;i<code.length;i++) seed=(seed*31+code.charCodeAt(i))%9973;
+    var out=[],v=base*0.9;
+    for(var k=0;k<40;k++){
+      seed=(seed*1103515245+12345)%2147483648;
+      var r=(seed/2147483648)-0.5;
+      v=v*(1+r*0.03);
+      out.push(v);
+    }
+    out[out.length-1]=base;
+    return out;
+  }
+  function stKlineSVG(series,up){
+    var w=300,h=112,min=Math.min.apply(null,series),max=Math.max.apply(null,series);
+    var rng=(max-min)||1, step=w/(series.length-1);
+    var pts=series.map(function(v,i){ return [i*step, h-((v-min)/rng)*(h-14)-7]; });
+    var col=up?"#ffd0d2":"#bff0d2";
+    var area=pts.map(function(p,i){return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" ");
+    area+=" L "+w+" "+h+" L 0 "+h+" Z";
+    var line=pts.map(function(p,i){return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" ");
+    return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+
+      '<path d="'+area+'" fill="rgba(255,255,255,.22)"/>'+
+      '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  }
+  /* 迷你折线（自选股行内） */
+  function stSparkSVG(series,up){
+    var w=62,h=26,min=Math.min.apply(null,series),max=Math.max.apply(null,series),rng=(max-min)||1;
+    var step=w/(series.length-1);
+    var pts=series.map(function(v,i){ return [i*step, h-((v-min)/rng)*(h-6)-3]; });
+    var line=pts.map(function(p,i){return (i?"L":"M")+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" ");
+    var col=up?"#e5484d":"#16a34a";
+    return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+
+      '<path d="'+line+'" fill="none" stroke="'+col+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/></svg>';
+  }
+  /* 柱状图（成交量风格） */
+  function stBarSVG(series,up){
+    var w=300,h=94,min=Math.min.apply(null,series),max=Math.max.apply(null,series),rng=(max-min)||1;
+    var n=series.length, gap=2, bw=(w-(n-1)*gap)/n;
+    var col=up?"rgba(229,72,77,.82)":"rgba(22,163,74,.82)";
+    var bars=series.map(function(v,i){
+      var bh=((v-min)/rng)*(h-10)+6, x=i*(bw+gap), y=h-bh;
+      return '<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+bh.toFixed(1)+'" rx="1.6" fill="'+col+'"/>';
+    }).join("");
+    return '<svg viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none">'+bars+'</svg>';
+  }
+  function stRow(s,onTap){
+    var row=mk("div","mp-row");
+    var ic=mk("div","mp-ico",s.name.slice(0,1)); ic.style.background="linear-gradient(135deg,#ff7b7b,#e5484d)";
+    row.appendChild(ic);
+    var main=mk("div","mp-row-main");
+    main.appendChild(mkText("div","mp-row-t",s.name));
+    main.appendChild(mkText("div","mp-row-s",s.code));
+    row.appendChild(main);
+    row.appendChild(mk("div","st-spark",stSparkSVG(stSeries(s.code,s.price),s.chg>=0)));
+    var r=mk("div","mp-row-r");
+    r.appendChild(mkText("b",null,fmt2(s.price)));
+    r.appendChild(mkText("span",stColor(s.chg),stSign(s.chg)));
+    row.appendChild(r);
+    row.onclick=onTap;
+    return row;
+  }
+  function stTopBar(bd,label,onBack){
+    var bar=mk("div",null); bar.style.display="flex";
+    var b=mkText("button","st-inline-btn",label);
+    b.onclick=onBack;
+    bar.appendChild(b);
+    bd.appendChild(bar);
+    return bar;
+  }
+  function renderStock(bd){
+    function paint(){
+      bd.innerHTML="";
+      var idx=mk("div","st-idx");
+      STOCK.idx.forEach(function(x){
+        var c=mk("div","st-idx-item");
+        c.appendChild(mkText("small",null,x.n));
+        c.appendChild(mkText("b",null,fmt2(x.v)));
+        c.appendChild(mkText("span",stColor(x.c),stSign(x.c)));
+        idx.appendChild(c);
+      });
+      bd.appendChild(idx);
+
+      var mv=0,costTotal=0;
+      Object.keys(STOCK.pos).forEach(function(k){
+        var p=STOCK.pos[k], q=stQuoteOf(k);
+        mv+=p.qty*q.price; costTotal+=p.qty*p.cost;
+      });
+      var acc=mk("div","st-grid2");
+      var c1=mk("div","st-cell");
+      c1.innerHTML='<span>可用余额</span><b>'+fmt2(STOCK.cash)+'<i class="st-unit">USDT</i></b>';
+      var c2=mk("div","st-cell");
+      c2.innerHTML='<span>持仓市值</span><b class="'+(mv-costTotal>=0?"up":"dn")+'">'+fmt2(mv)+'<i class="st-unit">USDT</i></b>';
+      acc.appendChild(c1); acc.appendChild(c2);
+      bd.appendChild(acc);
+
+      var seg=mk("div","mp-seg");
+      [["watch","自选股"],["pos","持仓"]].forEach(function(t){
+        var b=mkText("button",STOCK.tab===t[0]?"on":null,t[1]);
+        b.onclick=function(){ STOCK.tab=t[0]; paint(); };
+        seg.appendChild(b);
+      });
+      bd.appendChild(seg);
+
+      var list=mk("div","mp-list");
+      if(STOCK.tab==="watch"){
+        STOCK.list.forEach(function(s){
+          list.appendChild(stRow(s,function(){ openStockDetail(bd,s); }));
+        });
+      }else{
+        var ks=Object.keys(STOCK.pos);
+        if(!ks.length){
+          list.appendChild(mkText("div","mp-hint","暂无持仓，去自选股里「买入」试试"));
+        }else{
+          ks.forEach(function(k){
+            var p=STOCK.pos[k], q=stQuoteOf(k), pl=(q.price-p.cost)*p.qty;
+            var row=mk("div","mp-row");
+            var ic=mk("div","mp-ico",q.name.slice(0,1)); ic.style.background="linear-gradient(135deg,#4aa3ff,#2b7cd3)";
+            row.appendChild(ic);
+            var main=mk("div","mp-row-main");
+            main.appendChild(mkText("div","mp-row-t",q.name+" \u00D7"+p.qty));
+            main.appendChild(mkText("div","mp-row-s","\u6210\u672C \u00A5"+fmt2(p.cost)+" \u00B7 \u73B0\u4EF7 \u00A5"+fmt2(q.price)));
+            row.appendChild(main);
+            var r=mk("div","mp-row-r");
+            r.appendChild(mkText("b",stColor(pl),(pl>=0?"+":"")+fmt2(pl)));
+            r.appendChild(mkText("span",null,"\u5356\u51FA"));
+            row.appendChild(r);
+            row.onclick=function(){ openStockDetail(bd,q); };
+            list.appendChild(row);
+          });
+        }
+      }
+      bd.appendChild(list);
+      bd.appendChild(mkText("div","mp-hint","行情与交易均为本地模拟演示，非真实数据"));
+    }
+    paint();
+    if(MP.timer) clearInterval(MP.timer);
+    MP.timer=setInterval(function(){
+      if(MP.host!=="stock"){ clearInterval(MP.timer); MP.timer=null; return; }
+      if(MP.detail) return;
+      STOCK.list.forEach(function(s){
+        var r=(Math.random()-0.5)*0.6;
+        s.price=Math.max(0.5,s.price*(1+r/100));
+        s.chg=Math.max(-10,Math.min(10,s.chg+r));
+      });
+      STOCK.idx.forEach(function(x){
+        x.v=x.v*(1+(Math.random()-0.5)*0.0012);
+        x.c=Math.max(-10,Math.min(10,x.c+(Math.random()-0.5)*0.08));
+      });
+      paint();
+    },2600);
+  }
+  function stOrder(s,dir){
+    var qty=100;
+    if(dir>0){
+      var cost=s.price*qty;
+      if(cost>STOCK.cash){ toast("可用余额不足，无法买入"); return; }
+      STOCK.cash-=cost;
+      var p=STOCK.pos[s.code]||{qty:0,cost:0};
+      var newQty=p.qty+qty;
+      p.cost=(p.cost*p.qty+cost)/newQty;
+      p.qty=newQty;
+      STOCK.pos[s.code]=p;
+      toast("已买入 "+s.name+" 100 股（模拟）");
+    }else{
+      var p2=STOCK.pos[s.code];
+      if(!p2||p2.qty<qty){ toast("持仓不足，无法卖出"); return; }
+      STOCK.cash+=s.price*qty;
+      p2.qty-=qty;
+      if(p2.qty<=0) delete STOCK.pos[s.code];
+      toast("已卖出 "+s.name+" 100 股（模拟）");
+    }
+  }
+  function openStockDetail(bd,s){
+    MP.detail=true;
+    var series=stSeries(s.code,s.price);
+    bd.innerHTML="";
+    stTopBar(bd,"\u2039 返回列表",function(){ MP.detail=false; renderStock(bd); });
+
+    var hero=mk("div","st-hero");
+    hero.appendChild(mkText("div","st-name",s.name));
+    hero.appendChild(mkText("div","st-code",(s.code.charAt(0)==="6"?"SH":"SZ")+s.code));
+    hero.appendChild(mkText("div","st-price",fmt2(s.price)));
+    var chg=mk("div","st-chg");
+    chg.appendChild(mkText("span",null,stSign(s.chg)));
+    chg.appendChild(mkText("span",null,"\u00A5"+(s.chg>=0?"+":"")+fmt2(s.price*s.chg/100)));
+    hero.appendChild(chg);
+    hero.appendChild(mk("div","st-kline",stKlineSVG(series,s.chg>=0)));
+    bd.appendChild(hero);
+
+    var bars=mk("div","st-bars");
+    bars.appendChild(mkText("div","st-chart-cap","近 40 日成交量"));
+    bars.appendChild(mk("div","st-bar-svg",stBarSVG(series,s.chg>=0)));
+    bd.appendChild(bars);
+
+    bd.appendChild(mkText("div","mp-sec","买卖五档"));
+    var ob=mk("div","st-order");
+    var i,pr,r;
+    for(i=5;i>=1;i--){
+      pr=s.price*(1+i*0.0012); r=mk("div","st-ob");
+      r.innerHTML='<i>\u5356'+i+'</i><b class="dn">'+fmt2(pr)+'</b><span>'+Math.floor(Math.random()*900+100)+'</span>';
+      ob.appendChild(r);
+    }
+    for(i=1;i<=5;i++){
+      pr=s.price*(1-i*0.0012); r=mk("div","st-ob");
+      r.innerHTML='<i>\u4E70'+i+'</i><b class="up">'+fmt2(pr)+'</b><span>'+Math.floor(Math.random()*900+100)+'</span>';
+      ob.appendChild(r);
+    }
+    bd.appendChild(ob);
+
+    var p=STOCK.pos[s.code];
+    var info=mk("div","st-grid2");
+    var c1=mk("div","st-cell"); c1.innerHTML='<span>持仓</span><b>'+(p?p.qty:0)+' 股</b>';
+    var c2=mk("div","st-cell"); c2.innerHTML='<span>成本</span><b>'+(p?("\u00A5"+fmt2(p.cost)):"\u2014")+'</b>';
+    info.appendChild(c1); info.appendChild(c2);
+    bd.appendChild(info);
+
+    var btns=mk("div","st-btns");
+    var buy=mkText("button","st-buy","买入 100 股");
+    buy.onclick=function(){ stOrder(s,1); openStockDetail(bd,s); };
+    var sell=mkText("button","st-sell","卖出 100 股");
+    sell.onclick=function(){ stOrder(s,-1); openStockDetail(bd,s); };
+    btns.appendChild(buy); btns.appendChild(sell);
+    bd.appendChild(btns);
+    bd.appendChild(mkText("div","mp-hint","模拟交易，仅用于演示，不涉及任何真实资金"));
+  }
+
+  /* ---------- 公众号小程序 ---------- */
+  var OA={
+    list:[
+      {id:"tech",name:"\u79D1\u6280\u65E9\u8BFB",type:"\u8BA2\u9605\u53F7",ico:"\uD83D\uDCF1",bg:"linear-gradient(135deg,#4aa3ff,#2b7cd3)",desc:"\u6BCF\u5929 3 \u5206\u949F\uFF0C\u8BFB\u61C2\u79D1\u6280\u5708\u5927\u4E8B",follow:true,arts:[
+        {id:"t1",title:"端侧大模型开始「下沉」，手机会变成新的 AI 入口吗？",cover:"\uD83E\uDDEE",bg:"linear-gradient(135deg,#4aa3ff,#7c5cff)",time:"今天 08:12",read:9821,like:326,com:0,
+         body:["过去一年，大模型的主战场一直在云端。但随着端侧算力提升与模型量化技术成熟，越来越多的推理开始「下沉」到手机本地。","比起云端调用，端侧推理最大的优势是隐私与延迟：数据不出设备，首字响应也能压到毫秒级。","当然限制也很明显——参数量、内存与功耗都要重新权衡。短期内更现实的做法，是端云协同：轻任务本地跑，重任务上云端。","对于开发者而言，这意味着一条新的产品思路：把「即时、私密、离线可用」做成体验差异点。"],
+         cmts:[{n:"林深",c:"#4aa3ff",t:"端侧最大的想象空间还是隐私合规。"},{n:"Momo",c:"#e5484d",t:"期待手机会议纪要直接本地生成。"}]},
+        {id:"t2",title:"折叠屏的下一步：不是更薄，而是更好用",cover:"\uD83D\uDCF2",bg:"linear-gradient(135deg,#43cea2,#189f61)",time:"昨天 21:40",read:6540,like:210,com:0,
+         body:["折叠屏已经卷了三年厚度，但用户真正在意的是「展开之后到底能做什么」。","分屏、悬停、多任务拖拽——这些才是决定一台折叠屏是不是生产力工具的关键。","如果软件生态跟不上，再薄的机身也只是更贵的直板机。"],
+         cmts:[{n:"阿哲",c:"#f7971e",t:"说得对，生态才是护城河。"}]}
+      ]},
+      {id:"life",name:"\u57CE\u5E02\u751F\u6D3B\u6307\u5357",type:"\u670D\u52A1\u53F7",ico:"\uD83C\uDFD9\uFE0F",bg:"linear-gradient(135deg,#f7971e,#ffd200)",desc:"\u672C\u5730\u6D3B\u52A8 \u00B7 \u5C55\u89C8 \u00B7 \u5468\u672B\u53BB\u54EA\u513F",follow:false,arts:[
+        {id:"l1",title:"这个周末，城市里有 7 场值得去的展览",cover:"\uD83C\uDFA8",bg:"linear-gradient(135deg,#f7971e,#e5484d)",time:"今天 10:05",read:4320,like:158,com:0,
+         body:["从当代艺术到摄影回顾，本周的展览密度相当高。","如果你只有半天时间，推荐先去市中心美术馆的那场摄影展，动线短、质量稳。","记得提前在服务号里预约，多数展馆周末会限流。"],
+         cmts:[{n:"小满",c:"#189f61",t:"已收藏，周日去看看。"}]}
+      ]},
+      {id:"health",name:"\u5065\u5EB7\u5FAE\u8BFE\u5802",type:"\u8BA2\u9605\u53F7",ico:"\uD83E\uDE7A",bg:"linear-gradient(135deg,#22c55e,#15803d)",desc:"\u79D1\u5B66\u4F5C\u606F \u00B7 \u8FD0\u52A8 \u00B7 \u996E\u98DF\u79D1\u666E",follow:false,arts:[
+        {id:"h1",title:"久坐族的 3 个「碎片运动」，每天 10 分钟就够",cover:"\uD83C\uDFC3",bg:"linear-gradient(135deg,#22c55e,#0ea5e9)",time:"昨天 18:30",read:7120,like:402,com:0,
+         body:["长时间久坐的问题不是「没时间运动」，而是「肌肉长期不激活」。","把运动拆成碎片：起身拉伸、靠墙静蹲、原地高抬腿，每天累计 10 分钟就有明显改善。","关键是频率而不是强度——每小时动一次，比周末突击两小时更有效。"],
+         cmts:[{n:"老周",c:"#7c5cff",t:"靠墙静蹲亲测有效。"}]}
+      ]}
+    ]
+  };
+  function renderOA(bd){
+    bd.innerHTML="";
+    bd.appendChild(mkText("div","mp-sec","订阅的公众号"));
+    var list=mk("div","mp-list");
+    OA.list.forEach(function(o){
+      var row=mk("div","mp-row");
+      var ic=mk("div","mp-ico",o.ico); ic.style.background=o.bg;
+      row.appendChild(ic);
+      var main=mk("div","mp-row-main");
+      main.appendChild(mkText("div","mp-row-t",o.name));
+      main.appendChild(mkText("div","mp-row-s",o.desc));
+      row.appendChild(main);
+      var r=mk("div","mp-row-r");
+      if(o.follow) r.appendChild(mkText("span","mp-pill",o.type));
+      r.appendChild(mkText("span","mp-badge",String(o.arts.length)));
+      row.appendChild(r);
+      row.onclick=function(){ renderOAArticles(bd,o); };
+      list.appendChild(row);
+    });
+    bd.appendChild(list);
+    bd.appendChild(mkText("div","mp-hint","点击公众号查看文章，文章支持点赞 / 在看 / 留言互动"));
+  }
+  function renderOAArticles(bd,o){
+    bd.innerHTML="";
+    stTopBar(bd,"\u2039 全部分公众号",function(){ renderOA(bd); });
+
+    var hero=mk("div","oa-hero");
+    var ic=mk("div","mp-ico",o.ico); ic.style.background=o.bg; hero.appendChild(ic);
+    var main=mk("div","oa-hero-main");
+    main.appendChild(mkText("b",null,o.name));
+    main.appendChild(mkText("p",null,o.desc+" \u00B7 "+o.type));
+    hero.appendChild(main);
+    var f=mkText("button","oa-follow"+(o.follow?" on":""),o.follow?"\u5DF2\u5173\u6CE8":"\u5173\u6CE8");
+    f.onclick=function(e){
+      if(e&&e.stopPropagation) e.stopPropagation();
+      o.follow=!o.follow;
+      f.textContent=o.follow?"\u5DF2\u5173\u6CE8":"\u5173\u6CE8";
+      f.classList.toggle("on",o.follow);
+      toast(o.follow?"已关注 "+o.name:"已取消关注");
+    };
+    hero.appendChild(f);
+    bd.appendChild(hero);
+
+    bd.appendChild(mkText("div","mp-sec","最新文章"));
+    var list=mk("div","mp-list");
+    o.arts.forEach(function(a){
+      var art=mk("div","oa-art");
+      var m=mk("div","oa-art-main");
+      m.appendChild(mkText("div","oa-art-t",a.title));
+      var meta=mk("div","oa-art-meta");
+      meta.appendChild(mkText("span",null,a.time));
+      meta.appendChild(mkText("span",null,"\u9605\u8BFB "+a.read));
+      meta.appendChild(mkText("span",null,"\u8D5E "+a.like));
+      m.appendChild(meta);
+      art.appendChild(m);
+      var th=mk("div","oa-thumb",a.cover); th.style.background=a.bg; art.appendChild(th);
+      art.onclick=function(){ renderOAArticle(bd,o,a); };
+      list.appendChild(art);
+    });
+    bd.appendChild(list);
+  }
+  function renderOAArticle(bd,o,a){
+    bd.innerHTML="";
+    stTopBar(bd,"\u2039 "+o.name,function(){ renderOAArticles(bd,o); });
+
+    bd.appendChild(mkText("div","oa-title",a.title));
+    var by=mk("div","oa-byline");
+    var av=mk("div","oa-cmt-av",o.ico); av.style.background=o.bg; av.style.width="26px"; av.style.height="26px"; av.style.fontSize="13px";
+    by.appendChild(av);
+    by.appendChild(mkText("span",null,o.name));
+    by.appendChild(mkText("span",null,"\u00B7 "+a.time));
+    bd.appendChild(by);
+
+    var cover=mk("div","oa-cover",a.cover); cover.style.background=a.bg;
+    bd.appendChild(cover);
+
+    var body=mk("div","oa-body");
+    a.body.forEach(function(p){ body.appendChild(mkText("p",null,p)); });
+    bd.appendChild(body);
+    bd.appendChild(mkText("div","oa-end","\u2014 \u5168\u6587\u5B8C \u2014"));
+
+    var st={liked:false,seen:false};
+    var acts=mk("div","oa-acts");
+    var seenN=Math.round(a.like*0.6);
+    var lb=mk("button","oa-act",null); lb.innerHTML=ICO.heart+"<span>点赞 "+a.like+"</span>";
+    var sb=mk("button","oa-act",null); sb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7S19 19 12 19 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>'+"<span>在看 "+seenN+"</span>";
+    var gb=mk("button","oa-act",null); gb.innerHTML=ICO.share+"<span>分享</span>";
+    lb.onclick=function(){
+      st.liked=!st.liked; a.like+=st.liked?1:-1;
+      lb.classList.toggle("on",st.liked);
+      lb.innerHTML=ICO.heart+"<span>\u70B9\u8D5E "+a.like+"</span>";
+      toast(st.liked?"已点赞":"已取消点赞");
+    };
+    sb.onclick=function(){
+      st.seen=!st.seen; seenN+=st.seen?1:-1;
+      sb.classList.toggle("on",st.seen);
+      sb.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1.5 12S5 5 12 5s10.5 7 10.5 7S19 19 12 19 1.5 12 1.5 12z"/><circle cx="12" cy="12" r="3"/></svg>'+"<span>\u5728\u770B "+seenN+"</span>";
+      toast(st.seen?"已加入在看":"已取消在看");
+    };
+    gb.onclick=function(){ toast("链接已复制（演示）"); };
+    acts.appendChild(lb); acts.appendChild(sb); acts.appendChild(gb);
+    bd.appendChild(acts);
+
+    var csec=mkText("div","mp-sec","\u7559\u8A00 "+((a.cmts||[]).length));
+    bd.appendChild(csec);
+    var cl=mk("div",null);
+    var comments=(a.cmts||[]).slice();
+    function paintCmts(){
+      cl.innerHTML="";
+      if(!comments.length) cl.appendChild(mkText("div","mp-hint","还没有留言，来说点什么吧"));
+      comments.forEach(function(c,i){
+        var it=mk("div","oa-cmt");
+        var av2=mk("div","oa-cmt-av",c.n.slice(0,1)); av2.style.background=c.c; it.appendChild(av2);
+        var m2=mk("div","oa-cmt-main");
+        m2.appendChild(mkText("b",null,c.n));
+        m2.appendChild(mkText("p",null,c.t));
+        m2.appendChild(mkText("span",null,i===0?"\u521A\u521A":(i+" \u5206\u949F\u524D")));
+        it.appendChild(m2);
+        cl.appendChild(it);
+      });
+    }
+    paintCmts();
+    bd.appendChild(cl);
+
+    var wrap=mk("div","oa-edit");
+    var inp=document.createElement("input");
+    inp.type="text"; inp.placeholder="\u5199\u7559\u8A00\u2026"; inp.maxLength=60;
+    var send=mkText("button",null,"\u53D1\u9001");
+    send.onclick=function(){
+      var v=(inp.value||"").trim();
+      if(!v){ toast("写点什么再发送吧"); return; }
+      comments.unshift({n:(ME&&ME.name)||"\u6211",c:"#4aa3ff",t:v});
+      inp.value="";
+      paintCmts();
+      csec.textContent="\u7559\u8A00 "+comments.length;
+      toast("留言已发布");
+    };
+    inp.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); send.onclick(); } });
+    wrap.appendChild(inp); wrap.appendChild(send);
+    bd.appendChild(wrap);
+  }
+
+  /* ---------- 汇率换算 ---------- */
+  function renderForex(bd){
+    bd.innerHTML="";
+    var rates={USD:1,CNY:7.18,EUR:0.92,JPY:157.2,HKD:7.82,GBP:0.79};
+    var names={USD:"\u7F8E\u5143",CNY:"\u4EBA\u6C11\u5E01",EUR:"\u6B27\u5143",JPY:"\u65E5\u5143",HKD:"\u6E2F\u5E01",GBP:"\u82F1\u9551"};
+    var from="USD",to="CNY";
+    var hero=mk("div","st-hero");
+    hero.appendChild(mkText("div","st-name","换算结果"));
+    var out=mkText("div","st-price","0");
+    hero.appendChild(out);
+    var sub=mkText("div","st-chg","1 "+from+" = "+fmt2(rates[to]/rates[from])+" "+to);
+    hero.appendChild(sub);
+    bd.appendChild(hero);
+
+    bd.appendChild(mkText("div","mp-sec","金额"));
+    var inp=mk("input","mp-input"); inp.type="number"; inp.value="1000";
+    bd.appendChild(inp);
+
+    function paint(){
+      var amt=parseFloat(inp.value)||0;
+      var usd=amt/rates[from];
+      out.textContent=(usd*rates[to]).toFixed(2);
+      sub.textContent="1 "+from+" = "+fmt2(rates[to]/rates[from])+" "+to;
+    }
+    function segRow(label,key,setter){
+      bd.appendChild(mkText("div","mp-sec",label));
+      var seg=mk("div","mp-seg");
+      Object.keys(rates).forEach(function(k){
+        var b=mkText("button",null,k+" "+names[k]);
+        b.onclick=function(){
+          setter(k);
+          var kids=seg.children;
+          for(var i=0;i<kids.length;i++) kids[i].className="";
+          b.className="on";
+          paint();
+        };
+        if(k===(key==="from"?from:to)) b.className="on";
+        seg.appendChild(b);
+      });
+      bd.appendChild(seg);
+    }
+    inp.addEventListener("input",paint);
+    segRow("从","from",function(k){ from=k; });
+    segRow("到","to",function(k){ to=k; });
+    paint();
+    bd.appendChild(mkText("div","mp-hint","汇率为本地演示数据，实际以银行牌价为准"));
+  }
+
+  /* ---------- 天气预报 ---------- */
+  function renderWeather(bd){
+    bd.innerHTML="";
+    var days=[
+      {d:"今天",i:"\u2600\uFE0F",t:"24\u00B0 / 32\u00B0",x:"晴"},
+      {d:"明天",i:"\u26C5",t:"23\u00B0 / 30\u00B0",x:"多云"},
+      {d:"周三",i:"\uD83C\uDF27\uFE0F",t:"21\u00B0 / 27\u00B0",x:"小雨"},
+      {d:"周四",i:"\uD83C\uDF26\uFE0F",t:"20\u00B0 / 26\u00B0",x:"阵雨"},
+      {d:"周五",i:"\u26C5",t:"22\u00B0 / 29\u00B0",x:"多云"},
+      {d:"周六",i:"\u2600\uFE0F",t:"24\u00B0 / 31\u00B0",x:"晴"},
+      {d:"周日",i:"\u2600\uFE0F",t:"25\u00B0 / 33\u00B0",x:"晴"}
+    ];
+    var hero=mk("div","st-hero");
+    hero.appendChild(mkText("div","st-name","\u5F53\u524D\u4F4D\u7F6E \u00B7 \u793A\u4F8B\u57CE\u5E02"));
+    hero.appendChild(mkText("div","st-price","28\u00B0"));
+    hero.appendChild(mkText("div","st-chg","\u2600\uFE0F \u6674 \u00B7 \u4F53\u611F 30\u00B0 \u00B7 \u7A7A\u6C14\u8D28\u91CF \u4F18"));
+    bd.appendChild(hero);
+    bd.appendChild(mkText("div","mp-sec","\u672A\u6765 7 \u5929"));
+    var list=mk("div","mp-list");
+    days.forEach(function(x){
+      var row=mk("div","oa-day");
+      row.appendChild(mkText("b",null,x.d));
+      var ic=mk("i",null,x.i); row.appendChild(ic);
+      row.appendChild(mkText("span",null,x.x+" \u00B7 "+x.t));
+      list.appendChild(row);
+    });
+    bd.appendChild(list);
+    bd.appendChild(mkText("div","mp-hint","天气为本地演示数据"));
+  }
+
+  /* ---------- 记账本 ---------- */
+  var NOTE={items:[]};
+  function renderNote(bd){
+    bd.innerHTML="";
+    var hero=mk("div","st-hero");
+    hero.appendChild(mkText("div","st-name","\u672C\u6708\u7ED3\u4F59"));
+    var out=mkText("div","st-price","0.00");
+    hero.appendChild(out);
+    var sub=mkText("div","st-chg","\u6536\u5165 0 \u00B7 \u652F\u51FA 0");
+    hero.appendChild(sub);
+    bd.appendChild(hero);
+
+    function sum(){
+      var inc=0,exp=0;
+      NOTE.items.forEach(function(x){ if(x.v>0) inc+=x.v; else exp+=x.v; });
+      out.textContent=(inc+exp).toFixed(2);
+      sub.textContent="\u6536\u5165 "+inc.toFixed(2)+" \u00B7 \u652F\u51FA "+Math.abs(exp).toFixed(2);
+    }
+    bd.appendChild(mkText("div","mp-sec","记一笔"));
+    var row=mk("div","oa-edit");
+    var inp=document.createElement("input"); inp.type="number"; inp.placeholder="\u91D1\u989D\uFF0C\u8D1F\u6570\u4E3A\u652F\u51FA";
+    var add=mkText("button",null,"\u8BB0\u5F55");
+    var list=mk("div","mp-list");
+    function paintList(){
+      list.innerHTML="";
+      if(!NOTE.items.length){ list.appendChild(mkText("div","mp-hint","还没有记录，先记一笔吧")); return; }
+      NOTE.items.forEach(function(x,i){
+        var it=mk("div","mp-row");
+        var ic=mk("div","mp-ico",x.v>0?"\uD83D\uDCB0":"\uD83D\uDCB8");
+        ic.style.background=x.v>0?"linear-gradient(135deg,#22c55e,#15803d)":"linear-gradient(135deg,#ff7b7b,#e5484d)";
+        it.appendChild(ic);
+        var main=mk("div","mp-row-main");
+        main.appendChild(mkText("div","mp-row-t",x.label));
+        main.appendChild(mkText("div","mp-row-s",x.time));
+        it.appendChild(main);
+        var r=mk("div","mp-row-r");
+        r.appendChild(mkText("b",x.v>0?"up":"dn",(x.v>0?"+":"")+x.v.toFixed(2)));
+        it.appendChild(r);
+        it.onclick=function(){ NOTE.items.splice(i,1); paintList(); sum(); toast("已删除该笔记录"); };
+        list.appendChild(it);
+      });
+    }
+    add.onclick=function(){
+      var v=parseFloat(inp.value);
+      if(!v){ toast("请输入金额"); return; }
+      NOTE.items.unshift({v:v,label:v>0?"\u6536\u5165":"\u652F\u51FA",time:"\u521A\u521A"});
+      inp.value="";
+      paintList(); sum();
+      toast("已记录");
+    };
+    inp.addEventListener("keydown",function(e){ if(e.key==="Enter"){ e.preventDefault(); add.onclick(); } });
+    row.appendChild(inp); row.appendChild(add);
+    bd.appendChild(row);
+    bd.appendChild(mkText("div","mp-sec","\u660E\u7EC6"));
+    bd.appendChild(list);
+    paintList(); sum();
+    bd.appendChild(mkText("div","mp-hint","点击记录可删除，数据仅保存在本地页面"));
+  }
+
+  /* ---------- 快递查询 ---------- */
+  function renderExpress(bd){
+    bd.innerHTML="";
+    bd.appendChild(mkText("div","mp-sec","\u8F93\u5165\u5FEB\u9012\u5355\u53F7"));
+    var inp=mk("input","mp-input"); inp.placeholder="\u4F8B\u5982\uff1aSF1234567890";
+    bd.appendChild(inp);
+    var btn=mkText("button","oa-follow","\u67E5\u8BE2");
+    btn.style.display="block"; btn.style.width="100%"; btn.style.marginTop="10px"; btn.style.padding="12px 0"; btn.style.borderRadius="14px";
+    bd.appendChild(btn);
+    var box=mk("div",null);
+    bd.appendChild(box);
+    btn.onclick=function(){
+      var no=(inp.value||"").trim();
+      if(!no){ toast("请输入快递单号"); return; }
+      box.innerHTML="";
+      var head=mk("div","mp-sec","\u7269\u6D41\u8FDB\u5EA6 \u00B7 "+no);
+      box.appendChild(head);
+      var tl=mk("div","oa-tl");
+      var steps=[
+        {b:"\u5FEB\u4EF6\u5DF2\u7B7E\u6536",p:"\u611F\u8C22\u4F7F\u7528\u672C\u6B21\u670D\u52A1",done:true},
+        {b:"\u6D3E\u9001\u4E2D",p:"\u5FEB\u9012\u5458\u6B63\u5728\u6D3E\u9001\uFF0C\u8BF7\u4FDD\u6301\u7535\u8BDD\u7545\u901A",done:true},
+        {b:"\u5230\u8FBE\u5206\u62E3\u4E2D\u5FC3",p:"\u5DF2\u5230\u8FBE\u60A8\u6240\u5728\u57CE\u5E02\u5206\u62E3\u4E2D\u5FC3",done:true},
+        {b:"\u8FD0\u8F93\u4E2D",p:"\u5FEB\u4EF6\u5DF2\u53D1\u5F80\u4E0B\u4E00\u7AD9",done:true},
+        {b:"\u5DF2\u6536\u4EF6",p:"\u5FEB\u9012\u5DF2\u5728\u59D4\u6258\u65B9\u6536\u4EF6",done:true}
+      ];
+      steps.forEach(function(s){
+        var it=mk("div","oa-tl-item"+(s.done?" done":""));
+        it.appendChild(mkText("b",null,s.b));
+        it.appendChild(mkText("p",null,s.p+" \u00B7 \u5206\u949F\u524D"));
+        tl.appendChild(it);
+      });
+      box.appendChild(tl);
+      box.appendChild(mkText("div","mp-hint","物流信息为本地演示数据"));
+    };
+  }
+
+  /* ---------- 绑定 ---------- */
+  function bindMP(){
+    var tab=$("tabMp");
+    if(tab) tab.onclick=function(){ openMP(); };
+
+    var back=$("mpBack");
+    if(back) back.onclick=function(){ closeMP(); };
+    var mask=$("mpMask");
+    if(mask) mask.onclick=function(){ closeMP(); };
+    var search=$("mpSearch");
+    if(search) search.onclick=function(){ toast("小程序搜索（演示）"); };
+
+    var hback=$("mpHostBack");
+    if(hback) hback.onclick=function(){ closeMini(); };
+    var hmore=$("mpHostMore");
+    if(hmore) hmore.onclick=function(){ toast("\u5C0F\u7A0B\u5E8F\u66F4\u591A\u64CD\u4F5C\uFF08\u6F14\u793A\uFF09"); };
+
+    document.addEventListener("keydown",function(e){
+      if(e.key==="Escape"){
+        var h=$("mpHost");
+        if(h&&h.classList.contains("show")){ closeMini(); return; }
+        if(MP.open) closeMP();
+      }
+    });
+  }
+
+
+  /* ---------- 初始化 ---------- */
+  loadCfg();
+  bindTabs();
+  bindMP();
+  bindFeedBar();
+  /* 点击空白 / 滚动 / 缩放时收起浮层菜单 */
+  document.addEventListener("click",function(){
+    if(Date.now()<(menuGuardUntil||0)) return;
+    closeCtxMenu();closeMenu();
+  },false);
+  document.addEventListener("scroll",function(){closeCtxMenu();},true);
+  window.addEventListener("resize",function(){closeCtxMenu();closeMenu();});
+  chats.forEach(function(c){c.msgs.forEach(function(m){m.t=m.base;});});
+  renderList("");
+  startAutoMsg();
+
+  /* 桌面端默认打开第一个聊天 */
+  if(window.innerWidth>768){openChat("anna");}
+})();
+</script>
+</body>
+</html>
