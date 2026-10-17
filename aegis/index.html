@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>AEGIS · DDoS 防护运维控制台</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#060912; --bg2:#0a1020;
+  --accent:#7c8cff; --accent2:#b06cff;
+  --cyan:#39e0f0; --green:#33d17a; --red:#ff5c7a; --amber:#ffb64d;
+  --text:#eef2fb; --dim:#93a0bd; --dim2:#5f6c88;
+  --glass:rgba(255,255,255,.055);
+  --glass2:rgba(255,255,255,.085);
+  --brd:rgba(255,255,255,.13);
+  --brd2:rgba(255,255,255,.24);
+  --r:22px; --rm:16px; --rs:11px;
+  --navw:250px;
+}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:
+    radial-gradient(1100px 700px at 82% -8%, rgba(124,140,255,.16), transparent 60%),
+    radial-gradient(900px 620px at -10% 108%, rgba(176,108,255,.13), transparent 58%),
+    linear-gradient(160deg,var(--bg),var(--bg2));
+  color:var(--text);
+  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  overflow:hidden;
+}
+body.emg{--accent:#ff5c7a;--accent2:#ff8a5c}
+.app{display:flex;height:100%}
+
+/* ---------- 侧栏 ---------- */
+.nav{
+  width:var(--navw);flex:0 0 var(--navw);height:100%;
+  background:rgba(10,15,28,.72);
+  -webkit-backdrop-filter:blur(22px);backdrop-filter:blur(22px);
+  border-right:1px solid var(--brd);
+  display:flex;flex-direction:column;padding:20px 14px;
+}
+.brand{display:flex;align-items:center;gap:12px;padding:6px 8px 20px}
+.logo{
+  width:44px;height:44px;flex:0 0 44px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;font-weight:800;color:#fff;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));
+  box-shadow:0 10px 26px rgba(124,140,255,.4);
+}
+.bt{font-size:17px;font-weight:800;letter-spacing:2.5px}
+.bs{font-size:10.5px;color:var(--dim2);letter-spacing:1.4px;text-transform:uppercase}
+#navlist{display:flex;flex-direction:column;gap:4px;flex:1;overflow:auto}
+.navi{
+  display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:13px;
+  color:var(--dim);cursor:pointer;font-size:13.5px;font-weight:600;
+  transition:all .18s;user-select:none;
+}
+.navi i{font-style:normal;font-size:15px;width:18px;text-align:center;opacity:.85}
+.navi:hover{background:var(--glass);color:var(--text)}
+.navi.on{
+  background:linear-gradient(100deg,rgba(124,140,255,.24),rgba(176,108,255,.13));
+  color:#fff;box-shadow:inset 0 0 0 1px rgba(124,140,255,.35);
+}
+.navfoot{border-top:1px solid var(--brd);padding:14px 8px 4px}
+.pf{font-size:10.5px;color:var(--dim2);letter-spacing:1.5px;margin-bottom:8px}
+.pill{
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+  padding:7px 12px;border-radius:999px;background:rgba(51,209,122,.14);
+  color:var(--green);border:1px solid rgba(51,209,122,.3);
+}
+.pill.danger{background:rgba(255,92,122,.14);color:var(--red);border-color:rgba(255,92,122,.34)}
+
+/* ---------- 主区 ---------- */
+.main{flex:1;min-width:0;display:flex;flex-direction:column;height:100%}
+.top{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:18px 26px;border-bottom:1px solid var(--brd);
+  background:rgba(8,12,22,.5);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);
+}
+.tl h1{margin:0;font-size:19px;font-weight:800;letter-spacing:.5px}
+.crumb{font-size:11px;color:var(--dim2);letter-spacing:1.2px;text-transform:uppercase;margin-top:3px}
+.tr{display:flex;align-items:center;gap:14px}
+.threat{
+  font-size:11.5px;color:var(--dim);padding:8px 13px;border-radius:11px;
+  background:var(--glass);border:1px solid var(--brd);
+}
+.threat b{color:var(--green);font-weight:800;margin-left:4px}
+.threat.warn b{color:var(--amber)}
+.threat.crit b{color:var(--red)}
+.threat.crit{border-color:rgba(255,92,122,.4);background:rgba(255,92,122,.1)}
+.clock{
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13.5px;
+  color:var(--cyan);letter-spacing:1px;padding:8px 12px;border-radius:11px;
+  background:rgba(57,224,240,.08);border:1px solid rgba(57,224,240,.2);
+}
+.operator{display:flex;align-items:center;gap:9px}
+.ava{
+  width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:14px;background:linear-gradient(140deg,var(--accent),var(--accent2));color:#fff;
+}
+.on2{font-size:12.5px;font-weight:700}
+.os{font-size:10.5px;color:var(--dim2)}
+
+.body{flex:1;overflow:auto;padding:22px 26px 40px}
+.panel{display:none;animation:fade .28s ease}
+.panel.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- 卡片 ---------- */
+.card{
+  background:var(--glass);border:1px solid var(--brd);border-radius:var(--r);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);
+  box-shadow:0 20px 48px rgba(2,6,20,.42);
+  padding:20px;
+}
+.card h3{margin:0 0 4px;font-size:14px;font-weight:800;letter-spacing:.3px}
+.card .sub{font-size:11.5px;color:var(--dim2);margin-bottom:14px}
+.grid{display:grid;gap:16px}
+.kpis{grid-template-columns:repeat(auto-fit,minmax(178px,1fr));margin-bottom:16px}
+.kpi{position:relative;overflow:hidden}
+.kpi .lab{font-size:11.5px;color:var(--dim);letter-spacing:.6px;margin-bottom:10px}
+.kpi .val{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:27px;font-weight:800;letter-spacing:.4px}
+.kpi .un{font-size:12px;color:var(--dim2);margin-left:5px;font-weight:600}
+.kpi .delta{font-size:11px;margin-top:9px;color:var(--dim2)}
+.kpi .bar{position:absolute;left:0;top:0;height:3px;width:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.c-blue .val{color:var(--accent)} .c-cyan .val{color:var(--cyan)}
+.c-green .val{color:var(--green)} .c-red .val{color:var(--red)}
+.c-amber .val{color:var(--amber)}
+.c-red .bar{background:linear-gradient(90deg,var(--red),#ff9a7a)}
+.c-green .bar{background:linear-gradient(90deg,var(--green),#7fe0a8)}
+
+.two{grid-template-columns:1.35fr .85fr;margin-top:16px}
+.three{grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:16px}
+@media(max-width:1080px){.two{grid-template-columns:1fr}}
+
+canvas{display:block;width:100%;height:auto;border-radius:14px}
+.legend{display:flex;gap:18px;margin-top:12px;font-size:11.5px;color:var(--dim)}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:6px}
+
+/* ---------- 条形 ---------- */
+.brow{margin-bottom:13px}
+.brow .t{display:flex;justify-content:space-between;font-size:12px;margin-bottom:6px;color:var(--dim)}
+.brow .t b{color:var(--text);font-family:ui-monospace,monospace}
+.track{height:7px;border-radius:6px;background:rgba(255,255,255,.07);overflow:hidden}
+.track i{display:block;height:100%;border-radius:6px;transition:width .5s ease;
+  background:linear-gradient(90deg,var(--accent),var(--accent2))}
+.track i.rd{background:linear-gradient(90deg,var(--red),#ff9a7a)}
+.track i.cy{background:linear-gradient(90deg,var(--cyan),#7fe6f5)}
+
+/* ---------- 表格 ---------- */
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{
+  text-align:left;font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;
+  color:var(--dim2);font-weight:700;padding:0 12px 11px;border-bottom:1px solid var(--brd);
+}
+td{padding:11px 12px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--dim)}
+tbody tr:hover td{background:rgba(255,255,255,.03);color:var(--text)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--text)}
+.tag{display:inline-block;padding:3px 9px;border-radius:7px;font-size:10.5px;font-weight:700}
+.t-red{background:rgba(255,92,122,.15);color:var(--red)}
+.t-green{background:rgba(51,209,122,.15);color:var(--green)}
+.t-amber{background:rgba(255,182,77,.15);color:var(--amber)}
+.t-blue{background:rgba(124,140,255,.16);color:var(--accent)}
+
+/* ---------- 控件 ---------- */
+.btn{
+  border:1px solid var(--brd2);background:var(--glass2);color:var(--text);
+  padding:9px 15px;border-radius:11px;font-size:12.5px;font-weight:700;cursor:pointer;
+  transition:all .16s;font-family:inherit;
+}
+.btn:hover{background:rgba(255,255,255,.14)}
+.btn.pri{background:linear-gradient(100deg,var(--accent),var(--accent2));border:none;color:#fff}
+.btn.dg{background:rgba(255,92,122,.16);border-color:rgba(255,92,122,.4);color:var(--red)}
+.btn.sm{padding:6px 11px;font-size:11.5px;border-radius:9px}
+.btnrow{display:flex;flex-wrap:wrap;gap:9px}
+input[type=text],input[type=number],select{
+  background:rgba(0,0,0,.28);border:1px solid var(--brd);color:var(--text);
+  padding:9px 12px;border-radius:10px;font-size:12.5px;font-family:inherit;outline:none;
+}
+input:focus,select:focus{border-color:var(--accent)}
+label{font-size:12px;color:var(--dim)}
+.sw{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid rgba(255,255,255,.055)}
+.sw .nm{font-size:13px;font-weight:600}
+.sw .ds{font-size:11px;color:var(--dim2);margin-top:2px}
+.toggle{
+  width:46px;height:26px;border-radius:999px;background:rgba(255,255,255,.13);
+  position:relative;cursor:pointer;transition:background .2s;flex:0 0 46px;
+}
+.toggle i{
+  position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+  background:#fff;transition:left .2s;box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.toggle.on{background:linear-gradient(100deg,var(--accent),var(--accent2))}
+.toggle.on i{left:23px}
+.sl{margin:16px 0}
+.sl .t{display:flex;justify-content:space-between;font-size:12px;color:var(--dim);margin-bottom:8px}
+.sl .t b{color:var(--cyan);font-family:ui-monospace,monospace}
+input[type=range]{width:100%;-webkit-appearance:none;height:5px;border-radius:6px;
+  background:rgba(255,255,255,.13);outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;border-radius:50%;
+  background:linear-gradient(140deg,var(--accent),var(--accent2));box-shadow:0 2px 8px rgba(124,140,255,.6);cursor:pointer}
+
+/* ---------- 日志 ---------- */
+.log{
+  height:270px;overflow:auto;border-radius:14px;padding:13px;font-size:11.8px;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.75;
+  background:rgba(0,0,0,.34);border:1px solid var(--brd);
+}
+.log div{white-space:pre-wrap;word-break:break-all;color:var(--dim)}
+.log .ok{color:var(--green)} .log .bad{color:var(--red)}
+.log .wn{color:var(--amber)} .log .in{color:var(--cyan)} .log .hi{color:var(--accent)}
+.tm{color:var(--dim2)}
+
+.seg{display:inline-flex;background:rgba(0,0,0,.3);border:1px solid var(--brd);border-radius:12px;padding:3px;gap:3px}
+.seg button{
+  border:none;background:transparent;color:var(--dim);padding:8px 15px;border-radius:9px;
+  font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;
+}
+.seg button.on{background:linear-gradient(100deg,var(--accent),var(--accent2));color:#fff}
+
+.out{
+  margin-top:12px;padding:13px;border-radius:12px;background:rgba(0,0,0,.3);
+  border:1px solid var(--brd);font-family:ui-monospace,monospace;font-size:12px;
+  color:var(--dim);line-height:1.8;
+}
+.out b{color:var(--cyan)}
+.hint{font-size:11px;color:var(--dim2);margin-top:9px;line-height:1.7}
+.rowin{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.stat4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:14px}
+.stat4 .b{background:rgba(0,0,0,.26);border:1px solid var(--brd);border-radius:13px;padding:12px}
+.stat4 .b .k{font-size:10.5px;color:var(--dim2);letter-spacing:.8px}
+.stat4 .b .v{font-family:ui-monospace,monospace;font-size:19px;font-weight:800;margin-top:6px}
+.ok-v{color:var(--green)} .bad-v{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============ 侧栏 ============ -->
+  <aside class="nav">
+    <div class="brand">
+      <div class="logo">Æ</div>
+      <div><div class="bt">AEGIS</div><div class="bs">DDoS Mitigation</div></div>
+    </div>
+    <nav id="navlist">
+      <a class="navi on" data-p="overview"><i>◈</i><span>态势总览</span></a>
+      <a class="navi" data-p="live"><i>⚡</i><span>实时攻击</span></a>
+      <a class="navi" data-p="rules"><i>⛨</i><span>防护规则</span></a>
+      <a class="navi" data-p="ip"><i>▣</i><span>IP 管控</span></a>
+      <a class="navi" data-p="nodes"><i>◉</i><span>清洗节点</span></a>
+      <a class="navi" data-p="logs"><i>▤</i><span>日志审计</span></a>
+      <a class="navi" data-p="settings"><i>⚙</i><span>系统设置</span></a>
+    </nav>
+    <div class="navfoot">
+      <div class="pf">GLOBAL STATUS</div>
+      <div class="pill" id="navStatus">● 全面防护中</div>
+    </div>
+  </aside>
+
+  <!-- ============ 主区 ============ -->
+  <main class="main">
+    <header class="top">
+      <div class="tl">
+        <h1 id="pgTitle">态势总览</h1>
+        <div class="crumb" id="pgCrumb">Overview / Real-time posture</div>
+      </div>
+      <div class="tr">
+        <div class="threat" id="threatChip">威胁等级 <b>低</b></div>
+        <div class="clock" id="clock">--:--:--</div>
+        <div class="operator">
+          <div class="ava">运</div>
+          <div><div class="on2">首席安全官</div><div class="os">ops@aegis.cloud</div></div>
+        </div>
+      </div>
+    </header>
+
+    <div class="body">
+
+      <!-- ---------- 总览 ---------- -->
+      <section class="panel on" id="p-overview">
+        <div class="grid kpis">
+          <div class="card kpi c-cyan"><div class="bar"></div><div class="lab">实时入站 QPS</div>
+            <div><span class="val" id="kQps">0</span><span class="un">req/s</span></div>
+            <div class="delta" id="kQpsD">基线平稳</div></div>
+          <div class="card kpi c-blue"><div class="bar"></div><div class="lab">入站带宽</div>
+            <div><span class="val" id="kBand">0</span><span class="un">Mbps</span></div>
+            <div class="delta" id="kBandD">边缘汇聚</div></div>
+          <div class="card kpi c-green"><div class="bar"></div><div class="lab">清洗后交付</div>
+            <div><span class="val" id="kClean">0</span><span class="un">Mbps</span></div>
+            <div class="delta">纯净流量回源</div></div>
+          <div class="card kpi c-red"><div class="bar"></div><div class="lab">已拦截恶意请求</div>
+            <div><span class="val" id="kBlock">0</span><span class="un">次</span></div>
+            <div class="delta" id="kBlockD">本次会话累计</div></div>
+          <div class="card kpi c-amber"><div class="bar"></div><div class="lab">活跃攻击事件</div>
+            <div><span class="val" id="kAtk">0</span><span class="un">个</span></div>
+            <div class="delta" id="kAtkD">无进行中攻击</div></div>
+          <div class="card kpi c-blue"><div class="bar"></div><div class="lab">清洗率</div>
+            <div><span class="val" id="kRate">100</span><span class="un">%</span></div>
+            <div class="delta">恶意流量剥离比</div></div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <h3>实时流量态势</h3>
+            <div class="sub">入站总流量 vs 清洗后交付流量 · 窗口 120 采样</div>
+            <canvas id="cvsTraffic" width="1000" height="330"></canvas>
+            <div class="legend">
+              <span><i style="background:#7c8cff"></i>入站流量</span>
+              <span><i style="background:#33d17a"></i>清洗后交付</span>
+              <span><i style="background:#ff5c7a"></i>被剥离的恶意流量</span>
+            </div>
+          </div>
+          <div class="card">
+            <h3>攻击类型分布</h3>
+            <div class="sub">近 5 分钟识别到的攻击向量占比</div>
+            <div id="aTypes"></div>
+          </div>
+        </div>
+
+        <div class="grid two">
+          <div class="card">
+            <h3>攻击源地域 TOP 6</h3>
+            <div class="sub">按恶意流量体量聚合</div>
+            <div id="aGeo"></div>
+          </div>
+          <div class="card">
+            <h3>清洗节点健康度</h3>
+            <div class="sub">全球边缘清洗中心</div>
+            <div id="nodeMini" style="font-size:12.5px"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- 实时攻击 ---------- -->
+      <section class="panel" id="p-live">
+        <div class="card" style="margin-bottom:16px">
+          <h3>攻击态势推演 / 演练</h3>
+          <div class="sub">触发模拟攻击，观察清洗引擎与规则引擎的实时响应（真实算法驱动，非纯动画）</div>
+          <div class="btnrow">
+            <button class="btn dg" data-atk="SYN Flood">▸ 模拟 SYN Flood</button>
+            <button class="btn dg" data-atk="HTTP Flood">▸ 模拟 HTTP Flood</button>
+            <button class="btn dg" data-atk="UDP Amplification">▸ 模拟 UDP 放大</button>
+            <button class="btn dg" data-atk="CC 攻击">▸ 模拟 CC 攻击</button>
+            <button class="btn dg" data-atk="DNS Amplification">▸ 模拟 DNS 放大</button>
+            <button class="btn" data-atk="random">🎲 随机复合攻击</button>
+            <button class="btn pri" id="btnStopAtk">■ 终止攻击 / 恢复</button>
+          </div>
+          <div class="stat4">
+            <div class="b"><div class="k">当前攻击</div><div class="v" id="sAtk">—</div></div>
+            <div class="b"><div class="k">攻击强度</div><div class="v" id="sInt">0 Gbps</div></div>
+            <div class="b"><div class="k">已持续</div><div class="v" id="sDur">0s</div></div>
+            <div class="b"><div class="k">规则命中</div><div class="v" id="sRule">0</div></div>
+          </div>
+        </div>
+
+        <div class="grid three">
+          <div class="card">
+            <h3>威胁强度仪表盘</h3>
+            <div class="sub">当前攻击强度 / 全局清洗容量</div>
+            <canvas id="cvsGauge" width="560" height="300"></canvas>
+          </div>
+          <div class="card">
+            <h3>实时包速率瀑布</h3>
+            <div class="sub">入站总量（红=已拦截 / 蓝=放行）</div>
+            <canvas id="cvsWaterfall" width="660" height="300"></canvas>
+          </div>
+          <div class="card">
+            <h3>攻击类型分布</h3>
+            <div class="sub">当前攻击向量占比</div>
+            <canvas id="cvsAtkPie" width="560" height="300"></canvas>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h3>恶意数据包清洗流</h3>
+          <div class="sub">红=恶意入站包 · 绿=已清洗放行 · 蓝=正常流量</div>
+          <canvas id="cvsPacket" width="1000" height="240"></canvas>
+        </div>
+        <div class="grid two">
+          <div class="card">
+            <h3>实时攻击事件流</h3>
+            <div class="sub">系统识别并处置的攻击事件</div>
+            <div class="log" id="liveLog"></div>
+          </div>
+          <div class="card">
+            <h3>高频攻击源 IP</h3>
+            <div class="sub">一键加入全局黑名单</div>
+            <table><thead><tr><th>来源 IP</th><th>请求/秒</th><th>操作</th></tr></thead>
+            <tbody id="atkIps"><tr><td colspan="3" style="color:var(--dim2)">暂无异常来源</td></tr></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------- 防护规则 ---------- -->
+      <section class="panel" id="p-rules">
+        <div class="grid two">
+          <div class="card">
+            <h3>防护策略开关</h3>
+            <div class="sub">边缘 L3–L7 全栈防护引擎</div>
+            <div id="switches"></div>
+          </div>
+          <div class="card">
+            <h3>阈值与限速参数</h3>
+            <div class="sub">作用于全局边缘节点</div>
+            <div class="sl"><div class="t"><span>单 IP 速率限制</span><b id="vRate">60 req/s</b></div>
+              <input type="range" id="rRate" min="10" max="500" step="10" value="60"></div>
+            <div class="sl"><div class="t"><span>单 IP 并发连接上限</span><b id="vConn">120</b></div>
+              <input type="range" id="rConn" min="20" max="800" step="20" value="120"></div>
+            <div class="sl"><div class="t"><span>流量清洗触发阈值</span><b id="vThr">1.5 Gbps</b></div>
+              <input type="range" id="rThr" min="200" max="8000" step="100" value="1500"></div>
+            <div class="sl"><div class="t"><span>人机挑战难度</span><b id="vChal">中</b></div>
+              <input type="range" id="rChal" min="1" max="5" step="1" value="3"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h3>限流引擎仿真器</h3>
+          <div class="sub">真实滑动窗口计数算法：给定阈值与请求速率，逐请求判定放行 / 拦截</div>
+          <div class="rowin">
+            <label>限速阈值</label><input type="number" id="simLimit" value="60" style="width:90px">
+            <label>实际请求速率</label><input type="number" id="simRate" value="400" style="width:90px"><span style="font-size:12px;color:var(--dim2)">req/s</span>
+            <button class="btn pri" id="btnSim">▶ 运行 1 秒仿真</button>
+          </div>
+          <div class="out" id="simOut">等待仿真…</div>
+          <div class="hint">算法：滑动窗口（Sliding Window）。窗口 1000ms 内最多放行 <b>limit</b> 个请求，
+            超出的请求在到达瞬间即被拦截。这解释了为什么阈值内服务无感、超阈值攻击者被整批清洗。</div>
+        </div>
+      </section>
+
+      <!-- ---------- IP 管控 ---------- -->
+      <section class="panel" id="p-ip">
+        <div class="grid two">
+          <div class="card">
+            <h3>黑名单（阻断）</h3>
+            <div class="sub">支持单个 IP 与 CIDR 网段</div>
+            <table><thead><tr><th>地址 / 网段</th><th>命中</th><th>操作</th></tr></thead>
+            <tbody id="blRows"></tbody></table>
+          </div>
+          <div class="card">
+            <h3>白名单（放行）</h3>
+            <div class="sub">白名单优先级高于一切规则</div>
+            <table><thead><tr><th>地址 / 网段</th><th>命中</th><th>操作</th></tr></thead>
+            <tbody id="wlRows"></tbody></table>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h3>添加规则</h3>
+          <div class="rowin">
+            <input type="text" id="ipInput" placeholder="例如 203.0.113.7 或 198.51.100.0/24" style="width:280px">
+            <button class="btn pri" id="btnBlack">+ 加入黑名单</button>
+            <button class="btn" id="btnWhite">+ 加入白名单</button>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px">
+          <h3>IP 命中查询</h3>
+          <div class="sub">真实 CIDR 匹配算法，判定该 IP 会被放行还是阻断</div>
+          <div class="rowin">
+            <input type="text" id="ipTest" placeholder="输入要测试的 IP，如 198.51.100.42" style="width:280px">
+            <button class="btn pri" id="btnTest">查询判定</button>
+          </div>
+          <div class="out" id="ipOut">等待查询…</div>
+        </div>
+      </section>
+
+      <!-- ---------- 清洗节点 ---------- -->
+      <section class="panel" id="p-nodes">
+        <div class="card">
+          <h3>全球边缘清洗中心</h3>
+          <div class="sub">Anycast 就近接入 · 自动牵引与回注</div>
+          <table><thead><tr><th>节点</th><th>区域</th><th>状态</th><th>负载</th><th>时延</th><th>吞吐</th></tr></thead>
+          <tbody id="nodeRows"></tbody></table>
+        </div>
+      </section>
+
+      <!-- ---------- 日志审计 ---------- -->
+      <section class="panel" id="p-logs">
+        <div class="card">
+          <h3>审计日志</h3>
+          <div class="sub">防护决策、规则变更与运维操作留痕</div>
+          <div class="rowin" style="margin-bottom:14px">
+            <div class="seg" id="logFilter">
+              <button class="on" data-f="all">全部</button>
+              <button data-f="attack">攻击</button>
+              <button data-f="policy">策略</button>
+              <button data-f="system">系统</button>
+            </div>
+            <button class="btn sm" id="btnClearLog">清空视图</button>
+          </div>
+          <div class="log" id="auditLog" style="height:420px"></div>
+        </div>
+      </section>
+
+      <!-- ---------- 设置 ---------- -->
+      <section class="panel" id="p-settings">
+        <div class="grid two">
+          <div class="card">
+            <h3>防护模式</h3>
+            <div class="sub">决定清洗容量与挑战强度</div>
+            <div class="seg" id="modeSeg" style="margin-top:4px">
+              <button data-m="normal">标准防护</button>
+              <button data-m="high">高防模式</button>
+              <button data-m="emergency">紧急预案</button>
+            </div>
+            <div class="out" id="modeOut" style="margin-top:16px"></div>
+          </div>
+          <div class="card">
+            <h3>告警与通知</h3>
+            <div class="sub">异常事件实时推送</div>
+            <div class="sw"><div><div class="nm">攻击告警</div><div class="ds">检测到攻击立即通知</div></div><div class="toggle on" data-k="alert"><i></i></div></div>
+            <div class="sw"><div><div class="nm">阈值告警</div><div class="ds">流量超过清洗阈值时通知</div></div><div class="toggle on" data-k="alertThr"><i></i></div></div>
+            <div class="sw"><div><div class="nm">自动封禁</div><div class="ds">高频恶意源自动加入黑名单</div></div><div class="toggle on" data-k="autoBan"><i></i></div></div>
+            <div class="sw" style="border:none"><div><div class="nm">审计留痕</div><div class="ds">记录全部运维操作</div></div><div class="toggle on" data-k="audit"><i></i></div></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:16px">
+          <h3>服务信息</h3>
+          <div class="sub">当前防护实例</div>
+          <div class="stat4">
+            <div class="b"><div class="k">实例 ID</div><div class="v" style="font-size:14px">AEG-7F3C9D</div></div>
+            <div class="b"><div class="k">线路</div><div class="v" style="font-size:14px">BGP Anycast</div></div>
+            <div class="b"><div class="k">防护能力</div><div class="v" style="font-size:14px" id="sCap">1.5 Tbps</div></div>
+            <div class="b"><div class="k">SLA</div><div class="v" style="font-size:14px">99.99%</div></div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+'use strict';
+var W = window;
+function byId(id){ return document.getElementById(id); }
+function ce(tag,cls){ var e=document.createElement(tag); if(cls)e.className=cls; return e; }
+function fmt(n){ return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g,','); }
+function pad2(n){ return n<10 ? ('0'+n) : (''+n); }
+function now(){ return Date.now(); }
+function rnd(a,b){ return a + Math.random()*(b-a); }
+
+/* ================= 状态 ================= */
+var S = {
+  mode:'normal',
+  protect:true,
+  in:[], cln:[],
+  blockedTotal:0,
+  ruleHits:0,
+  attack:null,
+  atkStart:0,
+  intensity:0,
+  ipHits:{},
+  caps:{normal:1500,high:2400,emergency:3600},
+  rateLimit:60,
+  autoBan:true,
+  logs:[],
+  pkts:[]
+};
+
+/* ================= 真实算法 ================= */
+/* IPv4 -> 32bit uint */
+function ipToInt(ip){
+  if(typeof ip!=='string') return -1;
+  var p = ip.trim().split('.');
+  if(p.length!==4) return -1;
+  var n=0,i,v;
+  for(i=0;i<4;i++){
+    v = parseInt(p[i],10);
+    if(isNaN(v) || v<0 || v>255 || String(v)!==String(p[i]).replace(/^0+(?=\d)/,'')) { /* lenient */ }
+    if(isNaN(v) || v<0 || v>255) return -1;
+    n = n*256 + v;
+  }
+  return n;
+}
+/* 真实 CIDR 匹配（支持 a.b.c.d 与 a.b.c.d/nn） */
+function cidrMatch(ip, cidr){
+  if(typeof ip!=='string' || typeof cidr!=='string') return false;
+  ip = ip.trim(); cidr = cidr.trim();
+  if(cidr.indexOf('/')<0) return ip===cidr;
+  var seg = cidr.split('/');
+  if(seg.length!==2) return false;
+  var bits = parseInt(seg[1],10);
+  if(isNaN(bits) || bits<0 || bits>32) return false;
+  var ipn = ipToInt(ip), bn = ipToInt(seg[0]);
+  if(ipn<0 || bn<0) return false;
+  if(bits===0) return true;
+  var mask = ((0xFFFFFFFF << (32-bits)) >>> 0);
+  return (((ipn & mask) >>> 0) === ((bn & mask) >>> 0));
+}
+
+/* 真实滑动窗口限流器 */
+function SlidingLimiter(limit, windowMs){
+  this.limit = limit;
+  this.windowMs = windowMs || 1000;
+  this.hits = [];
+}
+SlidingLimiter.prototype.check = function(t){
+  while(this.hits.length && (t - this.hits[0]) >= this.windowMs) this.hits.shift();
+  if(this.hits.length < this.limit){ this.hits.push(t); return true; }
+  return false;
+};
+
+/* 真实令牌桶 */
+function TokenBucket(cap, rate){
+  this.cap = cap; this.rate = rate; this.tokens = cap; this.last = null;
+}
+TokenBucket.prototype.take = function(n, t){
+  if(this.last === null) this.last = t;
+  var dt = (t - this.last)/1000;
+  this.tokens = Math.min(this.cap, this.tokens + dt*this.rate);
+  this.last = t;
+  if(this.tokens >= n){ this.tokens -= n; return true; }
+  return false;
+};
+
+/* 限流仿真：虚拟时钟，1 秒内以固定速率来请求，逐请求判定 */
+function simulateRate(limit, reqPerSec){
+  var lim = new SlidingLimiter(limit, 1000);
+  var allowed=0, blocked=0, i, t, step;
+  if(reqPerSec<=0) return {allowed:0,blocked:0,total:0,timeline:[]};
+  step = 1000/reqPerSec;
+  var timeline = [];
+  for(i=0;i<reqPerSec;i++){
+    t = i*step;
+    if(lim.check(t)){ allowed++; if(timeline.length<40) timeline.push(1); }
+    else { blocked++; if(timeline.length<40) timeline.push(0); }
+  }
+  return {allowed:allowed, blocked:blocked, total:reqPerSec, timeline:timeline};
+}
+
+/* ================= 日志 ================= */
+function ts(){ var d=new Date(); return pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds()); }
+function pushLog(kind, msg, cls){
+  S.logs.push({k:kind, m:msg, c:cls, t:ts()});
+  if(S.logs.length>400) S.logs.shift();
+  if(kind==='attack' || kind==='policy' || kind==='system') auditRender();
+  if(kind==='attack') liveRender();
+}
+function logLine(host, kind, msg, cls){
+  var el = host;
+  var d = ce('div');
+  var s = ce('span','tm'); s.textContent = '['+ts()+'] ';
+  d.appendChild(s);
+  var t = ce('span', cls||''); t.textContent = msg;
+  d.appendChild(t);
+  el.insertBefore(d, el.firstChild);
+  while(el.childNodes.length>160) el.removeChild(el.lastChild);
+}
+function liveRender(){
+  var el = byId('liveLog'); if(!el) return;
+  /* 只重画最近若干条攻击类日志 */
+  el.innerHTML = '';
+  var n = S.logs.length, c=0, i, it;
+  for(i=n-1;i>=0 && c<60;i--){
+    it = S.logs[i];
+    if(it.k!=='attack') continue;
+    var d = ce('div');
+    var s1 = ce('span','tm'); s1.textContent = '['+it.t+'] ';
+    var s2 = ce('span', it.c||''); s2.textContent = it.m;
+    d.appendChild(s1); d.appendChild(s2);
+    el.appendChild(d); c++;
+  }
+}
+function auditFilter(){ var b=document.querySelector('#logFilter button.on'); return b?b.getAttribute('data-f'):'all'; }
+function auditRender(){
+  var el = byId('auditLog'); if(!el) return;
+  var f = auditFilter();
+  el.innerHTML = '';
+  var n = S.logs.length, c=0, i, it;
+  for(i=n-1;i>=0 && c<200;i--){
+    it = S.logs[i];
+    if(f!=='all' && it.k!==f) continue;
+    var d = ce('div');
+    var s1 = ce('span','tm'); s1.textContent = '['+it.t+'] ';
+    var s2 = ce('span', it.c||''); s2.textContent = '['+it.k.toUpperCase()+'] '+it.m;
+    d.appendChild(s1); d.appendChild(s2);
+    el.appendChild(d); c++;
+  }
+}
+
+/* ================= 流量引擎 ================= */
+var ATTACK_TYPES = [
+  {n:'SYN Flood',        w:.28, g:2.6},
+  {n:'UDP Amplification',w:.22, g:4.2},
+  {n:'HTTP Flood',       w:.20, g:1.2},
+  {n:'CC 攻击',          w:.14, g:.9},
+  {n:'DNS Amplification',w:.10, g:3.1},
+  {n:'Slowloris',        w:.06, g:.4}
+];
+var GEO = [
+  {n:'中国大陆', f:.24}, {n:'美国', f:.21}, {n:'俄罗斯', f:.16},
+  {n:'荷兰', f:.12}, {n:'越南', f:.10}, {n:'巴西', f:.09}, {n:'其他', f:.08}
+];
+var NODES = [
+  {n:'香港 HK-1', r:'亚太', s:1, load:46, lat:12, tp:820},
+  {n:'新加坡 SG-1', r:'亚太', s:1, load:38, lat:28, tp:640},
+  {n:'东京 JP-1', r:'亚太', s:1, load:52, lat:34, tp:560},
+  {n:'法兰克福 DE-1', r:'欧洲', s:1, load:61, lat:180, tp:720},
+  {n:'硅谷 US-1', r:'北美', s:1, load:44, lat:155, tp:910},
+  {n:'阿什本 US-2', r:'北美', s:1, load:33, lat:168, tp:480},
+  {n:'悉尼 AU-1', r:'大洋洲', s:0, load:0, lat:0, tp:0},
+  {n:'圣保罗 BR-1', r:'南美', s:1, load:27, lat:210, tp:300}
+];
+
+function baseIn(){
+  return 1150 + Math.sin(now()/9000)*130 + rnd(-55,55);
+}
+function tick(){
+  var inten = S.attack ? S.attack.g * rnd(0.88,1.12) : 0;
+  var gin = baseIn() + (inten>0 ? inten*1000*0.55 : 0);
+  var cap = S.caps[S.mode];
+  var cln = Math.min(gin, cap) + rnd(-18,18);
+  if(cln<60) cln = 60;
+  var blocked = Math.max(0, gin - cln);
+  S.in.push(gin); S.cln.push(cln);
+  if(S.in.length>120){ S.in.shift(); S.cln.shift(); }
+  S.blockedTotal += blocked * 38;
+
+  if(S.attack){
+    S.intensity = inten;
+    S.ruleHits += Math.round(rnd(8,40));
+  } else {
+    S.intensity = 0;
+  }
+  drawTraffic();
+  updateKPI(gin, cln, blocked);
+  updateLive();
+  spawnPackets();
+  if(liveOn()){ drawGauge(); drawWaterfall(); drawAtkPie(); }
+}
+function updateKPI(gin, cln, blocked){
+  var last = S.in.length? S.in[S.in.length-1] : 0;
+  byId('kQps').textContent = fmt(last*7.4);
+  byId('kBand').textContent = fmt(gin);
+  byId('kClean').textContent = fmt(cln);
+  byId('kBlock').textContent = fmt(S.blockedTotal);
+  byId('kAtk').textContent = S.attack ? '1' : '0';
+  var rate = gin>0 ? Math.round(blocked/gin*100) : 0;
+  byId('kRate').textContent = S.attack ? String(Math.max(1, rate)) : '100';
+  byId('kQpsD').textContent = S.attack ? '⚠ 异常激增' : '基线平稳';
+  byId('kBandD').textContent = S.attack ? '攻击流量涌入' : '边缘汇聚';
+  byId('kBlockD').textContent = '本次会话累计 ' + fmt(S.blockedTotal) + ' 次';
+  byId('kAtkD').textContent = S.attack ? (S.attack.n + ' 进行中') : '无进行中攻击';
+}
+
+/* ================= 绘图（Canvas2D 折线，非逐像素） ================= */
+function drawTraffic(){
+  var c = byId('cvsTraffic'); if(!c || !c.getContext) return;
+  var ctx = c.getContext('2d');
+  var w = c.width, h = c.height, pad = 30;
+  ctx.clearRect(0,0,w,h);
+  var mx = 2000, i;
+  for(i=0;i<S.in.length;i++) if(S.in[i]>mx) mx = S.in[i];
+  mx = Math.ceil(mx/1000)*1000;
+  /* 网格 */
+  ctx.strokeStyle = 'rgba(255,255,255,.06)'; ctx.lineWidth = 1;
+  for(i=0;i<=4;i++){
+    var y = pad + (h-pad*2)*i/4;
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad,y); ctx.stroke();
+  }
+  /* 攻击区间填充 */
+  if(S.attack && S.in.length>1){
+    ctx.fillStyle = 'rgba(255,92,122,.07)';
+    ctx.fillRect(pad, pad, w-pad*2, h-pad*2);
+  }
+  plotSeries(ctx, S.in, 'rgba(124,140,255,1)', 'rgba(124,140,255,.16)', pad, mx, w, h);
+  plotSeries(ctx, S.cln,'rgba(51,209,122,1)',  'rgba(51,209,122,.12)',  pad, mx, w, h);
+  /* 纵轴刻度 */
+  ctx.fillStyle = 'rgba(147,160,189,.65)';
+  ctx.font = '11px ui-monospace,Menlo,monospace';
+  ctx.fillText(mx+' Mbps', pad, pad-10);
+  ctx.fillText('0', pad, h-pad+16);
+}
+function plotSeries(ctx, arr, stroke, fill, pad, mx, w, h){
+  var n = arr.length; if(n<2) return;
+  var i, x, y, X, Y;
+  X = function(i){ return pad + (w-pad*2)*(i/119); };
+  Y = function(v){ return pad + (h-pad*2)*(1 - Math.min(1,v/mx)); };
+  ctx.beginPath();
+  ctx.moveTo(X(0), Y(arr[0]));
+  for(i=1;i<n;i++) ctx.lineTo(X(i), Y(arr[i]));
+  ctx.lineTo(X(n-1), h-pad); ctx.lineTo(X(0), h-pad); ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(X(0), Y(arr[0]));
+  for(i=1;i<n;i++) ctx.lineTo(X(i), Y(arr[i]));
+  ctx.strokeStyle = stroke; ctx.lineWidth = 2; ctx.lineJoin='round'; ctx.stroke();
+}
+
+/* ================= 面板渲染 ================= */
+function renderAttackTypes(atkType){
+  var host = byId('aTypes'); if(!host) return;
+  host.innerHTML = '';
+  var i, t, f;
+  for(i=0;i<ATTACK_TYPES.length;i++){
+    t = ATTACK_TYPES[i];
+    f = t.w;
+    if(atkType===t.n) f = Math.min(.9, f + .35);
+    else if(atkType) f = f * .5;
+    var row = ce('div','brow');
+    var tt = ce('div','t');
+    tt.innerHTML = '<span>'+t.n+'</span><b>'+(f*100).toFixed(1)+'%</b>';
+    var tr = ce('div','track');
+    var ii = ce('i', atkType===t.n ? 'rd':'');
+    if(!atkType) ii.className='cy';
+    ii.style.width = (f*100)+'%';
+    tr.appendChild(ii); row.appendChild(tt); row.appendChild(tr);
+    host.appendChild(row);
+  }
+}
+function renderGeo(){
+  var host = byId('aGeo'); if(!host) return;
+  host.innerHTML = '';
+  var i, g;
+  for(i=0;i<GEO.length;i++){
+    g = GEO[i];
+    var row = ce('div','brow');
+    var tt = ce('div','t');
+    tt.innerHTML = '<span>'+g.n+'</span><b>'+(g.f*100).toFixed(0)+'%</b>';
+    var tr = ce('div','track');
+    var ii = ce('i');
+    ii.style.width = (g.f*100)+'%';
+    tr.appendChild(ii); row.appendChild(tt); row.appendChild(tr);
+    host.appendChild(row);
+  }
+}
+function renderNodeMini(){
+  var host = byId('nodeMini'); if(!host) return;
+  host.innerHTML = '';
+  var i, nd;
+  for(i=0;i<6;i++){
+    nd = NODES[i];
+    var row = ce('div');
+    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.05)';
+    var col = nd.s? 'var(--green)':'var(--dim2)';
+    row.innerHTML = '<span><span style="color:'+col+'">●</span> '+nd.n+'</span>'+
+      '<span class="mono" style="font-size:12px;color:var(--dim)">'+nd.load+'% · '+nd.lat+'ms</span>';
+    host.appendChild(row);
+  }
+}
+function renderNodes(){
+  var host = byId('nodeRows'); if(!host) return;
+  host.innerHTML = '';
+  var i, nd, tr, st;
+  for(i=0;i<NODES.length;i++){
+    nd = NODES[i];
+    tr = ce('tr');
+    st = nd.s ? '<span class="tag t-green">在线</span>' : '<span class="tag t-amber">维护中</span>';
+    tr.innerHTML = '<td class="mono">'+nd.n+'</td><td>'+nd.r+'</td><td>'+st+'</td>'+
+      '<td>'+nd.load+'%</td><td>'+nd.lat+'ms</td><td>'+nd.tp+' Gbps</td>';
+    host.appendChild(tr);
+  }
+}
+
+/* ================= IP 管控 ================= */
+var BL = ['198.51.100.0/24','203.0.113.66','45.155.205.0/24'];
+var WL = ['10.0.0.0/8','192.168.1.10'];
+function renderIPLists(){
+  var b = byId('blRows'), w = byId('wlRows');
+  if(b){
+    b.innerHTML='';
+    if(!BL.length) b.innerHTML='<tr><td colspan="3" style="color:var(--dim2)">黑名单为空</td></tr>';
+    BL.forEach(function(x){
+      var tr=ce('tr');
+      tr.innerHTML='<td class="mono">'+x+'</td><td>'+(S.ipHits[x]||0)+'</td>'+
+        '<td><button class="btn sm" data-delbl="'+x+'">移除</button></td>';
+      b.appendChild(tr);
+    });
+  }
+  if(w){
+    w.innerHTML='';
+    if(!WL.length) w.innerHTML='<tr><td colspan="3" style="color:var(--dim2)">白名单为空</td></tr>';
+    WL.forEach(function(x){
+      var tr=ce('tr');
+      tr.innerHTML='<td class="mono">'+x+'</td><td>'+(S.ipHits[x]||0)+'</td>'+
+        '<td><button class="btn sm" data-delwl="'+x+'">移除</button></td>';
+      w.appendChild(tr);
+    });
+  }
+}
+/* 真实判定：白名单 > 黑名单 */
+function judgeIP(ip){
+  var i;
+  for(i=0;i<WL.length;i++) if(cidrMatch(ip, WL[i])) return {ok:true, by:WL[i], kind:'white'};
+  for(i=0;i<BL.length;i++) if(cidrMatch(ip, BL[i])) return {ok:false, by:BL[i], kind:'black'};
+  return {ok:true, by:null, kind:'default'};
+}
+
+/* ================= 攻击演练 ================= */
+function triggerAttack(type){
+  if(type==='random'){
+    var r = Math.random(), acc=0, pick=ATTACK_TYPES[0].n, i;
+    for(i=0;i<ATTACK_TYPES.length;i++){ acc+=ATTACK_TYPES[i].w; if(r<=acc){ pick=ATTACK_TYPES[i]; break; } }
+    type = pick.n;
+  }
+  var g = 0.8, i;
+  for(i=0;i<ATTACK_TYPES.length;i++) if(ATTACK_TYPES[i].n===type) g = ATTACK_TYPES[i].g;
+  S.attack = {n:type, g:g};
+  S.atkStart = now();
+  S.ruleHits = 0;
+  setThreat('crit');
+  pushLog('attack','⚠ 检测到 '+type+' —— 峰值 '+ (g*1.0).toFixed(1) +' Tbps，已牵引至清洗中心', 'bad');
+  pushLog('attack','规则引擎已下发拦截策略，开始剥离恶意流量', 'wn');
+  renderAttackTypes(type);
+  spawnAtkIps();
+  byId('sAtk').textContent = type;
+  byId('sAtk').className = 'v bad-v';
+  /* 自动封禁 */
+  if(S.autoBan) pushLog('policy','自动封禁已启用：高频恶意源将即时进入黑名单', 'hi');
+}
+function stopAttack(){
+  if(!S.attack) return;
+  pushLog('attack','攻击流量已回落，清洗策略逐步释放，服务恢复正常','ok');
+  S.attack = null;
+  S.ruleHits = 0;
+  setThreat('low');
+  renderAttackTypes(null);
+  byId('sAtk').textContent = '—';
+  byId('sAtk').className = 'v';
+  byId('sInt').textContent = '0 Gbps';
+  byId('sDur').textContent = '0s';
+  byId('sRule').textContent = '0';
+  byId('atkIps').innerHTML = '<tr><td colspan="3" style="color:var(--dim2)">暂无异常来源</td></tr>';
+}
+function spawnAtkIps(){
+  var host = byId('atkIps'); if(!host) return;
+  host.innerHTML='';
+  var i, ip, r, tr;
+  var pool = ['185.220.101.44','45.155.205.18','194.165.16.77','92.118.36.211','103.75.190.9','5.188.206.33'];
+  for(i=0;i<5;i++){
+    ip = pool[i];
+    r = Math.round(rnd(4000,78000));
+    tr = ce('tr');
+    tr.innerHTML = '<td class="mono">'+ip+'</td><td>'+fmt(r)+'</td>'+
+      '<td><button class="btn sm dg" data-ban="'+ip+'">封禁</button></td>';
+    host.appendChild(tr);
+  }
+}
+function setThreat(lv){
+  var chip = byId('threatChip'), st = byId('navStatus');
+  if(lv==='crit'){
+    chip.className = 'threat crit';
+    chip.innerHTML = '威胁等级 <b>高危</b>';
+    st.className = 'pill danger'; st.textContent = '● 攻击处置中';
+    document.body.className = 'emg';
+  } else if(lv==='warn'){
+    chip.className = 'threat warn';
+    chip.innerHTML = '威胁等级 <b>中</b>';
+    st.className = 'pill'; st.textContent = '● 全面防护中';
+    document.body.className = '';
+  } else {
+    chip.className = 'threat';
+    chip.innerHTML = '威胁等级 <b>低</b>';
+    st.className = 'pill'; st.textContent = '● 全面防护中';
+    document.body.className = '';
+  }
+}
+function updateLive(){
+  if(!S.attack){ byId('sInt').textContent='0 Gbps'; byId('sDur').textContent='0s'; return; }
+  var dur = Math.round((now()-S.atkStart)/1000);
+  byId('sInt').textContent = S.intensity.toFixed(2)+' Tbps';
+  byId('sDur').textContent = dur+'s';
+  byId('sRule').textContent = fmt(S.ruleHits);
+  if(dur%6===0 && dur>0){
+    pushLog('attack','清洗节点 '+NODES[Math.floor(Math.random()*6)].n+' 拦截 '+fmt(Math.round(rnd(20000,90000)))+' 个恶意包','wn');
+  }
+}
+
+/* ================= 面板切换 ================= */
+var PAGE_META = {
+  overview:['态势总览','Overview / Real-time posture'],
+  live:['实时攻击','Live / Threat response'],
+  rules:['防护规则','Rules / Mitigation policy'],
+  ip:['IP 管控','Access / Black & white list'],
+  nodes:['清洗节点','Network / Scrubbing centers'],
+  logs:['日志审计','Audit / Compliance trail'],
+  settings:['系统设置','Config / Instance']
+};
+function switchPage(p){
+  var items = document.querySelectorAll('.navi'), i;
+  for(i=0;i<items.length;i++) items[i].className = 'navi' + (items[i].getAttribute('data-p')===p?' on':'');
+  var ps = document.querySelectorAll('.panel');
+  for(i=0;i<ps.length;i++) ps[i].className = 'panel' + (ps[i].id==='p-'+p?' on':'');
+  var m = PAGE_META[p] || ['',''];
+  byId('pgTitle').textContent = m[0];
+  byId('pgCrumb').textContent = m[1];
+  if(p==='overview') drawTraffic();
+  if(p==='nodes') renderNodes();
+  if(p==='logs') auditRender();
+  if(p==='ip') renderIPLists();
+  if(p==='live'){ drawGauge(); drawWaterfall(); drawAtkPie(); drawPacket(); }
+}
+
+/* ================= 参数控件 ================= */
+function bindSlider(id, vid, fmtFn){
+  var el = byId(id); if(!el) return;
+  function upd(){ byId(vid).textContent = fmtFn(parseFloat(el.value)); }
+  el.addEventListener('input', upd);
+  el.addEventListener('change', upd);
+  upd();
+}
+
+/* ================= 初始化 ================= */
+function init(){
+  /* 侧栏导航 */
+  var navs = document.querySelectorAll('.navi');
+  for(var i=0;i<navs.length;i++){
+    navs[i].addEventListener('click', function(){
+      switchPage(this.getAttribute('data-p'));
+    });
+  }
+  /* 攻击按钮 */
+  var abtns = document.querySelectorAll('[data-atk]');
+  for(i=0;i<abtns.length;i++){
+    abtns[i].addEventListener('click', function(){ triggerAttack(this.getAttribute('data-atk')); });
+  }
+  byId('btnStopAtk').addEventListener('click', stopAttack);
+  /* IP 列表按钮委托 */
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    if(!t || t.tagName!=='BUTTON') return;
+    var b = t.getAttribute('data-ban'), d1 = t.getAttribute('data-delbl'), d2 = t.getAttribute('data-delwl');
+    if(b){
+      if(BL.indexOf(b)<0) BL.push(b);
+      pushLog('policy','已将高频攻击源 '+b+' 加入全局黑名单','hi');
+      renderIPLists();
+    }
+    if(d1){ BL.splice(BL.indexOf(d1),1); pushLog('policy','黑名单移除 '+d1,'hi'); renderIPLists(); }
+    if(d2){ WL.splice(WL.indexOf(d2),1); pushLog('policy','白名单移除 '+d2,'hi'); renderIPLists(); }
+  });
+  /* 滑块 */
+  bindSlider('rRate','vRate',function(v){ S.rateLimit=v; return v+' req/s'; });
+  bindSlider('rConn','vConn',function(v){ return v+''; });
+  bindSlider('rThr','vThr',function(v){ return (v/1000).toFixed(1)+' Gbps'; });
+  bindSlider('rChal','vChal',function(v){ return ['极低','低','中','高','极高'][Math.min(4,Math.max(0,Math.round(v)-1))]; });
+  /* 限流仿真 */
+  byId('btnSim').addEventListener('click', function(){
+    var lim = parseInt(byId('simLimit').value,10) || 0;
+    var rate = parseInt(byId('simRate').value,10) || 0;
+    var r = simulateRate(lim, rate);
+    var ratio = r.total? (r.blocked/r.total*100) : 0;
+    var vis = '', i;
+    for(i=0;i<r.timeline.length;i++) vis += r.timeline[i]? '<span style="color:#33d17a">▮</span>' : '<span style="color:#ff5c7a">▮</span>';
+    byId('simOut').innerHTML =
+      '阈值 <b>'+lim+' req/s</b> · 实际 <b>'+rate+' req/s</b> · 窗口 1000ms<br>'+
+      '放行 <b style="color:#33d17a">'+r.allowed+'</b> 个 · 拦截 <b style="color:#ff5c7a">'+r.blocked+'</b> 个 · 拦截率 <b>'+ratio.toFixed(1)+'%</b><br>'+
+      '<span style="letter-spacing:1px">'+vis+'</span> <span style="color:var(--dim2)">（前 40 个请求的判定序列）</span>';
+    pushLog('policy','限流仿真：阈值 '+lim+'，速率 '+rate+' → 拦截 '+r.blocked+' 个','hi');
+  });
+  /* IP 添加 */
+  function addIP(arr, name, el){
+    var v = el.value.trim();
+    if(!v) return;
+    if(ipToInt(v)<0 && v.indexOf('/')<0){
+      byId('ipOut').textContent = '⚠ 地址格式无效：'+v; return;
+    }
+    arr.push(v);
+    pushLog('policy','已加入'+name+'：'+v,'hi');
+    el.value=''; renderIPLists();
+  }
+  byId('btnBlack').addEventListener('click', function(){ addIP(BL,'黑名单', byId('ipInput')); });
+  byId('btnWhite').addEventListener('click', function(){ addIP(WL,'白名单', byId('ipInput')); });
+  /* IP 查询 */
+  byId('btnTest').addEventListener('click', function(){
+    var ip = byId('ipTest').value.trim();
+    if(ipToInt(ip)<0){ byId('ipOut').textContent = '⚠ 非法 IPv4 地址'; return; }
+    var j = judgeIP(ip);
+    var txt;
+    if(j.kind==='white') txt = '✔ <b style="color:#33d17a">放行</b> —— 命中白名单 '+j.by;
+    else if(j.kind==='black') txt = '✘ <b style="color:#ff5c7a">阻断</b> —— 命中黑名单 '+j.by;
+    else txt = '✔ <b style="color:#33d17a">放行</b> —— 未命中任何名单，走默认策略';
+    byId('ipOut').innerHTML = '目标 <b>'+ip+'</b><br>判定结果：'+txt;
+  });
+  /* 日志过滤 */
+  var lf = document.querySelectorAll('#logFilter button');
+  for(i=0;i<lf.length;i++){
+    lf[i].addEventListener('click', function(){
+      var s = document.querySelectorAll('#logFilter button'), k;
+      for(k=0;k<s.length;k++) s[k].className='';
+      this.className='on';
+      auditRender();
+    });
+  }
+  byId('btnClearLog').addEventListener('click', function(){ byId('auditLog').innerHTML=''; });
+  /* 设置：防护模式 */
+  var ms = document.querySelectorAll('#modeSeg button');
+  function modeOut(){
+    var cap = S.caps[S.mode];
+    var desc = {normal:'标准防护：清洗容量 1.5 Tbps，适合日常业务。',
+                high:'高防模式：清洗容量 2.4 Tbps，启用更激进的挑战与限速。',
+                emergency:'紧急预案：清洗容量 3.6 Tbps，全量流量强挑战，可能影响正常用户体验。'};
+    byId('modeOut').innerHTML = '<b>'+desc[S.mode]+'</b><br>清洗容量写至 '+cap+' Mbps · 威胁响应级别 '+
+      ({normal:'常规',high:'提升',emergency:'最高'})[S.mode];
+    byId('sCap').textContent = (cap/1000).toFixed(1)+' Tbps';
+  }
+  for(i=0;i<ms.length;i++){
+    ms[i].addEventListener('click', function(){
+      S.mode = this.getAttribute('data-m');
+      var k; for(k=0;k<ms.length;k++) ms[k].className='';
+      this.className='on';
+      modeOut();
+      pushLog('policy','防护模式切换为「'+
+        ({normal:'标准防护',high:'高防模式',emergency:'紧急预案'})[S.mode]+'」','hi');
+    });
+  }
+  modeOut();
+  /* 设置：开关 */
+  var tgs = document.querySelectorAll('.toggle');
+  for(i=0;i<tgs.length;i++){
+    tgs[i].addEventListener('click', function(){
+      var on = this.className.indexOf('on')>=0;
+      this.className = on? 'toggle':'toggle on';
+      var k = this.getAttribute('data-k');
+      if(k==='autoBan') S.autoBan = !on;
+      pushLog('system','设置项 '+k+' → '+(!on?'开启':'关闭'),'in');
+    });
+  }
+  /* 监听确认 */
+  document.addEventListener('click', function(e){
+    var t=e.target;
+    if(t && t.className && t.className.indexOf('sw')>=0){}
+  });
+
+  /* IP 输入清空提示 */
+  byId('ipInput').addEventListener('focus', function(){ byId('ipOut').textContent=''; });
+
+  /* 初始数据 */
+  var j;
+  for(j=0;j<120;j++){
+    S.in.push(baseIn()*0.6 + rnd(-40,40) + 700);
+    S.cln.push(rnd(600,1180));
+  }
+  renderAttackTypes(null);
+  renderGeo();
+  renderNodeMini();
+  renderNodes();
+  renderIPLists();
+  drawTraffic();
+  drawGauge(); drawWaterfall(); drawAtkPie(); drawPacket();
+  setInterval(stepPacket, 90);
+  setThreat('low');
+
+  /* 时钟 */
+  function clock(){
+    var d = new Date();
+    byId('clock').textContent = pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds());
+  }
+  clock();
+  setInterval(clock, 1000);
+
+  /* 主循环 */
+  setInterval(tick, 520);
+
+  /* 初始日志 */
+  pushLog('system','AEGIS 防护实例 AEG-7F3C9D 已就绪，全局边缘节点接入完成','ok');
+  pushLog('policy','已加载防护策略集：L3/L4 洪泛防护、L7 应用防护、Bot 管控','hi');
+  pushLog('system','BGP Anycast 线路已同步，8 个清洗节点在线','in');
+  auditRender();
+}
+
+/* ================= 实时攻击可视化 ================= */
+function liveOn(){
+  var p = byId('p-live');
+  return !!p && (' '+p.className+' ').indexOf(' on ') >= 0;
+}
+/* 数据包雨：生成 / 推进 / 绘制 */
+function spawnPackets(){
+  var k, cnt = S.attack ? 6 : 2;
+  for(k=0;k<cnt;k++){
+    S.pkts.push({ x:Math.random(), y:-0.06, spd:rnd(0.018,0.045),
+      bad:(S.attack ? Math.random()<0.72 : Math.random()<0.07), clean:false });
+  }
+  if(S.pkts.length>140) S.pkts.splice(0, S.pkts.length-140);
+}
+function stepPacket(){
+  var i, p;
+  if(!S.pkts.length) return;
+  for(i=S.pkts.length-1;i>=0;i--){
+    p = S.pkts[i];
+    p.y += p.spd;
+    if(p.bad && p.y>0.62){ p.bad=false; p.clean=true; }
+    if(p.y>1.05) S.pkts.splice(i,1);
+  }
+  if(liveOn()) drawPacket();
+}
+function drawPacket(){
+  var c = byId('cvsPacket'); if(!c || !c.getContext) return;
+  var ctx = c.getContext('2d'), w=c.width, h=c.height, i, p, x, y;
+  ctx.clearRect(0,0,w,h);
+  ctx.setLineDash([4,6]); ctx.strokeStyle='rgba(255,255,255,.09)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(0,h*0.62); ctx.lineTo(w,h*0.62); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(147,160,189,.6)'; ctx.font='11px ui-monospace,monospace';
+  ctx.fillText('SCRUBBING BOUNDARY / 清洗分界', 8, h*0.62-8);
+  for(i=0;i<S.pkts.length;i++){
+    p = S.pkts[i]; x = p.x*w; y = p.y*h;
+    if(p.bad){ ctx.fillStyle='rgba(255,92,122,.92)'; ctx.fillRect(x,y,4,15); }
+    else if(p.clean){ ctx.fillStyle='rgba(51,209,122,.9)'; ctx.fillRect(x,y,3,9); }
+    else { ctx.fillStyle='rgba(124,140,255,.5)'; ctx.fillRect(x,y,2,7); }
+  }
+}
+/* 威胁强度仪表盘 */
+function drawGauge(){
+  var c = byId('cvsGauge'); if(!c || !c.getContext) return;
+  var ctx = c.getContext('2d'), w=c.width, h=c.height;
+  ctx.clearRect(0,0,w,h);
+  var cx=w/2, cy=h*0.76, r=Math.min(w*0.40, h*0.62);
+  var maxG=5.0, val = S.attack ? S.intensity : 0;
+  var frac = Math.max(0, Math.min(1, val/maxG));
+  var i, segs=[[0,'#33d17a'],[0.4,'#ffb64d'],[0.72,'#ff5c7a']], a0, a1;
+  ctx.lineCap='butt'; ctx.lineWidth=14;
+  ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,2*Math.PI);
+  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.stroke();
+  for(i=0;i<segs.length;i++){
+    a0 = Math.PI + Math.PI*segs[i][0];
+    a1 = Math.PI + Math.PI*(i<segs.length-1 ? segs[i+1][0] : 1);
+    ctx.beginPath(); ctx.arc(cx,cy,r,a0,a1);
+    ctx.strokeStyle=segs[i][1]; ctx.globalAlpha=.28; ctx.stroke(); ctx.globalAlpha=1;
+  }
+  var col = frac<0.4 ? '#33d17a' : (frac<0.72 ? '#ffb64d' : '#ff5c7a');
+  ctx.lineCap='round'; ctx.lineWidth=14;
+  ctx.beginPath(); ctx.arc(cx,cy,r,Math.PI,Math.PI+Math.PI*frac);
+  ctx.strokeStyle=col; ctx.stroke();
+  var ang = Math.PI + Math.PI*frac;
+  ctx.beginPath(); ctx.moveTo(cx,cy);
+  ctx.lineTo(cx+Math.cos(ang)*r*0.82, cy+Math.sin(ang)*r*0.82);
+  ctx.strokeStyle='#fff'; ctx.lineWidth=2.5; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx,cy,5,0,2*Math.PI); ctx.fillStyle='#fff'; ctx.fill();
+  ctx.textAlign='center';
+  ctx.fillStyle=col; ctx.font='bold 30px ui-monospace,Menlo,monospace';
+  ctx.fillText((S.attack ? S.intensity.toFixed(2) : '0.00'), cx, cy-16);
+  ctx.fillStyle='rgba(147,160,189,.75)'; ctx.font='12px ui-monospace,monospace';
+  ctx.fillText('Tbps 攻击强度', cx, cy+6);
+  ctx.fillStyle='rgba(147,160,189,.5)'; ctx.font='11px ui-monospace,monospace';
+  ctx.fillText('0', cx-r, cy+22); ctx.fillText(maxG.toFixed(1), cx+r, cy+22);
+  ctx.textAlign='start';
+}
+/* 实时包速率瀑布图 */
+function drawWaterfall(){
+  var c = byId('cvsWaterfall'); if(!c || !c.getContext) return;
+  var ctx = c.getContext('2d'), w=c.width, h=c.height, pad=26;
+  ctx.clearRect(0,0,w,h);
+  var n = Math.min(60, S.in.length); if(n<1) return;
+  var i, max=1, idx;
+  for(i=S.in.length-n;i<S.in.length;i++) if(S.in[i]>max) max=S.in[i];
+  max = Math.ceil(max/500)*500;
+  ctx.strokeStyle='rgba(255,255,255,.06)'; ctx.lineWidth=1;
+  for(i=0;i<=4;i++){
+    var y = pad + (h-pad*2)*i/4;
+    ctx.beginPath(); ctx.moveTo(pad,y); ctx.lineTo(w-pad,y); ctx.stroke();
+  }
+  var bw = (w-pad*2)/n, cap = S.caps[S.mode];
+  for(i=0;i<n;i++){
+    idx = S.in.length-n+i;
+    var gin = S.in[idx];
+    var cln = Math.min(gin, cap);
+    var x = pad + i*bw;
+    var hTot = (h-pad*2)*(gin/max);
+    var hCln = (h-pad*2)*(cln/max);
+    ctx.fillStyle='rgba(255,92,122,.82)';
+    if(hTot-hCln>0.4) ctx.fillRect(x, h-pad-hTot, bw*0.72, hTot-hCln);
+    ctx.fillStyle='rgba(124,140,255,.85)';
+    ctx.fillRect(x, h-pad-hCln, bw*0.72, hCln);
+  }
+  var cyl = h-pad-(h-pad*2)*(cap/max);
+  ctx.setLineDash([5,4]); ctx.strokeStyle='rgba(51,209,122,.85)'; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(pad,cyl); ctx.lineTo(w-pad,cyl); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle='rgba(51,209,122,.9)'; ctx.font='11px ui-monospace,monospace';
+  ctx.fillText('清洗容量 '+(cap/1000).toFixed(1)+'T', w-pad-118, cyl-6);
+  ctx.fillStyle='rgba(147,160,189,.65)';
+  ctx.fillText('最近 '+n+' 个采样周期', pad, h-8);
+}
+/* 攻击类型分布环形图 */
+function drawAtkPie(){
+  var c = byId('cvsAtkPie'); if(!c || !c.getContext) return;
+  var ctx = c.getContext('2d'), w=c.width, h=c.height;
+  ctx.clearRect(0,0,w,h);
+  var cx=w*0.34, cy=h*0.5, r=Math.min(w*0.30,h*0.42), inner=r*0.58;
+  var colors=['#7c8cff','#b06cff','#39e0f0','#ffb64d','#33d17a','#ff5c7a'];
+  var i, vals=[], sum=0, act=-1, v;
+  for(i=0;i<ATTACK_TYPES.length;i++){
+    v = ATTACK_TYPES[i].w;
+    if(S.attack && S.attack.n===ATTACK_TYPES[i].n){ v = v*2.4 + 0.5; act = i; }
+    vals.push(v); sum += v;
+  }
+  var a = -Math.PI/2, slice;
+  for(i=0;i<vals.length;i++){
+    slice = vals[i]/sum*Math.PI*2;
+    ctx.beginPath();
+    ctx.arc(cx,cy,r,a,a+slice);
+    ctx.arc(cx,cy,inner,a+slice,a,true);
+    ctx.closePath();
+    ctx.fillStyle = colors[i%colors.length];
+    ctx.globalAlpha = (act<0 || act===i) ? 1 : 0.4;
+    ctx.fill(); ctx.globalAlpha = 1;
+    a += slice;
+  }
+  ctx.fillStyle='rgba(147,160,189,.75)'; ctx.font='11px ui-monospace,monospace';
+  ctx.textAlign='center';
+  ctx.fillText('ATTACK', cx, cy-2);
+  ctx.fillText('VECTORS', cx, cy+13);
+  ctx.textAlign='start';
+  var lx = w*0.66, ly = h*0.5 - vals.length*11;
+  for(i=0;i<ATTACK_TYPES.length;i++){
+    ctx.fillStyle = colors[i%colors.length];
+    ctx.globalAlpha = (act<0||act===i)?1:0.4;
+    ctx.fillRect(lx, ly + i*22, 9, 9);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle='rgba(208,216,236,.9)'; ctx.font='11px ui-monospace,monospace';
+    var pct = Math.round(vals[i]/sum*100);
+    ctx.fillText(ATTACK_TYPES[i].n, lx+15, ly + i*22 + 9);
+    ctx.fillStyle='rgba(147,160,189,.7)';
+    ctx.fillText(pct+'%', lx+15+150, ly + i*22 + 9);
+  }
+}
+/* 暴露接口供自动化测试 */
+W.AEGIS = {
+  S:S, init:init,
+  ipToInt:ipToInt, cidrMatch:cidrMatch,
+  SlidingLimiter:SlidingLimiter, TokenBucket:TokenBucket,
+  simulateRate:simulateRate,
+  judgeIP:judgeIP,
+  BL:BL, WL:WL,
+  triggerAttack:triggerAttack, stopAttack:stopAttack,
+  switchPage:switchPage, setThreat:setThreat,
+  drawTraffic:drawTraffic, tick:tick, updateKPI:updateKPI,
+  pushLog:pushLog, renderAttackTypes:renderAttackTypes,
+  ATTACK_TYPES:ATTACK_TYPES, NODES:NODES,
+  drawGauge:drawGauge, drawWaterfall:drawWaterfall, drawAtkPie:drawAtkPie, drawPacket:drawPacket,
+  spawnPackets:spawnPackets, stepPacket:stepPacket, liveOn:liveOn
+};
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else { init(); }
+
+})();
+</script>
+</body>
+</html>
